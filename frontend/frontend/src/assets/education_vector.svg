@@ -1,0 +1,4 @@
+<div className="page">
+  <img src="education_vector.svg" alt="education illustration" className="illustration" />
+  <div className="auth-card"> … </div>
+</div>

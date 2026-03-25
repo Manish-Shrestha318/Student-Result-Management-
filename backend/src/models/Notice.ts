@@ -1,0 +1,42 @@
+import mongoose, { Schema, Document } from "mongoose";
+
+export interface INotice extends Document {
+  title: string;
+  content: string;
+  category: "academic" | "exam" | "event" | "holiday" | "general";
+  targetRoles: Array<"admin" | "teacher" | "student" | "parent">;
+  targetClasses?: Array<mongoose.Types.ObjectId>;
+  attachments?: Array<{
+    filename: string;
+    url: string;
+  }>;
+  publishDate: Date;
+  expiryDate?: Date;
+  createdBy: mongoose.Types.ObjectId;
+  isActive: boolean;
+}
+
+const NoticeSchema: Schema = new Schema({
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  category: { 
+    type: String, 
+    enum: ["academic", "exam", "event", "holiday", "general"],
+    required: true 
+  },
+  targetRoles: [{ 
+    type: String, 
+    enum: ["admin", "teacher", "student", "parent"] 
+  }],
+  targetClasses: [{ type: Schema.Types.ObjectId, ref: 'Class' }],
+  attachments: [{
+    filename: String,
+    url: String
+  }],
+  publishDate: { type: Date, default: Date.now },
+  expiryDate: { type: Date },
+  createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export default mongoose.model<INotice>("Notice", NoticeSchema);
