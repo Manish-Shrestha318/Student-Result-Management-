@@ -7,7 +7,7 @@ export interface IUser {
   role: Role;
   googleId?: string;
   profilePicture?: string;
-  isVerified: boolean;
+  status: "pending" | "active" | "rejected";
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
 }

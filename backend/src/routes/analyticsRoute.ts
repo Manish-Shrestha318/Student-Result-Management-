@@ -8,7 +8,8 @@ import {
   getSubjectWiseAnalysis,
   getAttendanceImpact,
   getComprehensiveStudentReport,
-  compareStudents
+  compareStudents,
+  getStudentResultWithAttendance
 } from "../controllers/analyticsController";
 
 const router = express.Router();
@@ -76,6 +77,13 @@ router.get(
   "/compare/:studentId1/:studentId2", 
   authorizeRoles("admin", "teacher"), 
   compareStudents
+);
+
+// Attendance-aware effective result
+router.get(
+  "/result-with-attendance/:studentId",
+  authorizeRoles("admin", "teacher", "student", "parent"),
+  getStudentResultWithAttendance
 );
 
 export default router;

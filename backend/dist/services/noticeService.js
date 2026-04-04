@@ -62,7 +62,7 @@ class NoticeService {
         if (updates.targetClasses) {
             updateData.targetClasses = updates.targetClasses.map(id => new mongoose_1.Types.ObjectId(id));
         }
-        return await Notice_1.default.findByIdAndUpdate(noticeId, updateData, { new: true, runValidators: true }).populate('createdBy', 'name');
+        return await Notice_1.default.findByIdAndUpdate(noticeId, updateData, { returnDocument: "after", runValidators: true }).populate('createdBy', 'name');
     }
     // Delete notice
     async deleteNotice(noticeId) {

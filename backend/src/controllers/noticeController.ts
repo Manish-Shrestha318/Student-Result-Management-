@@ -51,11 +51,13 @@ export class NoticeController {
       const user = (req as any).user;
       const { category, isActive } = req.query;
 
+      const isActiveParam = isActive !== undefined ? isActive === 'true' : (user.role === 'admin' ? undefined : true);
+
       const notices = await noticeService.getNotices(
         user.role,
         user.id,
         category as string,
-        isActive === 'true'
+        isActiveParam
       );
 
       res.json({

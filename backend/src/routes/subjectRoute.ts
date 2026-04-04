@@ -4,11 +4,11 @@ import { getSubjectsController, createSubjectController, updateSubjectController
 
 const router = express.Router();
 
-router.use(protect, authorizeRoles("admin"));
+router.use(protect);
 
-router.get("/", getSubjectsController);
-router.post("/", createSubjectController);
-router.put("/:id", updateSubjectController);
-router.delete("/:id", deleteSubjectController);
+router.get("/", authorizeRoles("admin", "teacher"), getSubjectsController);
+router.post("/", authorizeRoles("admin"), createSubjectController);
+router.put("/:id", authorizeRoles("admin"), updateSubjectController);
+router.delete("/:id", authorizeRoles("admin"), deleteSubjectController);
 
 export default router;

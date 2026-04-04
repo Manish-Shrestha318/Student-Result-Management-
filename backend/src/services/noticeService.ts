@@ -28,37 +28,60 @@ export class NoticeService {
   }
 
   // Get notices based on user role
-  async getNotices(role: string, userId?: string, category?: string, isActive: boolean = true): Promise<INotice[]> {
-    const query: any = { isActive };
+  async getNotices(role: string, userId?: string, category?: string, isActive?: boolean): Promise<INotice[]> {
+    const query: any = {};
+    if (isActive !== undefined) {
+      query.isActive = isActive;
+    }
 
-    // Filter by publish date
-    query.publishDate = { $lte: new Date() };
-    
-    // Add expiry date filter
-    query.$or = [
-      { expiryDate: { $exists: false } },
-      { expiryDate: null },
-      { expiryDate: { $gte: new Date() } }
-    ];
+    // For admin, do not filter by publish/expiry dates or target roles
+    if (role !== 'admin') {
+      // Filter by publish date
+      query.publishDate = { $lte: new Date() };
+      
+      // Add expiry date filter
+      query.$or = [
+        { expiryDate: { $exists: false } },
+        { expiryDate: null },
+        { expiryDate: { $gte: new Date() } }
+      ];
 
-    // Filter by target roles
-    query.targetRoles = { $in: [role] };
+      // Filter by target roles
+      query.targetRoles = { $in: [role] };
+    }
 
     // Filter by category if provided
     if (category) {
       query.category = category;
     }
 
-    // For students, filter by class if userId is provided
+    // For students, filter by both role and class if userId is provided
     if (role === 'student' && userId) {
       const Student = require('../models/Student').default;
+      const ClassModel = require('../models/Class').default;
       const student = await Student.findOne({ userId: new Types.ObjectId(userId) });
+      
+      const studentFilter: any[] = [{ targetRoles: { $in: ['student'] } }];
+      
+      // If student has a class name/section string, find the actual Class ObjectId
       if (student && student.class) {
-        query.$or = [
-          ...(query.$or || []),
-          { targetClasses: { $in: [student.class] } }
-        ];
+        // Find the class document to get its ObjectId
+        const classDoc = await ClassModel.findOne({ 
+          name: student.class,
+          section: student.section 
+        });
+        
+        if (classDoc) {
+          studentFilter.push({ targetClasses: { $in: [classDoc._id] } });
+        }
       }
+      
+      query.$and = [
+        ...(query.$and || []),
+        { $or: studentFilter }
+      ];
+      // Remove the previously added role filter since it's now in the $or block
+      delete query.targetRoles;
     }
 
     return await Notice.find(query)
@@ -85,7 +108,7 @@ export class NoticeService {
     return await Notice.findByIdAndUpdate(
       noticeId,
       updateData,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).populate('createdBy', 'name');
   }
 

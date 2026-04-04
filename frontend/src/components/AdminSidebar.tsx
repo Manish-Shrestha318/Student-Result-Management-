@@ -7,7 +7,9 @@ import {
   FileText, 
   BarChart3, 
   CreditCard, 
-  Settings, 
+  Bell,
+  BookOpen,
+  Layers,
   LogOut 
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -68,10 +70,12 @@ const AdminSidebar: React.FC = () => {
         <NavItem icon={<Users size={20} />} label="Manage Users" path="/dashboard/admin/users" active={location.pathname === '/dashboard/admin/users'} />
         <NavItem icon={<UserCheck size={20} />} label="Teacher Approvals" path="/dashboard/admin/approvals" active={location.pathname === '/dashboard/admin/approvals'} />
         <NavItem icon={<GraduationCap size={20} />} label="Student Records" path="/dashboard/admin/students" active={location.pathname === '/dashboard/admin/students'} />
+        <NavItem icon={<Layers size={20} />} label="Manage Classes" path="/dashboard/admin/classes" active={location.pathname === '/dashboard/admin/classes'} />
+        <NavItem icon={<BookOpen size={20} />} label="Manage Subjects" path="/dashboard/admin/subjects" active={location.pathname === '/dashboard/admin/subjects'} />
         <NavItem icon={<FileText size={20} />} label="Reports" path="/dashboard/admin/reports" active={location.pathname === '/dashboard/admin/reports'} />
         <NavItem icon={<BarChart3 size={20} />} label="Analytics" path="/dashboard/admin/analytics" active={location.pathname === '/dashboard/admin/analytics'} />
         <NavItem icon={<CreditCard size={20} />} label="Fee Management" path="/dashboard/admin/fees" active={location.pathname === '/dashboard/admin/fees'} />
-        <NavItem icon={<Settings size={20} />} label="Settings" path="/dashboard/admin/settings" active={location.pathname === '/dashboard/admin/settings'} />
+        <NavItem icon={<Bell size={20} />} label="Notices & Board" path="/dashboard/admin/notices" active={location.pathname === '/dashboard/admin/notices'} />
       </nav>
 
       <button 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -6,10 +6,7 @@ import {
   Edit3, 
   FileBarChart, 
   MessageSquare, 
-  Settings, 
   LogOut, 
-  Bell, 
-  User, 
   Plus,
   ExternalLink,
   Search,
@@ -43,20 +40,26 @@ ChartJS.register(
   Legend
 );
 
+import AdminHeader from '../../components/AdminHeader';
+
 const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
-  // Class performance comparison data
-  const classPerformanceData = {
-    labels: ['Class 10-A', 'Class 10-B', 'Class 9-C', 'Class 11-A', 'Class 8-B'],
-    datasets: [
-      {
-        label: 'Average Score (%)',
-        data: [82, 75, 88, 79, 84],
-        backgroundColor: '#2563eb',
-        borderRadius: 6,
-      },
-    ],
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [stats, setStats] = useState({
+    assignedClasses: 0,
+    totalStudents: 0,
+    subjectsHandled: 0,
+  });
+  
+  const [students, setStudents] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [classPerformanceData, setClassPerformanceData] = useState<any>({
+    labels: [],
+    datasets: []
+  });
 
   const chartOptions = {
     responsive: true,
@@ -70,21 +73,9 @@ const TeacherDashboard: React.FC = () => {
   };
 
   const teacherStats = [
-    { label: 'Assigned Classes', value: '5', icon: Layers, color: '#2563eb' },
-    { label: 'Total Students', value: '164', icon: Users, color: '#0ea5e9' },
-    { label: 'Subjects Handled', value: '3', icon: BookOpen, color: '#8b5cf6' },
-  ];
-
-  const students = [
-    { id: '101', name: 'Sophia Miller', class: '10-A', email: 'sophia@email.com', attendance: '98%', performance: 'A' },
-    { id: '102', name: 'James Wilson', class: '10-A', email: 'james@email.com', attendance: '92%', performance: 'B+' },
-    { id: '103', name: 'Olivia Brown', class: '10-A', email: 'olivia@email.com', attendance: '95%', performance: 'A-' },
-    { id: '104', name: 'William Jones', class: '10-A', email: 'will@email.com', attendance: '88%', performance: 'B' },
-  ];
-
-  const messages = [
-    { from: 'Mrs. Davis (Parent)', subject: 'About Term Exam marks...', time: '15m ago', unread: true },
-    { from: 'Student: Alex Thomson', subject: 'Submission query for Unit 3...', time: '2h ago', unread: false },
+    { label: 'Assigned Classes', value: stats.assignedClasses.toString(), icon: Layers, color: '#2563eb' },
+    { label: 'Total Students', value: stats.totalStudents.toString(), icon: Users, color: '#0ea5e9' },
+    { label: 'Subjects Handled', value: stats.subjectsHandled.toString(), icon: BookOpen, color: '#8b5cf6' },
   ];
 
   const handleLogout = () => {
@@ -92,6 +83,46 @@ const TeacherDashboard: React.FC = () => {
     localStorage.removeItem('user');
     navigate('/login');
   };
+
+  React.useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      try {
+        const [dashboardRes, noticesRes] = await Promise.all([
+          fetch('/api/dashboard/teacher', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/notices', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        
+        const data = await dashboardRes.json();
+        const noticesData = await noticesRes.json();
+        
+        if (data.success) {
+          setStats(data.stats);
+          setStudents(data.students || []);
+          setMessages(data.messages || []);
+          if (data.classPerformanceData && data.classPerformanceData.labels.length > 0) {
+            setClassPerformanceData(data.classPerformanceData);
+          }
+        } else {
+          setError(data.message || 'Failed to load dashboard data');
+        }
+
+        if (noticesData.success && noticesData.data) {
+          setAnnouncements(noticesData.data.slice(0, 3));
+        }
+
+      } catch (err) {
+        setError('Error fetching dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+
+  const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
@@ -108,7 +139,6 @@ const TeacherDashboard: React.FC = () => {
           <NavItem icon={<Edit3 size={20} />} label="Mark Entry" />
           <NavItem icon={<FileBarChart size={20} />} label="Reports" />
           <NavItem icon={<MessageSquare size={20} />} label="Messages" />
-          <NavItem icon={<Settings size={20} />} label="Settings" />
         </nav>
 
         <button 
@@ -122,33 +152,14 @@ const TeacherDashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <header style={{ height: '80px', backgroundColor: '#fff', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 3rem', position: 'sticky', top: 0, zIndex: 10 }}>
-          <h2 style={{ fontSize: '1.25rem' }}>Teacher Dashboard</h2>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div style={{ position: 'relative', cursor: 'pointer' }}>
-              <Bell size={22} color="var(--text-secondary)" />
-              <span style={{ position: 'absolute', top: -5, right: -5, width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%', border: '2px solid #fff' }}></span>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Prof. Sarah Parker</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Senior Faculty</p>
-              </div>
-              <div style={{ width: '45px', height: '45px', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={24} color="var(--text-secondary)" />
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader title="Teacher Dashboard" error={error} />
 
         <div style={{ padding: '3rem' }}>
           {/* Action Header section */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Welcome back, Sarah!</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>You have 2 new messages and 15 pending mark entries.</p>
+              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Welcome back, {userData.name ? userData.name.split(' ')[0] : 'Teacher'}!</h3>
+              <p style={{ color: 'var(--text-secondary)' }}>You have {messages.length > 0 ? messages.length : 'no'} new messages.</p>
             </div>
             <button className="btn-primary" style={{ width: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <Edit3 size={18} />
@@ -175,7 +186,7 @@ const TeacherDashboard: React.FC = () => {
               {/* Student Management Table section */}
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3>Recent Students (Class 10-A)</h3>
+                  <h3>Assigned Students</h3>
                   <div style={{ position: 'relative' }}>
                     <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={16} />
                     <input type="text" placeholder="Search student..." style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.875rem', outline: 'none' }} />
@@ -192,21 +203,33 @@ const TeacherDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {students.map((student, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '1rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{student.name}</span>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {student.id}</span>
-                            </div>
-                          </td>
-                          <td style={{ padding: '1rem' }}>{student.attendance}</td>
-                          <td style={{ padding: '1rem' }}><span style={{ padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: '#eef2ff', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem' }}>{student.performance}</span></td>
-                          <td style={{ padding: '1rem' }}>
-                            <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><MoreVertical size={18} /></button>
-                          </td>
-                        </tr>
-                      ))}
+                      {loading ? (
+                        <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading students...</td></tr>
+                      ) : students.length === 0 ? (
+                        <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No students found.</td></tr>
+                      ) : (
+                        students.map((student: any, i: number) => (
+                          <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{student.name}</span>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{student.email}</span>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 500, marginTop: '0.2rem' }}>Class: {student.class} | Roll No: {student.id}</span>
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }}></div>
+                                  {student.attendance}
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem' }}><span style={{ padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: '#eef2ff', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem' }}>{student.performance}</span></td>
+                              <td style={{ padding: '1rem' }}>
+                                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><MoreVertical size={18} /></button>
+                              </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -224,7 +247,13 @@ const TeacherDashboard: React.FC = () => {
                   </select>
                 </div>
                 <div style={{ height: '280px' }}>
-                  <Bar data={classPerformanceData} options={chartOptions} />
+                  {loading ? (
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>Loading chart data...</div>
+                  ) : classPerformanceData.labels.length > 0 ? (
+                    <Bar data={classPerformanceData} options={chartOptions} />
+                  ) : (
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No performance data available</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -240,7 +269,10 @@ const TeacherDashboard: React.FC = () => {
                   <button style={{ border: 'none', background: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Plus size={20}/></button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {messages.map((msg, i) => (
+                  {messages.length === 0 && !loading && (
+                    <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No new messages.</div>
+                  )}
+                  {messages.map((msg: any, i: number) => (
                     <div key={i} style={{ padding: '1rem', borderRadius: '10px', background: msg.unread ? '#f0f7ff' : '#fff', border: msg.unread ? '1px solid #bfdbfe' : '1px solid var(--border-color)', position: 'relative' }}>
                       {msg.unread && <span style={{ position: 'absolute', right: '10px', top: '10px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>}
                       <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>{msg.from}</h5>
@@ -249,6 +281,28 @@ const TeacherDashboard: React.FC = () => {
                     </div>
                   ))}
                   <button className="btn-primary" style={{ fontSize: '0.9rem', padding: '0.6rem' }}>Open Inbox</button>
+                </div>
+              </div>
+
+              {/* Announcements section */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <Bell size={20} color="var(--primary)" />
+                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>School Announcements</h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {announcements.length === 0 ? (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No recent announcements.</p>
+                  ) : (
+                    announcements.map((ann, i) => (
+                      <div key={i} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(ann.createdAt).toLocaleDateString()}</p>
+                        <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>{ann.title}</h4>
+                        <p style={{ fontSize: '0.875rem' }}>{ann.content.substring(0, 80)}...</p>
+                      </div>
+                    ))
+                  )}
+                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>View All Notices →</button>
                 </div>
               </div>
 

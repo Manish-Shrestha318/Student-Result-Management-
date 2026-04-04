@@ -27,7 +27,23 @@ export const enterMarks = async (req: Request, res: Response) => {
 export const getStudentMarks = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
-    const marks = await markService.getMarksByStudent(studentId as any);
+    const user = (req as any).user;
+
+    // Resolve student ID
+    const { AnalyticsService } = require("../services/analyticsService");
+    const analyticsService = new AnalyticsService();
+    const resolvedStudentId = await analyticsService.resolveStudentProfileId(studentId);
+
+    // Authorization check: Admin and Teacher can view any student's marks. 
+    // Students and Parents can only view their own data.
+    if (user.role === "student" || user.role === "parent") {
+       const userStudentId = await analyticsService.resolveStudentProfileId(user.id);
+       if (userStudentId.toString() !== resolvedStudentId.toString()) {
+         return res.status(403).json({ success: false, message: "Forbidden: You can only view your own marks" });
+       }
+    }
+
+    const marks = await markService.getMarksByStudent(resolvedStudentId.toString());
     
     res.json({ 
       success: true, 
@@ -122,7 +138,22 @@ export const deleteMarks = async (req: Request, res: Response) => {
 export const getPerformanceTrend = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
-    const trends = await markService.getPerformanceTrend(studentId as any);
+    const user = (req as any).user;
+
+    // Resolve student ID
+    const { AnalyticsService } = require("../services/analyticsService");
+    const analyticsService = new AnalyticsService();
+    const resolvedStudentId = await analyticsService.resolveStudentProfileId(studentId);
+
+    // Authorization check
+    if (user.role === "student" || user.role === "parent") {
+       const userStudentId = await analyticsService.resolveStudentProfileId(user.id);
+       if (userStudentId.toString() !== resolvedStudentId.toString()) {
+         return res.status(403).json({ success: false, message: "Forbidden: You can only view your own trends" });
+       }
+    }
+
+    const trends = await markService.getPerformanceTrend(resolvedStudentId.toString());
     
     res.json({
       success: true,

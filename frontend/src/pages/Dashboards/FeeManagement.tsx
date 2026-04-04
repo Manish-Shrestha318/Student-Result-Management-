@@ -16,6 +16,8 @@ const FeeManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedClass, setSelectedClass] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const fetchFees = async () => {
     setLoading(true);
@@ -47,6 +49,11 @@ const FeeManagement: React.FC = () => {
     fee.studentId?.userId?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     fee.feeType.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentFees = filteredFees.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filteredFees.length / itemsPerPage);
 
   const handleUpdatePayment = async (feeId: string) => {
     const amount = prompt("Enter payment amount:");
@@ -153,7 +160,7 @@ const FeeManagement: React.FC = () => {
                   ) : filteredFees.length === 0 ? (
                     <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>No fee records found.</td></tr>
                   ) : (
-                    filteredFees.map((fee) => {
+                    currentFees.map((fee) => {
                       const style = getStatusStyle(fee.status);
                       const balance = fee.amount - fee.paidAmount;
                       return (
@@ -213,6 +220,20 @@ const FeeManagement: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filteredFees.length)} of {filteredFees.length}</span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
+                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
+                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
+                  ))}
+                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

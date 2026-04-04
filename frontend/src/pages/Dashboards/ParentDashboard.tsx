@@ -93,6 +93,26 @@ const ParentDashboard: React.FC = () => {
     { from: 'Office Administration', preview: 'Reminder: The school council meet...', time: 'Yesterday', read: true },
   ];
 
+  const [announcements, setAnnouncements] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchNotices = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const response = await fetch('/api/notices', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success && data.data) {
+          setAnnouncements(data.data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Failed to fetch notices:', err);
+      }
+    };
+    fetchNotices();
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -281,28 +301,23 @@ const ParentDashboard: React.FC = () => {
 
               {/* School Updates section */}
               <div className="card">
-                <h3 style={{ fontSize: '1.125rem', marginBottom: '1.25rem' }}>School Announcements</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <AlertCircle size={20} color="#d97706" />
-                    </div>
-                    <div>
-                      <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem' }}>School Trip Postponed</h5>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>The visit to Planetarium is rescheduled to next Wednesday.</p>
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>2 hours ago</p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: '#f5f3ff', border: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Clock size={20} color="#7c3aed" />
-                    </div>
-                    <div>
-                      <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.95rem' }}>Parent-Teacher Meeting</h5>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Book your slot for the upcoming PTA meeting on Friday.</p>
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Yesterday</p>
-                    </div>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <Bell size={20} color="var(--primary)" />
+                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>School Announcements</h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {announcements.length === 0 ? (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No recent announcements.</p>
+                  ) : (
+                    announcements.map((ann, i) => (
+                      <div key={i} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(ann.createdAt).toLocaleDateString()}</p>
+                        <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>{ann.title}</h4>
+                        <p style={{ fontSize: '0.875rem' }}>{ann.content.substring(0, 80)}...</p>
+                      </div>
+                    ))
+                  )}
+                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>View All Notices →</button>
                 </div>
               </div>
             </aside>

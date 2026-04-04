@@ -116,11 +116,16 @@ export class AttendanceService {
     }
   }
 
-  async getAttendanceReport(studentId: string, month: number, year: number): Promise<any> {
+  async getAttendanceReport(idFromParam: string, month: number, year: number): Promise<any> {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
     
-    const attendance = await this.getAttendanceByStudent(studentId, startDate, endDate);
+    // Resolve frontend User ID to Student ID
+    const AnalyticsServiceClass = require('./analyticsService').AnalyticsService;
+    const analyticsHelper = new AnalyticsServiceClass();
+    const studentId = await analyticsHelper.resolveStudentProfileId(idFromParam);
+
+    const attendance = await this.getAttendanceByStudent(studentId.toString(), startDate, endDate);
     
     const totalDays = attendance.length;
     const present = attendance.filter(a => a.status === 'present').length;
@@ -134,10 +139,16 @@ export class AttendanceService {
     const student = await Student.findById(studentId).populate('userId');
 
     return {
-      studentId,
+      studentId: studentId.toString(),
       studentName: student ? (student as any).userId?.name : 'Unknown',
       month,
       year,
+      totalDays,
+      present,
+      absent,
+      late,
+      holiday,
+      percentage: attendancePercentage.toFixed(2),
       summary: {
         totalDays,
         present,

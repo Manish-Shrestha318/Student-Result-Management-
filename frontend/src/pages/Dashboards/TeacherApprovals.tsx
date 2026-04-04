@@ -16,6 +16,13 @@ const TeacherApprovals: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentTeachers = pendingTeachers.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(pendingTeachers.length / itemsPerPage);
 
   const fetchPendingTeachers = async () => {
     setLoading(true);
@@ -25,8 +32,13 @@ const TeacherApprovals: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      if (data.success) {
+      console.log("Fetched pending teachers:", data);
+
+      if (data && data.success && Array.isArray(data.users)) {
         setPendingTeachers(data.users);
+      } else if (Array.isArray(data)) {
+        // Fallback for direct array response
+        setPendingTeachers(data);
       } else {
         setError(data.message || 'Failed to fetch pending teachers');
       }
@@ -46,7 +58,11 @@ const TeacherApprovals: React.FC = () => {
     try {
       const response = await fetch(`/api/users/verify-teacher/${id}`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'approve' })
       });
       const data = await response.json();
       if (data.success) {
@@ -68,12 +84,16 @@ const TeacherApprovals: React.FC = () => {
 
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch(`/api/users/verify-teacher/${id}`, {
+        method: 'PUT',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'reject' })
       });
       const data = await response.json();
-      if (data.success || response.ok) {
+      if (data.success) {
         setSuccessMessage(`Teacher ${name} application rejected.`);
         // Refresh data
         fetchPendingTeachers();
@@ -138,7 +158,7 @@ const TeacherApprovals: React.FC = () => {
                       </td>
                     </tr>
                   ) : (
-                    pendingTeachers.map((teacher) => (
+                    currentTeachers.map((teacher) => (
                       <tr key={teacher._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                         <td style={{ padding: '1.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -192,6 +212,20 @@ const TeacherApprovals: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, pendingTeachers.length)} of {pendingTeachers.length}</span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
+                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
+                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
+                  ))}
+                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface INotice extends Document {
   title: string;
   content: string;
-  category: "academic" | "exam" | "event" | "holiday" | "general";
+  category: "academic" | "exam" | "event" | "holiday" | "general" | "urgent";
   targetRoles: Array<"admin" | "teacher" | "student" | "parent">;
   targetClasses?: Array<mongoose.Types.ObjectId>;
   attachments?: Array<{
@@ -21,7 +21,7 @@ const NoticeSchema: Schema = new Schema({
   content: { type: String, required: true },
   category: { 
     type: String, 
-    enum: ["academic", "exam", "event", "holiday", "general"],
+    enum: ["academic", "exam", "event", "holiday", "general", "urgent"],
     required: true 
   },
   targetRoles: [{ 

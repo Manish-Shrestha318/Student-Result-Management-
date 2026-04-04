@@ -38,7 +38,7 @@ const SubjectSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     code: { type: String, required: true, unique: true },
     class: { type: String, required: true },
-    teacherId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Teacher', required: true },
+    teacherId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     fullMarks: { type: Number, default: 100 },
     passMarks: { type: Number, default: 40 }
 }, { timestamps: true });

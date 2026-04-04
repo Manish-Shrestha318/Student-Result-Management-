@@ -11,17 +11,17 @@ export const registerUser = async (
   password: string,
   role: string
 ) => {
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) throw new Error("User already exists");
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
     name,
-    email,
+    email: email.toLowerCase(),
     password: hashedPassword,
     role,
-    isVerified: role === "teacher" ? false : true,
+    status: role === "teacher" ? "pending" : "active",
   });
 
   const token = generateToken(user._id.toString(), user.role);
@@ -32,14 +32,29 @@ import sendEmail from "../utils/sendEmail";
 import crypto from "crypto";
 
 export const loginUser = async (email: string, password: string, rememberMe: boolean = false) => {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) throw new Error("User not found");
 
-  if (user.role === "teacher" && !user.isVerified) {
+  // Fallback for existing users without 'status' field:
+  // Teachers who were NOT verified should be "pending".
+  // All other existing users should be "active".
+  const finalStatus = user.status || ( (user as any).isVerified === false ? "pending" : "active" );
+
+  if (finalStatus === "pending") {
     throw new Error("Your teacher account is pending verification by the administrator.");
   }
 
-  if (!user.password) throw new Error("Please login with Google");
+  if (finalStatus === "rejected") {
+    throw new Error("Your account application has been rejected. Please contact the administrator.");
+  }
+
+  // If password field is missing from DB, we guide them
+  if (!user.password) {
+    if ((user as any).googleId) {
+       throw new Error("This account is currently configured for Google Login only.");
+    }
+    throw new Error("No password found for this account. Please use forgot-password.");
+  }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error("Invalid password");
@@ -121,6 +136,7 @@ export const googleLogin = async (idToken: string) => {
       googleId,
       profilePicture: picture || "",
       role: "student",
+      status: "active"
     });
   } else if (!user.googleId) {
     user.googleId = googleId;
@@ -128,6 +144,15 @@ export const googleLogin = async (idToken: string) => {
       user.profilePicture = picture;
     }
     await user.save();
+  }
+
+  // Enforce Status Checks for Google OAuth logins
+  const finalStatus = user.status || ( (user as any).isVerified === false ? "pending" : "active" );
+  if (finalStatus === "pending") {
+    throw new Error("Your account is pending verification by the administrator.");
+  }
+  if (finalStatus === "rejected") {
+    throw new Error("Your account application has been rejected.");
   }
 
   const token = generateToken(user._id.toString(), user.role);

@@ -10,8 +10,15 @@ import {
   Bell,
   Globe,
   Monitor,
-  CheckCircle2
+  CheckCircle2,
+  LayoutDashboard,
+  GraduationCap,
+  Calendar,
+  FileText,
+  LogOut,
+  Settings as SettingsIcon
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -30,23 +37,28 @@ const Settings: React.FC = () => {
     confirm: ''
   });
 
+  const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   const fetchProfile = async () => {
-    if (!currentUser._id) return;
-    
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/users/${currentUser._id}`, {
+      const response = await fetch('/api/users/me', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      if (data) {
+      if (data && data.user) {
         setProfile({
-          name: data.name || '',
-          email: data.email || '',
-          profilePicture: data.profilePicture || ''
+          name: data.user.name || '',
+          email: data.user.email || '',
+          profilePicture: data.user.profilePicture || ''
         });
       }
     } catch (err) {
@@ -67,23 +79,22 @@ const Settings: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`/api/users/${currentUser._id}`, {
+      const response = await fetch('/api/users/me', {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json' 
         },
-        body: JSON.stringify({ name: profile.name, email: profile.email })
+        body: JSON.stringify({ name: profile.name })
       });
       
+      const data = await response.json();
       if (response.ok) {
         setSuccessMessage('Profile updated successfully!');
-        // Update local storage too
-        const updatedUser = { ...currentUser, name: profile.name, email: profile.email };
+        const updatedUser = { ...currentUser, name: profile.name };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        const data = await response.json();
         setError(data.message || 'Failed to update profile');
       }
     } catch (err) {
@@ -100,26 +111,36 @@ const Settings: React.FC = () => {
       return;
     }
 
+    if (passwords.new.length < 6) {
+      setError('New password must be at least 6 characters');
+      return;
+    }
+
+    if (!passwords.current) {
+      setError('Current password is required');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`/api/users/${currentUser._id}`, {
+      const response = await fetch('/api/users/me/password', {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json' 
         },
-        body: JSON.stringify({ password: passwords.new })
+        body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.new })
       });
       
+      const data = await response.json();
       if (response.ok) {
         setSuccessMessage('Password changed successfully!');
         setPasswords({ current: '', new: '', confirm: '' });
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
-        const data = await response.json();
         setError(data.message || 'Failed to change password');
       }
     } catch (err) {
@@ -159,7 +180,37 @@ const Settings: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      <AdminSidebar />
+      {currentUser.role === 'admin' ? (
+        <AdminSidebar />
+      ) : (
+        <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
+          <div style={{ marginBottom: '3rem' }}>
+            <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+          </div>
+          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {currentUser.role === 'student' ? (
+              <>
+                <LocalNavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
+                <LocalNavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
+                <LocalNavItem icon={<Calendar size={20} />} label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
+                <LocalNavItem icon={<Bell size={20} />} label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
+                <LocalNavItem icon={<FileText size={20} />} label="Reports" onClick={() => navigate('/dashboard/student')} />
+              </>
+            ) : (
+              <>
+                <LocalNavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/teacher')} />
+              </>
+            )}
+          </nav>
+          <button 
+            onClick={handleLogout}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </aside>
+      )}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         <AdminHeader title="Account Settings" error={error} />
 
@@ -186,7 +237,7 @@ const Settings: React.FC = () => {
                   </label>
                 </div>
                 <h3 style={{ margin: '0 0 0.25rem 0' }}>{profile.name}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>System Administrator</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'capitalize' }}>{currentUser.role}</p>
                 <div style={{ marginTop: '1.5rem', padding: '0.5rem 1rem', background: '#eff6ff', color: 'var(--primary)', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <ShieldCheck size={14} /> Verified Account
                 </div>
@@ -206,28 +257,17 @@ const Settings: React.FC = () => {
               {/* Profile Details Form */}
               <div className="card">
                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <User size={20} color="var(--primary)" /> Public Profile
+                  <User size={20} color="var(--primary)" /> {profile.name}'s Profile
                 </h3>
                 <form onSubmit={handleUpdateProfile} style={{ display: 'grid', gap: '1.5rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Full Name</label>
-                      <input 
-                        type="text" 
-                        value={profile.name}
-                        onChange={(e) => setProfile({...profile, name: e.target.value})}
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Email Address</label>
-                      <input 
-                        type="email" 
-                        value={profile.email}
-                        onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Full Name</label>
+                    <input 
+                      type="text" 
+                      value={profile.name}
+                      onChange={(e) => setProfile({...profile, name: e.target.value})}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
+                    />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button type="submit" disabled={loading} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -305,6 +345,31 @@ const SettingsNav: React.FC<{ icon: React.ReactNode, label: string, active?: boo
     cursor: 'pointer',
     borderLeft: active ? '4px solid var(--primary)' : '4px solid transparent'
   }}>
+    {icon}
+    {label}
+  </button>
+);
+
+const LocalNavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }> = ({ icon, label, active, onClick }) => (
+  <button 
+    onClick={onClick}
+    style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '0.75rem', 
+      padding: '0.875rem 1.25rem', 
+      borderRadius: '8px', 
+      border: 'none', 
+      backgroundColor: active ? '#f1f5f9' : 'transparent', 
+      color: active ? 'var(--primary)' : 'var(--text-secondary)', 
+      fontSize: '0.95rem',
+      fontWeight: active ? 600 : 500,
+      cursor: 'pointer',
+      width: '100%',
+      textAlign: 'left',
+      transition: 'all 0.2s'
+    }}
+  >
     {icon}
     {label}
   </button>

@@ -18,7 +18,11 @@ const UserSchema: Schema = new Schema(
     },
     googleId: { type: String, required: false, unique: true, sparse: true },
     profilePicture: { type: String, required: false, default: "" },
-    isVerified: { type: Boolean, default: true },
+    status: { 
+      type: String, 
+      enum: ["pending", "active", "rejected"], 
+      default: "active" 
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },

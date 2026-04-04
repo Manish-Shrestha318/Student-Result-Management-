@@ -49,7 +49,10 @@ class FeeService {
             const studentIds = students.map(s => s._id);
             query.studentId = { $in: studentIds };
         }
-        const fees = await Fee_1.default.find(query).populate('studentId');
+        const fees = await Fee_1.default.find(query).populate({
+            path: 'studentId',
+            populate: { path: 'userId', select: 'name email' }
+        });
         const totalCollected = fees.reduce((sum, f) => sum + f.paidAmount, 0);
         const totalPending = fees.reduce((sum, f) => sum + (f.amount - f.paidAmount), 0);
         return {

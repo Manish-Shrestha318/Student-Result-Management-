@@ -5,6 +5,18 @@ const analyticsService = new AnalyticsService();
 const topicAnalysisService = new TopicAnalysisService();
 const attendanceImpactService = new AttendanceImpactService();
 
+// NEW: Attendance-aware result
+export const getStudentResultWithAttendance = async (req: Request, res: Response) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId) return res.status(400).json({ success: false, message: 'Student ID required' });
+    const data = await analyticsService.getStudentResultWithAttendance(studentId as string);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 
 export const getStudentPerformance = async (req: Request, res: Response) => {
   try {

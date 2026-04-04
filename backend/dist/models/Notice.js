@@ -39,7 +39,7 @@ const NoticeSchema = new mongoose_1.Schema({
     content: { type: String, required: true },
     category: {
         type: String,
-        enum: ["academic", "exam", "event", "holiday", "general"],
+        enum: ["academic", "exam", "event", "holiday", "general", "urgent"],
         required: true
     },
     targetRoles: [{

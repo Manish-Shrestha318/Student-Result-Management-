@@ -5,9 +5,21 @@ import { Types } from "mongoose";
 
 export class AnalyticsService {
   
+  // Helper: the frontend sends User._id but marks/attendance are stored against Student._id
+  // This resolves whichever ID is passed to the correct Student profile _id
+  public async resolveStudentProfileId(idFromParam: string): Promise<Types.ObjectId> {
+    const oid = new Types.ObjectId(idFromParam);
+    // Check if a Student profile exists with this _id directly
+    const directMatch = await Student.findById(oid).select('_id');
+    if (directMatch) return directMatch._id as Types.ObjectId;
+    // Otherwise treat it as a User._id and look up the Student profile
+    const byUser = await Student.findOne({ userId: oid }).select('_id');
+    if (byUser) return byUser._id as Types.ObjectId;
+    throw new Error('Student profile not found for ID: ' + idFromParam);
+  }
   // Get student performance summary
   async getStudentPerformanceSummary(studentId: string): Promise<any> {
-    const studentObjectId = new Types.ObjectId(studentId);
+    const studentObjectId = await this.resolveStudentProfileId(studentId);
     
     // Get all marks
     const marks = await Mark.find({ studentId: studentObjectId })
@@ -104,16 +116,23 @@ export class AnalyticsService {
       average: (subjectAverages[subject].total / subjectAverages[subject].count).toFixed(2)
     }));
 
+    // Calculate pass rate
+    const passedStudents = studentPerformance.filter(s => s.passed).length;
+    const passRate = studentPerformance.length > 0 ? (passedStudents / studentPerformance.length) * 100 : 0;
+
     // Sort students by average
     studentPerformance.sort((a, b) => parseFloat(b.average) - parseFloat(a.average));
 
     return {
-      class: classData.name + ' ' + classData.section,
+      className: classData.name + ' ' + classData.section,
       term,
       year,
       totalStudents: studentPerformance.length,
       topper: studentPerformance[0] || null,
-      classAverage: (studentPerformance.reduce((sum, s) => sum + parseFloat(s.average), 0) / studentPerformance.length).toFixed(2),
+      averageScore: studentPerformance.length > 0 
+        ? parseFloat((studentPerformance.reduce((sum, s) => sum + parseFloat(s.average), 0) / studentPerformance.length).toFixed(2))
+        : 0,
+      passRate,
       studentPerformance,
       subjectAverages: subjectStats
     };
@@ -165,30 +184,82 @@ export class AnalyticsService {
     return Array.from(termMap.values());
   }
 
-  // Get performance trend 
+  // Get performance trend - grouped by term
   async getPerformanceTrend(studentId: string): Promise<any> {
-    const marks = await Mark.find({ studentId: new Types.ObjectId(studentId) })
+    const resolvedId = await this.resolveStudentProfileId(studentId);
+    const marks = await Mark.find({ studentId: resolvedId })
       .populate('subjectId')
       .sort({ year: 1, term: 1 });
 
-    const trends = [];
-    let cumulative = 0;
+    // Group marks by term+year
+    const termMap = new Map<string, { term: string; year: number; totalObtained: number; totalFull: number }>();
 
     for (const mark of marks) {
-      cumulative += mark.marksObtained;
-      trends.push({
-        date: `${mark.term} ${mark.year}`,
-        subject: (mark.subjectId as any)?.name || 'Unknown',
-        marks: mark.marksObtained,
-        grade: mark.grade,
-        cumulativeAverage: (cumulative / (trends.length + 1)).toFixed(2)
-      });
+      const key = `${mark.term} ${mark.year}`;
+      if (!termMap.has(key)) {
+        termMap.set(key, { term: mark.term, year: mark.year, totalObtained: 0, totalFull: 0 });
+      }
+      const entry = termMap.get(key)!;
+      entry.totalObtained += mark.marksObtained;
+      entry.totalFull     += mark.totalMarks;
     }
 
-    return trends;
+    return Array.from(termMap.values()).map(t => ({
+      term:       `${t.term} ${t.year}`,
+      year:       t.year,
+      percentage: t.totalFull > 0 ? +((t.totalObtained / t.totalFull) * 100).toFixed(2) : 0,
+    }));
   }
-}
 
+  // NEW: Compute effective result considering attendance
+  // Rule: attendance < 75% → student is NOT ELIGIBLE (detained) for that term's exam
+  async getStudentResultWithAttendance(studentId: string): Promise<any> {
+    const studentObjectId = await this.resolveStudentProfileId(studentId);
+
+    const marks      = await Mark.find({ studentId: studentObjectId }).populate('subjectId').sort({ year: -1, term: -1 });
+    const attendance = await Attendance.find({ studentId: studentObjectId });
+
+    const totalDays    = attendance.length;
+    const presentDays  = attendance.filter((a: any) => a.status === 'present' || a.status === 'late').length;
+    const attendancePct = totalDays > 0 ? (presentDays / totalDays) * 100 : 100;
+    const isEligible   = attendancePct >= 75;
+
+    // Group marks by subject
+    const subjectSummary = marks.map(m => {
+      const rawPct = (m.marksObtained / m.totalMarks) * 100;
+      const effectivePct = isEligible ? rawPct : 0;  // Not eligible = 0 effective
+      return {
+        subject:           (m.subjectId as any)?.name ?? 'Unknown',
+        term:              m.term,
+        year:              m.year,
+        marksObtained:     m.marksObtained,
+        totalMarks:        m.totalMarks,
+        rawPercentage:     +rawPct.toFixed(2),
+        effectivePercentage: +effectivePct.toFixed(2),
+        grade:             isEligible ? (m.grade ?? 'N/A') : 'N/E',  // Not Eligible
+        eligibilityStatus: isEligible ? 'Eligible' : 'Not Eligible',
+      };
+    });
+
+    const totalObtained  = marks.reduce((s, m) => s + m.marksObtained, 0);
+    const totalFull      = marks.reduce((s, m) => s + m.totalMarks,    0);
+    const rawAvg         = totalFull > 0 ? +((totalObtained / totalFull) * 100).toFixed(2) : 0;
+    const effectiveAvg   = isEligible ? rawAvg : 0;
+
+    return {
+      studentId,
+      attendancePercentage: +attendancePct.toFixed(2),
+      minimumRequiredAttendance: 75,
+      isEligible,
+      eligibilityMessage: isEligible
+        ? `Attendance ${attendancePct.toFixed(1)}% ≥ 75% — eligible to appear in examinations.`
+        : `Attendance ${attendancePct.toFixed(1)}% < 75% — student is DETAINED and not eligible to appear in examinations.`,
+      rawAveragePercentage:       rawAvg,
+      effectiveAveragePercentage: effectiveAvg,
+      subjects: subjectSummary,
+    };
+  }
+} // end AnalyticsService
 
 /**
  * Simple Topic Analysis Service
@@ -196,8 +267,18 @@ export class AnalyticsService {
  */
 export class TopicAnalysisService {
   
+  private async resolveStudentProfileId(idFromParam: string): Promise<Types.ObjectId> {
+    const oid = new Types.ObjectId(idFromParam);
+    const directMatch = await Student.findById(oid).select('_id');
+    if (directMatch) return directMatch._id as Types.ObjectId;
+    const byUser = await Student.findOne({ userId: oid }).select('_id');
+    if (byUser) return byUser._id as Types.ObjectId;
+    throw new Error('Student profile not found for ID: ' + idFromParam);
+  }
+
   async analyzeTopicPerformance(studentId: string): Promise<any> {
-    const marks = await Mark.find({ studentId: new Types.ObjectId(studentId) })
+    const resolvedId = await this.resolveStudentProfileId(studentId);
+    const marks = await Mark.find({ studentId: resolvedId })
       .populate('subjectId');
 
     const subjectAnalysis: any = {};
@@ -270,8 +351,17 @@ export class TopicAnalysisService {
  */
 export class AttendanceImpactService {
   
+  private async resolveStudentProfileId(idFromParam: string): Promise<Types.ObjectId> {
+    const oid = new Types.ObjectId(idFromParam);
+    const directMatch = await Student.findById(oid).select('_id');
+    if (directMatch) return directMatch._id as Types.ObjectId;
+    const byUser = await Student.findOne({ userId: oid }).select('_id');
+    if (byUser) return byUser._id as Types.ObjectId;
+    throw new Error('Student profile not found for ID: ' + idFromParam);
+  }
+
   async analyzeAttendanceImpact(studentId: string): Promise<any> {
-    const studentObjectId = new Types.ObjectId(studentId);
+    const studentObjectId = await this.resolveStudentProfileId(studentId);
     
     // Get attendance by month
     const attendance = await Attendance.aggregate([
@@ -288,13 +378,16 @@ export class AttendanceImpactService {
       }
     ]);
     
-    // Get marks by month
+    // Get marks by month (using createdAt as marks don't have month field)
     const marks = await Mark.aggregate([
       { $match: { studentId: studentObjectId } },
       {
         $group: {
-          _id: { month: "$month", year: "$year" },
-          avgScore: { $avg: "$marksObtained" }
+          _id: { 
+            month: { $month: "$createdAt" }, 
+            year: { $year: "$createdAt" } 
+          },
+          avgScore: { $avg: { $multiply: [{ $divide: ["$marksObtained", "$totalMarks"] }, 100] } }
         }
       }
     ]);
@@ -320,7 +413,13 @@ export class AttendanceImpactService {
       });
 
       if (markData) {
-        totalEffect += attendanceRate > 80 ? 1 : -1;
+        // Behavioral logic: Does high attendance correlate with high marks?
+        const isHighAttendance = attendanceRate >= 80;
+        const isHighPerformance = markData.avgScore >= 70;
+        
+        if (isHighAttendance && isHighPerformance) totalEffect += 1;
+        else if (!isHighAttendance && !isHighPerformance) totalEffect += 1; // Positive correlation (low att = low marks)
+        else totalEffect -= 1; // Deviation
         count++;
       }
     }

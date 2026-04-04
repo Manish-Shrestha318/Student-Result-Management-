@@ -32,16 +32,38 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
+const crypto_1 = __importDefault(require("crypto"));
 const UserSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false },
     role: {
         type: String,
         enum: ["student", "teacher", "admin", "parent"],
         default: "student",
     },
+    googleId: { type: String, required: false, unique: true, sparse: true },
+    profilePicture: { type: String, required: false, default: "" },
+    status: {
+        type: String,
+        enum: ["pending", "active", "rejected"],
+        default: "active"
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
 }, { timestamps: true });
+UserSchema.methods.getResetPasswordToken = function () {
+    const resetToken = crypto_1.default.randomBytes(20).toString("hex");
+    this.resetPasswordToken = crypto_1.default
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+    this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+    return resetToken;
+};
 exports.default = mongoose_1.default.model("User", UserSchema);

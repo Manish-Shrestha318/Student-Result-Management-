@@ -3,7 +3,6 @@ import {
   Users,
   UserCheck, 
   GraduationCap, 
-  MoreVertical,
   CheckCircle2,
   XCircle,
   Activity,
@@ -45,7 +44,6 @@ const AdminDashboard: React.FC = () => {
   const [pendingTeachers, setPendingTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [recentUsers, setRecentUsers] = useState<any[]>([]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -64,20 +62,11 @@ const AdminDashboard: React.FC = () => {
       });
       const teachersData = await teachersRes.json();
 
-      // Fetch Recent Users
-      const usersRes = await fetch('/api/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const usersData = await usersRes.json();
-
       if (statsData.success) {
         setStats(statsData.stats);
       }
       if (teachersData.success) {
         setPendingTeachers(teachersData.users);
-      }
-      if (usersData.success) {
-        setRecentUsers(usersData.users.slice(0, 5));
       }
     } catch (err) {
       console.error("Dashboard fetch error:", err);
@@ -86,6 +75,7 @@ const AdminDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchDashboardData();
@@ -178,48 +168,7 @@ const AdminDashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               
-              {/* User Management Overview section */}
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3>System User Base</h3>
-                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>View All Directory</button>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-color)' }}>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Name & Email</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Role</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Status</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentUsers.map((user, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '1rem' }}>
-                            <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{user.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user.email}</div>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <span style={{ padding: '0.2rem 0.6rem', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '0.75rem', textTransform: 'capitalize' }}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <span style={{ fontSize: '0.85rem', color: user.isVerified ? '#16a34a' : '#f59e0b', fontWeight: 600 }}>
-                              {user.isVerified ? 'Active' : 'Pending'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><MoreVertical size={16}/></button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              {/* Removed System User Base per request */}
 
               {/* Analytics Summary section */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

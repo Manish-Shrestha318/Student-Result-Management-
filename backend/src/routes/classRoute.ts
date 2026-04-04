@@ -4,11 +4,11 @@ import { getClassesController, createClassController, updateClassController, del
 
 const router = express.Router();
 
-router.use(protect, authorizeRoles("admin"));
+router.use(protect);
 
-router.get("/", getClassesController);
-router.post("/", createClassController);
-router.put("/:id", updateClassController);
-router.delete("/:id", deleteClassController);
+router.get("/", authorizeRoles("admin", "teacher"), getClassesController);
+router.post("/", authorizeRoles("admin"), createClassController);
+router.put("/:id", authorizeRoles("admin"), updateClassController);
+router.delete("/:id", authorizeRoles("admin"), deleteClassController);
 
 export default router;

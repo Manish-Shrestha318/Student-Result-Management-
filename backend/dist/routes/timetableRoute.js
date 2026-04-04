@@ -18,5 +18,5 @@ router.get("/teacher/:teacherId", (0, authMiddleware_1.authorizeRoles)("admin", 
 // Admin/Teacher routes
 router.post("/", (0, authMiddleware_1.authorizeRoles)("admin", "teacher"), timetableController.createTimetable);
 router.put("/:timetableId", (0, authMiddleware_1.authorizeRoles)("admin", "teacher"), timetableController.updateTimetable);
-router.delete("/:timetableId", (0, authMiddleware_1.authorizeRoles)("admin"), timetableController.deleteTimetable);
+router.delete("/:timetableId", (0, authMiddleware_1.authorizeRoles)("admin", "teacher"), timetableController.deleteTimetable);
 exports.default = router;

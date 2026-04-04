@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -7,10 +7,7 @@ import {
   Settings, 
   LogOut, 
   Bell, 
-  User, 
   Download,
-  AlertCircle,
-  TrendingUp,
   Award
 } from 'lucide-react';
 import { 
@@ -25,6 +22,7 @@ import {
   LineElement 
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import AdminHeader from '../../components/AdminHeader';
 import { useNavigate } from 'react-router-dom';
 
 ChartJS.register(
@@ -40,13 +38,88 @@ ChartJS.register(
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  // Dummy data for performance chart
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [results, setResults] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<any>(null);
+  const [trends, setTrends] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    } else {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (user?._id) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    try {
+      // 1. Fetch Marks/Results
+      const resultsRes = await fetch(`/api/academics/marks/marks/student/${user._id}`, { headers });
+      const resultsData = await resultsRes.json();
+      if (resultsData.success) setResults(resultsData.data);
+
+      // 2. Fetch Attendance
+      const attendanceRes = await fetch(`/api/academics/attendance/student/${user._id}`, { headers });
+      const attendanceData = await attendanceRes.json();
+      if (attendanceData.success) setAttendance(attendanceData.data);
+
+      // 3. Fetch Performance Trends
+      const trendsRes = await fetch(`/api/academics/marks/trends/${user._id}`, { headers });
+      const trendsData = await trendsRes.json();
+      if (trendsData.success) setTrends(trendsData.data);
+
+      // 4. Fetch Announcements
+      const noticesRes = await fetch('/api/notices', { headers });
+      const noticesData = await noticesRes.json();
+      if (noticesData.success) {
+        setAnnouncements(noticesData.data ? noticesData.data.slice(0, 3) : []);
+      }
+
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      setError("Failed to load some dashboard data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadReport = async () => {
+    try {
+      const year = new Date().getFullYear();
+      const term = "Final"; 
+      const url = `/api/report-cards/generate?studentId=${user._id}&term=${term}&year=${year}`;
+      window.open(url, '_blank');
+    } catch (err) {
+      alert("Failed to generate report card");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   const chartData = {
-    labels: ['Unit 1', 'Unit 2', 'Quarterly', 'Unit 3', 'Unit 4', 'Finals'],
+    labels: trends.length > 0 ? trends.map(t => t.term) : ['Unit 1', 'Unit 2', 'Quarterly', 'Unit 3', 'Unit 4', 'Finals'],
     datasets: [
       {
         label: 'Academic Progress (%)',
-        data: [75, 82, 78, 85, 92, 88],
+        data: trends.length > 0 ? trends.map(t => parseFloat(t.percentage)) : [0, 0, 0, 0, 0, 0],
         borderColor: '#2563eb',
         backgroundColor: 'rgba(37, 99, 235, 0.1)',
         tension: 0.4,
@@ -66,30 +139,23 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
+  // Calculate stats
+  const averageMarksValue = results.length > 0 ? (results.reduce((acc, curr) => acc + curr.marksObtained, 0) / results.reduce((acc, curr) => acc + curr.totalMarks, 0) * 100).toFixed(1) : 'N/A';
+  const attendancePercentage = attendance?.length > 0 ? ((attendance.filter((a: any) => a.status === 'present').length / attendance.length) * 100).toFixed(1) : '0';
+
   const stats = [
-    { label: 'Latest Grade', value: 'A-', icon: Award, color: '#2563eb' },
-    { label: 'Attendance', value: '94%', icon: Calendar, color: '#0ea5e9' },
-    { label: 'Overall GPA', value: '3.8', icon: TrendingUp, color: '#8b5cf6' },
+    { label: 'Avg Achievement', value: results.length > 0 ? `${averageMarksValue}%` : '---', icon: Award, color: '#2563eb' },
+    { label: 'Attendance', value: `${attendancePercentage}%`, icon: Calendar, color: '#0ea5e9' },
+    { label: 'Total Subjects', value: results.length.toString(), icon: GraduationCap, color: '#8b5cf6' },
   ];
 
-  const results = [
-    { subject: 'Mathematics', marks: 92, total: 100, grade: 'A+' },
-    { subject: 'Science', marks: 88, total: 100, grade: 'A' },
-    { subject: 'English', marks: 85, total: 100, grade: 'B+' },
-    { subject: 'History', marks: 78, total: 100, grade: 'B' },
-    { subject: 'Computer Science', marks: 95, total: 100, grade: 'A+' },
-  ];
-
-  const announcements = [
-    { title: 'Final Exams Schedule', date: 'Oct 15, 2024', description: 'The final examination schedule for the current semester has been posted.' },
-    { title: 'New Science Lab Hours', date: 'Oct 12, 2024', description: 'The science laboratory will remain open until 6 PM on weekdays.' },
-  ];
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
+  if (loading && !user) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem' }}>Loading Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
@@ -100,11 +166,11 @@ const StudentDashboard: React.FC = () => {
         </div>
         
         <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active />
-          <NavItem icon={<GraduationCap size={20} />} label="Results" />
-          <NavItem icon={<Calendar size={20} />} label="Attendance" />
-          <NavItem icon={<FileText size={20} />} label="Reports" />
-          <NavItem icon={<Settings size={20} />} label="Settings" />
+          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
+          <NavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
+          <NavItem icon={<Calendar size={20} />} label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
+          <NavItem icon={<Bell size={20} />} label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
+          <NavItem icon={<FileText size={20} />} label="Reports" onClick={() => navigate('/dashboard/student/reports')} />
         </nav>
 
         <button 
@@ -119,29 +185,16 @@ const StudentDashboard: React.FC = () => {
       {/* Main Content Area */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         {/* Topbar navigation */}
-        <header style={{ height: '80px', backgroundColor: '#fff', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 3rem', position: 'sticky', top: 0, zIndex: 10 }}>
-          <h2 style={{ fontSize: '1.25rem' }}>Student Dashboard</h2>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <div style={{ position: 'relative', cursor: 'pointer' }}>
-              <Bell size={22} color="var(--text-secondary)" />
-              <span style={{ position: 'absolute', top: -5, right: -5, width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%', border: '2px solid #fff' }}></span>
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Alex Thomson</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: #2024098</p>
-              </div>
-              <div style={{ width: '45px', height: '45px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={24} color="var(--text-secondary)" />
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader title="Student Dashboard" error={error} />
 
         {/* Dashboard Content */}
         <div style={{ padding: '3rem' }}>
+          {error && (
+            <div style={{ marginBottom: '2rem', padding: '1rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '8px', border: '1px solid #fecaca' }}>
+              {error}
+            </div>
+          )}
+
           {/* Summary Cards section */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '3rem' }}>
             {stats.map((stat, i) => (
@@ -162,10 +215,10 @@ const StudentDashboard: React.FC = () => {
               {/* Progress Chart section */}
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h3>Academic Progress</h3>
-                  <button className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <h3>Academic Performance Trend</h3>
+                  <button onClick={handleDownloadReport} className="btn-primary" style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <Download size={16} />
-                    Download Report
+                    Download PDF Report
                   </button>
                 </div>
                 <div style={{ height: '300px' }}>
@@ -175,30 +228,38 @@ const StudentDashboard: React.FC = () => {
 
               {/* Subject Results Table section */}
               <div className="card">
-                <h3 style={{ marginBottom: '1.5rem' }}>Subject-wise Results</h3>
+                <h3 style={{ marginBottom: '1.5rem' }}>Subject-wise Grades</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-color)' }}>
                         <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Subject</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Exam Type</th>
                         <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Marks</th>
                         <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Grade</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Performance</th>
+                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Progress</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {results.map((row, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '1.25rem 1rem', fontWeight: 500 }}>{row.subject}</td>
-                          <td style={{ padding: '1.25rem 1rem' }}>{row.marks} / {row.total}</td>
-                          <td style={{ padding: '1.25rem 1rem' }}><span style={{ padding: '0.25rem 0.75rem', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-color)', fontWeight: 600 }}>{row.grade}</span></td>
-                          <td style={{ padding: '1.25rem 1rem' }}>
-                            <div style={{ width: '100%', maxWidth: '120px', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                              <div style={{ width: `${row.marks}%`, height: '100%', background: 'var(--primary)' }}></div>
-                            </div>
-                          </td>
+                      {results.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No results found yet.</td>
                         </tr>
-                      ))}
+                      ) : (
+                        results.map((row, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '1.25rem 1rem', fontWeight: 500 }}>{row.subjectId?.name || 'Subject'}</td>
+                            <td style={{ padding: '1.25rem 1rem' }}>{row.examType}</td>
+                            <td style={{ padding: '1.25rem 1rem' }}>{row.marksObtained} / {row.totalMarks}</td>
+                            <td style={{ padding: '1.25rem 1rem', fontWeight: 700 }}>{row.grade || 'N/A'}</td>
+                            <td style={{ padding: '1.25rem 1rem' }}>
+                              <div style={{ width: '100%', maxWidth: '120px', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${(row.marksObtained / row.totalMarks) * 100}%`, height: '100%', background: 'var(--primary)' }}></div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -210,28 +271,32 @@ const StudentDashboard: React.FC = () => {
               <div className="card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                   <Bell size={20} color="var(--primary)" />
-                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>Recent Updates</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>Latest Announcements</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {announcements.map((ann, i) => (
-                    <div key={i} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{ann.date}</p>
-                      <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>{ann.title}</h4>
-                      <p style={{ fontSize: '0.875rem' }}>{ann.description}</p>
-                    </div>
-                  ))}
-                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>View All Announcements →</button>
+                  {announcements.length === 0 ? (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No recent announcements.</p>
+                  ) : (
+                    announcements.map((ann, i) => (
+                      <div key={i} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(ann.createdAt).toLocaleDateString()}</p>
+                        <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>{ann.title}</h4>
+                        <p style={{ fontSize: '0.875rem' }}>{ann.content.substring(0, 80)}...</p>
+                      </div>
+                    ))
+                  )}
+                  <button onClick={() => navigate('/dashboard/student/results')} style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>View All Announcements →</button>
                 </div>
               </div>
 
-              {/* Status Alert section */}
+              {/* Attendance section */}
               <div className="card" style={{ background: '#2563eb', color: '#fff', border: 'none' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                  <AlertCircle size={24} />
+                  <Calendar size={24} />
                   <div>
-                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Fees Pending</h4>
-                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem', marginBottom: '1rem' }}>Your current semester fee is overdue. Please complete the payment to see final grades.</p>
-                    <button style={{ background: '#fff', color: '#2563eb', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>Pay Now</button>
+                    <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Attendance Status</h4>
+                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem', marginBottom: '1rem' }}>Your current attendance is {attendancePercentage}%. Keep it up to maintain your grade eligibility.</p>
+                    <button onClick={() => navigate('/dashboard/student/attendance')} style={{ background: '#fff', color: '#2563eb', padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>View Detailed Log</button>
                   </div>
                 </div>
               </div>
@@ -248,10 +313,13 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
-  <button style={{ 
+const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick }) => (
+  <button 
+    onClick={onClick}
+    style={{ 
     display: 'flex', 
     alignItems: 'center', 
     gap: '0.75rem', 

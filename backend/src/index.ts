@@ -7,7 +7,6 @@ import connectDB from "./config/database";
 import authRoutes from "./routes/authRoute";
 import dashboardRoutes from "./routes/dashboardRoute";
 import userRoutes from "./routes/userRoute";
-import studentRoutes from "./routes/studentRoute";
 import classRoutes from "./routes/classRoute";
 import activityLogRoutes from "./routes/activityLogRoute";
 import subjectRoutes from "./routes/subjectRoute";
@@ -36,13 +35,11 @@ initCronJobs();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Main Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/logs", activityLogRoutes);
-app.use("/api/students", studentRoutes);
 app.use("/api/classes", classRoutes);
+app.use("/api/logs", activityLogRoutes);
 app.use("/api/subjects", subjectRoutes);
 
 app.use("/api/academics/marks", markRoutes);

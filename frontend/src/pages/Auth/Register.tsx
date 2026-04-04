@@ -262,6 +262,21 @@ const Register: React.FC = () => {
           </button>
         </form>
 
+        <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0', gap: '1rem' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+        </div>
+
+        <button 
+          className="btn-secondary" 
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', border: '1px solid var(--border-color)' }}
+          onClick={() => alert("Redirecting to Google Account Creation...")}
+        >
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style={{ width: '18px' }} />
+          Sign up with Google
+        </button>
+
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Login</Link>
         </p>

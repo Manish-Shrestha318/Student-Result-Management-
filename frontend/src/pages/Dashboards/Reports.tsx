@@ -65,7 +65,7 @@ const Reports: React.FC = () => {
       if (activeTab === 'results') {
         url = `/api/reports/data?studentId=${selectedStudent}&term=${term}&year=${year}`;
       } else if (activeTab === 'class' && selectedClass) {
-        url = `/api/analytics/class/${selectedClass}`;
+        url = `/api/analytics/class/${selectedClass}?term=${term}&year=${year}`;
       } else if (activeTab === 'attendance' && selectedStudent) {
         // Just as an example, fetch attendance report for the current month
         const now = new Date();
@@ -177,7 +177,7 @@ const Reports: React.FC = () => {
                     </div>
                   )}
 
-                  {activeTab === 'results' && (
+                  {(activeTab === 'results' || activeTab === 'class') && (
                     <>
                       <div>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Academic Term</label>
@@ -313,6 +313,52 @@ const Reports: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {reportData && activeTab === 'class' && (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+                    <SummaryCard label="Class Average" value={`${reportData.averageScore}%`} color="#2563eb" />
+                    <SummaryCard label="Pass Rate" value={`${reportData.passRate.toFixed(1)}%`} color="#16a34a" />
+                    <SummaryCard label="Top Student" value={reportData.topper?.name || 'N/A'} color="#8b5cf6" />
+                  </div>
+
+                  <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                    <h3 style={{ padding: '1.5rem', margin: 0, borderBottom: '1px solid var(--border-color)' }}>Student Rankings</h3>
+                    <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                          <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Rank</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Roll No</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Name</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Average</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportData.studentPerformance.map((s: any, i: number) => (
+                            <tr key={s.studentId} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                              <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>#{i + 1}</td>
+                              <td style={{ padding: '1rem 1.5rem' }}>{s.rollNumber}</td>
+                              <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{s.name}</td>
+                              <td style={{ padding: '1rem 1.5rem' }}>{s.average}%</td>
+                              <td style={{ padding: '1rem 1.5rem' }}>
+                                {s.passed ? 
+                                  <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem' }}>Pass</span> : 
+                                  <span style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.85rem' }}>Fail</span>
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                          {reportData.studentPerformance.length === 0 && (
+                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No performance data for this class.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
               )}
             </section>
           </div>

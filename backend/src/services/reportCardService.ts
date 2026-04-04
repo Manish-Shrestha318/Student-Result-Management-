@@ -16,15 +16,18 @@ export class ReportCardService {
   // Generate report card as PDF
   async generateReportCard(studentId: string, term: string, year: number): Promise<Buffer> {
     try {
+      // Resolve student profile ID (handles both User._id and Student._id)
+      const resolvedStudentId = await this.analyticsService.resolveStudentProfileId(studentId);
+
       // Get student data
-      const student = await Student.findById(studentId).populate('userId');
+      const student = await Student.findById(resolvedStudentId).populate('userId');
       if (!student) {
         throw new Error("Student not found");
       }
 
       // Get marks
       const marks = await Mark.find({
-        studentId: new Types.ObjectId(studentId),
+        studentId: resolvedStudentId,
         term,
         year
       }).populate('subjectId');
@@ -71,13 +74,15 @@ export class ReportCardService {
 
   // Get report card data as JSON (for preview)
   async getReportCardData(studentId: string, term: string, year: number): Promise<any> {
-    const student = await Student.findById(studentId).populate('userId');
+    const resolvedStudentId = await this.analyticsService.resolveStudentProfileId(studentId);
+
+    const student = await Student.findById(resolvedStudentId).populate('userId');
     if (!student) {
       throw new Error("Student not found");
     }
 
     const marks = await Mark.find({
-      studentId: new Types.ObjectId(studentId),
+      studentId: resolvedStudentId,
       term,
       year
     }).populate('subjectId');
