@@ -11,6 +11,7 @@ import ManageUsers from './pages/Dashboards/ManageUsers';
 import TeacherApprovals from './pages/Dashboards/TeacherApprovals';
 import StudentRecords from './pages/Dashboards/StudentRecords';
 import Reports from './pages/Dashboards/Reports';
+import Analytics from './pages/Dashboards/Analytics';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,7 @@ const App: React.FC = () => {
         <Route path="/dashboard/admin/approvals" element={<TeacherApprovals />} />
         <Route path="/dashboard/admin/students" element={<StudentRecords />} />
         <Route path="/dashboard/admin/reports" element={<Reports />} />
+        <Route path="/dashboard/admin/analytics" element={<Analytics />} />
 
         {/* Fallback to Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
