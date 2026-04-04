@@ -18,6 +18,6 @@ router.get("/teacher/:teacherId", authorizeRoles("admin", "teacher"), timetableC
 // Admin/Teacher routes
 router.post("/", authorizeRoles("admin", "teacher"), timetableController.createTimetable);
 router.put("/:timetableId", authorizeRoles("admin", "teacher"), timetableController.updateTimetable);
-router.delete("/:timetableId", authorizeRoles("admin"), timetableController.deleteTimetable);
+router.delete("/:timetableId", authorizeRoles("admin", "teacher"), timetableController.deleteTimetable);
 
 export default router;

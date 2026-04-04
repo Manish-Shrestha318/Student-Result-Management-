@@ -14,7 +14,7 @@ const ClassSchema: Schema = new Schema({
   name: { type: String, required: true },
   section: { type: String, required: true },
   academicYear: { type: String, required: true },
-  classTeacher: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
+  classTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   students: [{ type: Schema.Types.ObjectId, ref: 'Student' }],
   subjects: [{ type: Schema.Types.ObjectId, ref: 'Subject' }],
   roomNumber: { type: String }

@@ -1,0 +1,1 @@
+src/controllers/chatController.ts(72,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.

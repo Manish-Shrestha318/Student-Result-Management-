@@ -13,7 +13,7 @@ const SubjectSchema: Schema = new Schema({
   name: { type: String, required: true },
   code: { type: String, required: true, unique: true },
   class: { type: String, required: true },
-  teacherId: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
+  teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   fullMarks: { type: Number, default: 100 },
   passMarks: { type: Number, default: 40 }
 }, { timestamps: true });

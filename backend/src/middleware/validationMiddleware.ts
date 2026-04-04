@@ -6,6 +6,7 @@ export const validate = (req: Request, res: Response, next: NextFunction) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
+      message: errors.array()[0].msg, // Return the first error as the primary message
       errors: errors.array().map(err => ({
         field: err.type === 'field' ? err.path : 'unknown',
         message: err.msg
@@ -21,6 +22,12 @@ export const registerValidation = [
   body('password')
     .isLength({ min: 6})
     .withMessage('Password must be at least 6 characters'),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Password confirmation does not match password');
+    }
+    return true;
+  }),
   body('role')
     .optional()
     .toLowerCase()
@@ -30,4 +37,20 @@ export const registerValidation = [
 export const loginValidation = [
   body('email').isEmail().withMessage('Valid email required'),
   body('password').notEmpty().withMessage('Password required')
+];
+
+export const forgotPasswordValidation = [
+  body('email').isEmail().withMessage('Valid email required')
+];
+
+export const resetPasswordValidation = [
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters'),
+  body('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error('Password confirmation does not match password');
+    }
+    return true;
+  })
 ];
