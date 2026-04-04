@@ -71,7 +71,10 @@ export class FeeService {
       query.studentId = { $in: studentIds };
     }
 
-    const fees = await Fee.find(query).populate('studentId');
+    const fees = await Fee.find(query).populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'name email' }
+    });
 
     const totalCollected = fees.reduce((sum, f) => sum + f.paidAmount, 0);
     const totalPending = fees.reduce((sum, f) => sum + (f.amount - f.paidAmount), 0);
