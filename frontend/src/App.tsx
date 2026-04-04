@@ -14,6 +14,7 @@ import Reports from './pages/Dashboards/Reports';
 import Analytics from './pages/Dashboards/Analytics';
 import FeeManagement from './pages/Dashboards/FeeManagement';
 import Settings from './pages/Dashboards/Settings';
+import ActivityLogs from './pages/Dashboards/ActivityLogs';
 
 const App: React.FC = () => {
   return (
@@ -36,6 +37,7 @@ const App: React.FC = () => {
         <Route path="/dashboard/admin/analytics" element={<Analytics />} />
         <Route path="/dashboard/admin/fees" element={<FeeManagement />} />
         <Route path="/dashboard/admin/settings" element={<Settings />} />
+        <Route path="/dashboard/admin/logs" element={<ActivityLogs />} />
 
         {/* Fallback to Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

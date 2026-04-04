@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { getAllUsers, getUserById, createUser, updateUser, deleteUser, uploadProfilePicture } from "../services/userService";
+import { logActivity } from "../services/activityLogService";
 import User from "../models/User";
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -65,6 +66,15 @@ export const verifyTeacherController = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ message: "Teacher not found" });
     user.isVerified = true;
     await user.save();
+
+    // Log this action
+    await logActivity({
+      userId: (req as any).user.id,
+      action: "Teacher Verified",
+      category: "user_management",
+      details: `Admin verified teacher account: ${user.name} (${user.email})`
+    });
+
     res.json({ success: true, message: "Teacher verified successfully" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
