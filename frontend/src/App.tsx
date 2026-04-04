@@ -10,6 +10,7 @@ import AdminDashboard from './pages/Dashboards/AdminDashboard';
 import ManageUsers from './pages/Dashboards/ManageUsers';
 import TeacherApprovals from './pages/Dashboards/TeacherApprovals';
 import StudentRecords from './pages/Dashboards/StudentRecords';
+import Reports from './pages/Dashboards/Reports';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +29,7 @@ const App: React.FC = () => {
         <Route path="/dashboard/admin/users" element={<ManageUsers />} />
         <Route path="/dashboard/admin/approvals" element={<TeacherApprovals />} />
         <Route path="/dashboard/admin/students" element={<StudentRecords />} />
+        <Route path="/dashboard/admin/reports" element={<Reports />} />
 
         {/* Fallback to Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
