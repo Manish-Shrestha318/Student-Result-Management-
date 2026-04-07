@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,42 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: credentialResponse.credential })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigateByRole(data.user?.role?.toLowerCase());
+      } else {
+        setError(data.message || 'Google Login failed.');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const navigateByRole = (role: string) => {
+    if (role === 'student') navigate('/dashboard/student');
+    else if (role === 'parent') navigate('/dashboard/parent');
+    else if (role === 'teacher') navigate('/dashboard/teacher');
+    else if (role === 'admin') navigate('/dashboard/admin');
+    else {
+      alert(`Login Successful! Dashboard for unknown role is currently disabled.`);
+      navigate('/login');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,25 +62,11 @@ const Login: React.FC = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        const role = data.user?.role?.toLowerCase();
-        
-        if (role === 'student') {
-          navigate('/dashboard/student');
-        } else if (role === 'parent') {
-          navigate('/dashboard/parent');
-        } else if (role === 'teacher') {
-          navigate('/dashboard/teacher');
-        } else if (role === 'admin') {
-          navigate('/dashboard/admin');
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          navigateByRole(data.user?.role?.toLowerCase());
         } else {
-          alert(`Login Successful! Dashboard for unknown role is currently disabled.`);
-          navigate('/login');
-        }
-      } else {
         setError(data.message || 'Invalid email or password.');
       }
     } catch (_err) {
@@ -130,14 +153,17 @@ const Login: React.FC = () => {
           <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
         </div>
 
-        <button 
-          className="btn-secondary" 
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', border: '1px solid var(--border-color)' }}
-          onClick={() => alert("Redirecting to Google Authentication...")}
-        >
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style={{ width: '18px' }} />
-          Continue with Google
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Login Failed')}
+            theme="outline"
+            size="large"
+            shape="pill"
+            width="360"
+            text="signup_with"
+          />
+        </div>
 
         <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Create Account</Link>

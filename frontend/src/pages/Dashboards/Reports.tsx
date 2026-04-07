@@ -1,23 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  FileText, 
-  Download, 
-  FileSpreadsheet, 
-  Calendar,
-  Filter,
-  BarChart3,
-  CheckCircle2,
-  XCircle
-} from 'lucide-react';
+import { Row, Col, Card, Table, Badge, Button, Form, Nav, Spinner } from 'react-bootstrap';
 
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'results' | 'class' | 'attendance'>('results');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Filter states
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -25,7 +15,6 @@ const Reports: React.FC = () => {
   const [term, setTerm] = useState('First Term');
   const [year, setYear] = useState('2026');
 
-  // Data states
   const [reportData, setReportData] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -51,8 +40,12 @@ const Reports: React.FC = () => {
   }, []);
 
   const fetchReport = async () => {
-    if (!selectedStudent && activeTab === 'results') {
+    if (!selectedStudent && (activeTab === 'results' || activeTab === 'attendance')) {
       alert('Please select a student first');
+      return;
+    }
+    if (!selectedClass && activeTab === 'class') {
+      alert('Please select a class first');
       return;
     }
 
@@ -67,7 +60,6 @@ const Reports: React.FC = () => {
       } else if (activeTab === 'class' && selectedClass) {
         url = `/api/analytics/class/${selectedClass}?term=${term}&year=${year}`;
       } else if (activeTab === 'attendance' && selectedStudent) {
-        // Just as an example, fetch attendance report for the current month
         const now = new Date();
         url = `/api/academics/attendance/report/${selectedStudent}?month=${now.getMonth()+1}&year=${now.getFullYear()}`;
       }
@@ -127,283 +119,300 @@ const Reports: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Academic Reports & Analytics" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Institutional Audit & Reports" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Main Tabs */}
-          <div style={{ display: 'flex', gap: '2rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-            <TabButton icon={<FileText size={18} />} label="Student Results" active={activeTab === 'results'} onClick={() => setActiveTab('results')} />
-            <TabButton icon={<BarChart3 size={18} />} label="Class Performance" active={activeTab === 'class'} onClick={() => setActiveTab('class')} />
-            <TabButton icon={<Calendar size={18} />} label="Attendance Overview" active={activeTab === 'attendance'} onClick={() => setActiveTab('attendance')} />
-          </div>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Operational Tab Bar ── */}
+          <Nav className="nav-underline mb-5 border-bottom gap-4">
+            <Nav.Item>
+              <Nav.Link 
+                active={activeTab === 'results'} 
+                onClick={() => setActiveTab('results')}
+                className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'results' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
+              >
+                Student Performance Matrix
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link 
+                active={activeTab === 'class'} 
+                onClick={() => setActiveTab('class')}
+                className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'class' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
+              >
+                Class Analytics Portfolio
+              </Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link 
+                active={activeTab === 'attendance'} 
+                onClick={() => setActiveTab('attendance')}
+                className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'attendance' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
+              >
+                Attendance Report
+              </Nav.Link>
+            </Nav.Item>
+          </Nav>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '2rem' }}>
-            {/* Filters Sidebar */}
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="card">
-                <h4 style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Filter size={18} color="var(--primary)" /> Filters
-                </h4>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  {(activeTab === 'results' || activeTab === 'attendance') && (
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Select Student</label>
-                      <select 
-                        value={selectedStudent} 
-                        onChange={(e) => setSelectedStudent(e.target.value)}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}
-                      >
-                        <option value="">Choose Student...</option>
-                        {students.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                      </select>
-                    </div>
-                  )}
-
-                  {activeTab === 'class' && (
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Select Class</label>
-                      <select 
-                        value={selectedClass} 
-                        onChange={(e) => setSelectedClass(e.target.value)}
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}
-                      >
-                        <option value="">Choose Class...</option>
-                        {classes.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                      </select>
-                    </div>
-                  )}
-
-                  {(activeTab === 'results' || activeTab === 'class') && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Academic Term</label>
-                        <select 
-                          value={term} 
-                          onChange={(e) => setTerm(e.target.value)}
-                          style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}
+          <Row className="g-5">
+            {/* ── Analytical Parameters Sidebar ── */}
+            <Col lg={4} xl={3}>
+              <div className="d-flex flex-column gap-4 position-sticky" style={{ top: '2rem' }}>
+                <Card className="border-0 shadow-sm rounded-4 p-4 p-xl-5">
+                  <h6 className="fw-bold text-dark mb-4 smallest text-uppercase ls-1 border-start border-4 border-primary ps-3">Filters</h6>
+                  
+                  <div className="d-flex flex-column gap-4">
+                    {(activeTab === 'results' || activeTab === 'attendance') && (
+                      <Form.Group>
+                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 mb-2">Student</Form.Label>
+                        <Form.Select 
+                          value={selectedStudent} 
+                          onChange={(e) => setSelectedStudent(e.target.value)}
+                          className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
                         >
-                          <option value="First Term">First Term</option>
-                          <option value="Mid Term">Mid Term</option>
-                          <option value="Final Term">Final Term</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Academic Year</label>
-                        <select 
-                          value={year} 
-                          onChange={(e) => setYear(e.target.value)}
-                          style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }}
-                        >
-                          <option value="2025">2025</option>
-                          <option value="2026">2026</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
+                          <option value="">SELECT STUDENT...</option>
+                          {students.map(s => <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>)}
+                        </Form.Select>
+                      </Form.Group>
+                    )}
 
-                  <button 
-                    onClick={fetchReport}
-                    disabled={loading}
-                    className="btn-primary" 
-                    style={{ width: '100%', marginTop: '0.5rem' }}
-                  >
-                    {loading ? 'Fetching...' : 'Generate Report'}
-                  </button>
-                </div>
+                    {activeTab === 'class' && (
+                      <Form.Group>
+                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 mb-2">Class</Form.Label>
+                        <Form.Select 
+                          value={selectedClass} 
+                          onChange={(e) => setSelectedClass(e.target.value)}
+                          className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
+                        >
+                          <option value="">SELECT CLASS...</option>
+                          {classes.map(c => <option key={c._id} value={c._id}>{c.name.toUpperCase()}</option>)}
+                        </Form.Select>
+                      </Form.Group>
+                    )}
+
+                    {(activeTab === 'results' || activeTab === 'class') && (
+                      <>
+                        <Form.Group>
+                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 mb-2">Term</Form.Label>
+                          <Form.Select 
+                            value={term} 
+                            onChange={(e) => setTerm(e.target.value)}
+                            className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
+                          >
+                            <option value="First Term">FIRST TERM</option>
+                            <option value="Mid Term">SECOND TERM</option>
+                            <option value="Final Term">FINAL TERM</option>
+                          </Form.Select>
+                        </Form.Group>
+                        <Form.Group>
+                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 mb-2">Year</Form.Label>
+                          <Form.Select 
+                            value={year} 
+                            onChange={(e) => setYear(e.target.value)}
+                            className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
+                          >
+                            <option value="2025">YEAR 2025</option>
+                            <option value="2026">YEAR 2026</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </>
+                    )}
+
+                    <Button 
+                      onClick={fetchReport}
+                      disabled={loading}
+                      variant="primary"
+                      className="w-100 fw-bold smallest py-3 rounded-pill ls-1 text-uppercase mt-2 shadow-sm"
+                    >
+                      {loading ? 'LOADING...' : 'SHOW REPORT'}
+                    </Button>
+                  </div>
+                </Card>
+
+                {activeTab === 'results' && reportData && (
+                  <Card className="border-0 shadow-sm rounded-4 p-4 py-xl-5 bg-primary text-white overflow-hidden">
+                    <h6 className="fw-bold mb-2 smallest text-uppercase ls-1">Download Report</h6>
+                    <p className="smallest opacity-75 fw-medium mb-4 lh-base uppercase ls-1">Download a PDF copy of this report.</p>
+                    <Button 
+                      onClick={handleDownloadReport}
+                      disabled={downloading}
+                      variant="light"
+                      className="w-100 fw-bold smallest py-3 rounded-pill ls-1 text-uppercase text-primary shadow-sm"
+                    >
+                      {downloading ? 'LOADING PDF...' : 'DOWNLOAD PDF'}
+                    </Button>
+                  </Card>
+                )}
               </div>
+            </Col>
 
-              {activeTab === 'results' && reportData && (
-                <div className="card" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-                  <h4 style={{ margin: '0 0 1rem 0' }}>Quick Download</h4>
-                  <p style={{ fontSize: '0.8rem', opacity: 0.9, marginBottom: '1.25rem' }}>Download the official PDF report card for this student.</p>
-                  <button 
-                    onClick={handleDownloadReport}
-                    disabled={downloading}
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      borderRadius: '8px', 
-                      border: 'none', 
-                      backgroundColor: '#fff', 
-                      color: 'var(--primary)', 
-                      fontWeight: 700, 
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}
-                  >
-                    {downloading ? 'Preparing...' : <><Download size={18} /> Official PDF</>}
-                  </button>
-                </div>
-              )}
-            </aside>
-
-            {/* Results Display Area */}
-            <section style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* ── Results Output Console ── */}
+            <Col lg={8} xl={9}>
               {!reportData && !loading && (
-                <div className="card" style={{ height: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                  <FileSpreadsheet size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                  <p>Select filters and click "Generate Report" to view analytics.</p>
-                </div>
+                <Card className="border-0 shadow-sm rounded-4 d-flex align-items-center justify-content-center p-5 text-center bg-white" style={{ minHeight: '500px' }}>
+                  <div className="max-width-400">
+                    <h6 className="text-secondary fw-bold smallest text-uppercase ls-1 opacity-50 mb-3">No Data</h6>
+                    <p className="text-muted smaller fw-medium ls-1 px-4 opacity-75">Select student/class, term, and year to view the report.</p>
+                  </div>
+                </Card>
               )}
 
-              {loading && <div className="card" style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading report data...</div>}
+              {loading && (
+                <Card className="border-0 shadow-sm rounded-4 d-flex align-items-center justify-content-center p-5 bg-white" style={{ minHeight: '500px' }}>
+                   <Spinner animation="grow" variant="primary" size="sm" className="mb-4" />
+                   <h6 className="fw-bold text-primary smallest text-uppercase ls-1">Loading report...</h6>
+                </Card>
+              )}
 
               {reportData && activeTab === 'results' && (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-                    <SummaryCard label="Total Percentage" value={`${reportData.summary.overallPercentage}%`} color="#2563eb" />
-                    <SummaryCard label="GPA / Grade" value={reportData.summary.overallGrade} color="#16a34a" />
-                    <SummaryCard label="Final Result" value={reportData.summary.result} color={reportData.summary.result === 'PASS' ? '#16a34a' : '#dc2626'} />
-                  </div>
+                <div className="d-flex flex-column gap-5 animate-fade-in">
+                  <Row className="g-4">
+                    <Col sm={4}>
+                       <SummaryCard label="TOTAL SCORE" value={`${reportData.summary.overallPercentage}%`} variant="primary" trend="PERCENTAGE" />
+                    </Col>
+                    <Col sm={4}>
+                       <SummaryCard label="GRADE" value={reportData.summary.overallGrade} variant="success" trend="GRADE" />
+                    </Col>
+                    <Col sm={4}>
+                       <SummaryCard label="RESULT" value={reportData.summary.result} variant={reportData.summary.result === 'PASS' ? 'success' : 'danger'} trend="PASS/FAIL" />
+                    </Col>
+                  </Row>
 
-                  <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <h3 style={{ padding: '1.5rem', margin: 0, borderBottom: '1px solid var(--border-color)' }}>Marks Breakdown</h3>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Subject</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Marks</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Total</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Grade</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Status</th>
+                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary shadow-sm bg-white">
+                    <Card.Header className="bg-white p-4 border-0 border-bottom">
+                       <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Subject Marks</h6>
+                    </Card.Header>
+                    <div className="table-responsive">
+                      <Table borderless hover className="align-middle mb-0 smallest fw-medium">
+                        <thead className="bg-light-soft">
+                          <tr className="border-bottom border-light">
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Subject</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Marks Obtained</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Total Marks</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Percentage</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-end">Result</th>
                           </tr>
                         </thead>
                         <tbody>
                           {reportData.marks.map((m: any, i: number) => (
-                            <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>{m.subject}</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>{m.marksObtained}</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>{m.totalMarks}</td>
-                              <td style={{ padding: '1rem 1.5rem' }}><span style={{ fontWeight: 700 }}>{m.grade}</span> ({m.percentage}%)</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>
-                                {m.marksObtained >= (m.totalMarks * 0.4) ? 
-                                  <span style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600 }}><CheckCircle2 size={14}/> Pass</span> : 
-                                  <span style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600 }}><XCircle size={14}/> Fail</span>
-                                }
+                            <tr key={i} className="border-bottom border-light">
+                              <td className="px-4 py-3 fw-bold text-dark ls-1 text-uppercase">{m.subject}</td>
+                              <td className="px-4 py-3 text-center fw-bold fs-6">{m.marksObtained}</td>
+                              <td className="px-4 py-3 text-center text-muted fw-bold">{m.totalMarks}</td>
+                              <td className="px-4 py-3 text-center"><Badge bg="light" text="dark" className="fw-bold smaller border px-3 py-1 rounded-pill ls-1">{m.grade} ({m.percentage}%)</Badge></td>
+                              <td className="px-4 py-3 text-end">
+                                <span className={`fw-bold ls-1 text-uppercase smallest ${m.marksObtained >= (m.totalMarks * 0.4) ? 'text-success' : 'text-danger'}`}>
+                                  {m.marksObtained >= (m.totalMarks * 0.4) ? 'Pass' : 'Fail'}
+                                </span>
                               </td>
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                      </Table>
                     </div>
-                  </div>
-                </>
-              )}
-
-              {reportData && activeTab === 'attendance' && (
-                <div className="card">
-                  <h3 style={{ marginBottom: '1.5rem' }}>Attendance Analytics</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                    <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '12px', textAlign: 'center' }}>
-                      <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Attendance Rate</p>
-                      <h2 style={{ fontSize: '3rem', margin: 0, color: 'var(--primary)' }}>{reportData.percentage}%</h2>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center' }}>
-                      <AttendanceRow label="Days Present" value={reportData.present} color="#16a34a" />
-                      <AttendanceRow label="Days Absent" value={reportData.absent} color="#dc2626" />
-                      <AttendanceRow label="Total Working Days" value={reportData.totalDays} color="#64748b" />
-                    </div>
-                  </div>
+                  </Card>
                 </div>
               )}
 
-              {reportData && activeTab === 'class' && (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-                    <SummaryCard label="Class Average" value={`${reportData.averageScore}%`} color="#2563eb" />
-                    <SummaryCard label="Pass Rate" value={`${reportData.passRate.toFixed(1)}%`} color="#16a34a" />
-                    <SummaryCard label="Top Student" value={reportData.topper?.name || 'N/A'} color="#8b5cf6" />
-                  </div>
+              {reportData && activeTab === 'attendance' && (
+                <Card className="border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white border-top border-4 border-info shadow-sm">
+                  <h6 className="fw-bold text-dark mb-5 smallest text-uppercase ls-1 border-start border-4 border-info ps-3">Attendance Report</h6>
+                  <Row className="align-items-center g-5">
+                    <Col md={5}>
+                      <div className="p-5 bg-light-soft rounded-circle border border-info border-3 text-center shadow-inner mx-auto" style={{ width: '220px', height: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1 opacity-75">Percentage</span>
+                        <h2 className="display-5 fw-bold text-primary mb-0 ls-1">{reportData.percentage}%</h2>
+                      </div>
+                    </Col>
+                    <Col md={7}>
+                      <div className="d-flex flex-column gap-2">
+                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light border-light-dark border mb-2">
+                           <span className="smallest fw-bold text-uppercase text-secondary ls-1">TOTAL DAYS</span>
+                           <span className="smaller fw-bold text-dark ls-1">{reportData.totalDays}</span>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 border-start border-4 border-success bg-success-soft shadow-sm mb-2">
+                           <span className="smallest fw-bold text-uppercase text-success ls-1">DAYS PRESENT</span>
+                           <span className="smaller fw-bold text-success ls-1">{reportData.present}</span>
+                        </div>
+                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 border-start border-4 border-danger bg-danger-soft shadow-sm">
+                           <span className="smallest fw-bold text-uppercase text-danger ls-1">DAYS ABSENT</span>
+                           <span className="smaller fw-bold text-danger ls-1">{reportData.absent}</span>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+              )}
 
-                  <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <h3 style={{ padding: '1.5rem', margin: 0, borderBottom: '1px solid var(--border-color)' }}>Student Rankings</h3>
-                    <div style={{ overflowX: 'auto', maxHeight: '400px' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                          <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Rank</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Roll No</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Name</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Average</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.8rem' }}>Status</th>
+              {reportData && activeTab === 'class' && (
+                <div className="d-flex flex-column gap-5 animate-fade-in">
+                  <Row className="g-4">
+                    <Col sm={4}>
+                       <SummaryCard label="CLASS AVERAGE" value={`${reportData.averageScore.toFixed(1)}%`} variant="primary" trend="AVERAGE" />
+                    </Col>
+                    <Col sm={4}>
+                       <SummaryCard label="PASS RATE" value={`${reportData.passRate.toFixed(1)}%`} variant="success" trend="PERCENTAGE" />
+                    </Col>
+                    <Col sm={4}>
+                       <SummaryCard label="TOP STUDENT" value={reportData.topper?.name.toUpperCase() || 'N/A'} variant="warning" trend="TOPPER" />
+                    </Col>
+                  </Row>
+
+                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary shadow-sm bg-white">
+                    <Card.Header className="bg-white p-4 border-0 border-bottom">
+                       <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Enrolled Subject Rankings</h6>
+                    </Card.Header>
+                    <div className="table-responsive" style={{ maxHeight: '500px' }}>
+                      <Table borderless hover className="align-middle mb-0 smallest fw-medium">
+                        <thead className="bg-light-soft position-sticky top-0 z-2 shadow-sm">
+                          <tr className="border-bottom border-light">
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Audited Rank</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Registry Name</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Mean Aggregate</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-end">Evaluation State</th>
                           </tr>
                         </thead>
                         <tbody>
                           {reportData.studentPerformance.map((s: any, i: number) => (
-                            <tr key={s.studentId} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '1rem 1.5rem', fontWeight: 600 }}>#{i + 1}</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>{s.rollNumber}</td>
-                              <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{s.name}</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>{s.average}%</td>
-                              <td style={{ padding: '1rem 1.5rem' }}>
-                                {s.passed ? 
-                                  <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.85rem' }}>Pass</span> : 
-                                  <span style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.85rem' }}>Fail</span>
-                                }
+                            <tr key={s.studentId} className="border-bottom border-light">
+                              <td className="px-4 py-4"><Badge bg="light" text="primary" className="fw-bold p-2 border smallest ls-1">#{i + 1}</Badge></td>
+                              <td className="px-4 py-4">
+                                <div className="fw-bold text-dark ls-1 text-uppercase">{s.name}</div>
+                                <div className="smallest text-muted fw-bold ls-1 opacity-50">REG: {s.rollNumber}</div>
+                              </td>
+                              <td className="px-4 py-4 text-center fw-bold fs-6">{s.average}%</td>
+                              <td className="px-4 py-4 text-end">
+                                <Badge bg={s.passed ? 'success-soft' : 'danger-soft'} text={s.passed ? 'success' : 'danger'} className="fw-bold smaller text-uppercase px-3 py-2 rounded-pill border ls-1">
+                                  {s.passed ? 'Satisfactory' : 'Unsatisfactory'}
+                                </Badge>
                               </td>
                             </tr>
                           ))}
-                          {reportData.studentPerformance.length === 0 && (
-                            <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No performance data for this class.</td></tr>
-                          )}
                         </tbody>
-                      </table>
+                      </Table>
                     </div>
-                  </div>
-                </>
+                  </Card>
+                </div>
               )}
-            </section>
-          </div>
+            </Col>
+          </Row>
         </div>
       </main>
     </div>
   );
 };
 
-// Subcomponents
-const TabButton: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => (
-  <button 
-    onClick={onClick}
-    style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.75rem', 
-      padding: '0.5rem 0', 
-      border: 'none', 
-      background: 'none', 
-      color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-      fontWeight: active ? 700 : 500,
-      fontSize: '1rem',
-      cursor: 'pointer',
-      borderBottom: active ? '3px solid var(--primary)' : '3px solid transparent',
-      transition: 'all 0.2s'
-    }}
-  >
-    {icon}
-    {label}
-  </button>
-);
-
-const SummaryCard: React.FC<{ label: string, value: string, color: string }> = ({ label, value, color }) => (
-  <div className="card" style={{ borderLeft: `5px solid ${color}` }}>
-    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 0.4rem 0' }}>{label}</p>
-    <h3 style={{ fontSize: '1.75rem', margin: 0, color }}>{value}</h3>
-  </div>
-);
-
-const AttendanceRow: React.FC<{ label: string, value: number, color: string }> = ({ label, value, color }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
-    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{label}</span>
-    <span style={{ fontWeight: 700, color }}>{value}</span>
-  </div>
+const SummaryCard: React.FC<{ label: string, value: string, variant: string, trend: string }> = ({ label, value, variant, trend }) => (
+  <Card className={`border-0 shadow-sm rounded-4 h-100 border-start border-5 border-${variant}`}>
+    <Card.Body className="p-4 py-3 text-center text-sm-start">
+      <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{label}</span>
+      <h3 className="fw-bold text-dark mb-1 ls-1">{value}</h3>
+      <div className={`smallest fw-bold text-uppercase ls-1 text-${variant}`}>{trend}</div>
+    </Card.Body>
+  </Card>
 );
 
 export default Reports;
+

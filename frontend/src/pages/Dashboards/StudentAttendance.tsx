@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  GraduationCap, 
-  Calendar, 
-  Bell, 
-  FileText,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AdminHeader from '../../components/AdminHeader';
+import { Row, Col, Card, Button, ProgressBar } from 'react-bootstrap';
 
 interface AttendanceRecord {
   _id: string;
@@ -25,7 +12,7 @@ interface AttendanceRecord {
 
 const StudentAttendance: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -55,10 +42,8 @@ const StudentAttendance: React.FC = () => {
   }, [user, currentMonth, currentYear]);
 
   const fetchAttendanceData = async () => {
-    setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      // Use the student report API for full month stats
       const month = currentMonth + 1;
       const response = await fetch(`/api/academics/attendance/report/${user._id}?month=${month}&year=${currentYear}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -75,12 +60,10 @@ const StudentAttendance: React.FC = () => {
           percentage: data.data.percentage || '0'
         });
       } else {
-        setError(data.message || 'Failed to fetch attendance');
+        setError(data.message || 'Failed to synchronize presence hub.');
       }
     } catch (err) {
-      setError('Could not connect to the server');
-    } finally {
-      setLoading(false);
+      setError('Operational error: Could not establish secure socket to presence engine.');
     }
   };
 
@@ -118,189 +101,142 @@ const StudentAttendance: React.FC = () => {
   const monthName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(currentYear, currentMonth));
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Sidebar */}
-      <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-        <div style={{ marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
+      {/* ── Scholar Console ── */}
+      <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', zIndex: 10 }}>
+        <div className="mb-5 px-3">
+          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+          <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
         </div>
         
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
-          <NavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
-          <NavItem icon={<Calendar size={20} />} label="Attendance" active />
-          <NavItem icon={<Bell size={20} />} label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
-          <NavItem icon={<FileText size={20} />} label="Reports" onClick={() => navigate('/dashboard/student/reports')} />
+        <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
+          <Link to="/dashboard/student" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Dashboard</span>
+          </Link>
+          <Link to="/dashboard/student/results" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Results</span>
+          </Link>
+          <Link to="/dashboard/student/attendance" className="nav-link bg-primary text-white rounded-pill py-3 px-4 fw-bold shadow-sm mb-1">
+             <span className="ls-1 text-uppercase smallest">Attendance</span>
+          </Link>
+          <Link to="/dashboard/student/notices" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Notices</span>
+          </Link>
         </nav>
-
-        <button 
-          onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-        >
-          <LogOut size={20} />
-          Logout
-        </button>
       </aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Attendance Records" error={error} />
+      {/* ── Primary Terminal ── */}
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Attendance" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Stats Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
-            <StatCard label="Present" value={stats.present} color="#059669" icon={<CheckCircle2 size={20} />} />
-            <StatCard label="Absent" value={stats.absent} color="#dc2626" icon={<XCircle size={20} />} />
-            <StatCard label="Attendance %" value={`${stats.percentage}%`} color="var(--primary)" icon={<AlertCircle size={20} />} />
-          </div>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Numerical Intelligence ── */}
+          <Row className="g-4 mb-5">
+            {[
+              { label: 'PRESENT', value: stats.present, color: 'success' },
+              { label: 'ABSENCE VECTOR', value: stats.absent, color: 'danger' },
+              { label: 'CONSISTENCY INDEX', value: `${stats.percentage}%`, color: 'primary' },
+            ].map((stat, i) => (
+              <Col key={i} md={4}>
+                <Card className={`border-0 shadow-sm rounded-4 p-4 border-start border-5 border-${stat.color}`}>
+                  <Card.Body className="p-0">
+                    <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-2">{stat.label}</span>
+                    <h2 className="mb-0 fw-bold ls-1">{stat.value}</h2>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-            {/* Calendar View */}
-            <div className="card" style={{ padding: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h3 style={{ margin: 0 }}>{monthName} {currentYear}</h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => changeMonth(-1)} style={navBtnStyle}><ChevronLeft size={20} /></button>
-                  <button onClick={() => setCurrentMonth(new Date().getMonth())} style={navBtnStyle}>Today</button>
-                  <button onClick={() => changeMonth(1)} style={navBtnStyle}><ChevronRight size={20} /></button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1rem' }}>
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} style={{ textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.85rem', paddingBottom: '0.5rem' }}>
-                    {day}
+          <Row className="g-4">
+            {/* ── Interactive Presence Grid ── */}
+            <Col xl={8}>
+              <Card className="border-0 shadow-sm rounded-4 p-4">
+                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
+                  <h5 className="fw-bold text-dark mb-0 smallest text-uppercase ls-2">{monthName} {currentYear}</h5>
+                  <div className="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border">
+                    <Button variant="white" className="px-3 fw-bold smallest ls-1 border-end" onClick={() => changeMonth(-1)}>PREV</Button>
+                    <Button variant="white" className="px-3 fw-bold smallest ls-1 border-end" onClick={() => setCurrentMonth(new Date().getMonth())}>SYNC</Button>
+                    <Button variant="white" className="px-3 fw-bold smallest ls-1" onClick={() => changeMonth(1)}>NEXT</Button>
                   </div>
-                ))}
-                
-                {Array.from({ length: new Date(currentYear, currentMonth, 1).getDay() }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-
-                {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }).map((_, i) => {
-                  const dayNum = i + 1;
-                  const status = getDayStatus(dayNum);
-                  return (
-                    <div 
-                      key={dayNum} 
-                      style={{ 
-                        height: '80px', 
-                        border: '1px solid var(--border-color)', 
-                        borderRadius: '12px', 
-                        padding: '0.5rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        backgroundColor: status ? getStatusBg(status.status) : 'transparent',
-                        borderColor: status ? getStatusColor(status.status) : 'var(--border-color)'
-                      }}
-                    >
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{dayNum}</span>
-                      {status && (
-                        <div style={{ 
-                          fontSize: '0.7rem', 
-                          fontWeight: 700, 
-                          textTransform: 'uppercase', 
-                          color: getStatusColor(status.status),
-                          textAlign: 'center'
-                        }}>
-                          {status.status}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Attendance Summary/Legend */}
-            <div className="card" style={{ padding: '1.5rem' }}>
-              <h3 style={{ marginBottom: '1.5rem' }}>Status Guide</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <LegendItem status="present" label="Present" />
-                <LegendItem status="absent" label="Absent" />
-              </div>
-              
-              <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--primary)', borderRadius: '12px', color: '#fff' }}>
-                <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '0.5rem' }}>Monthly Productivity</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800 }}>{stats.percentage}%</div>
-                <div style={{ height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px', marginTop: '1rem', overflow: 'hidden' }}>
-                  <div style={{ width: `${stats.percentage}%`, height: '100%', background: '#fff' }} />
                 </div>
-              </div>
-            </div>
-          </div>
+
+                <div className="row g-1 text-center mb-3">
+                  {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                    <div key={day} className="col smallest fw-bold text-secondary ls-1 py-2 opacity-50">{day}</div>
+                  ))}
+                </div>
+
+                <div className="row g-2">
+                  {Array.from({ length: new Date(currentYear, currentMonth, 1).getDay() }).map((_, i) => (
+                    <div key={`empty-${i}`} className="col" style={{ minHeight: '90px' }} />
+                  ))}
+
+                  {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }).map((_, i) => {
+                    const dayNum = i + 1;
+                    const status = getDayStatus(dayNum);
+                    return (
+                      <div key={dayNum} className="col" style={{ minWidth: '14%', minHeight: '90px' }}>
+                        <div 
+                          className={`h-100 rounded-4 p-3 d-flex flex-column justify-content-between transition-all border shadow-sm-hover ${
+                            status?.status === 'present' ? 'bg-success-soft border-success text-success' :
+                            status?.status === 'absent' ? 'bg-danger-soft border-danger text-danger' :
+                            status?.status === 'late' ? 'bg-warning-soft border-warning text-warning' :
+                            'bg-white border-light-dark opacity-75'
+                          }`}
+                        >
+                          <span className="fw-bold smallest ls-1">{dayNum}</span>
+                          {status && (
+                            <span className="fw-bold smallest text-uppercase text-center ls-1 opacity-75">{status.status}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Fill remaining space to keep grid consistent */}
+                  {Array.from({ length: (7 - (new Date(currentYear, currentMonth, 1).getDay() + getDaysInMonth(currentMonth, currentYear)) % 7) % 7 }).map((_, i) => (
+                    <div key={`end-empty-${i}`} className="col" />
+                  ))}
+                </div>
+              </Card>
+            </Col>
+
+            {/* ── Status intelligence pod ── */}
+            <Col xl={4}>
+              <Card className="border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h6 className="fw-bold mb-4 text-dark smallest text-uppercase ls-2 border-bottom pb-3">Status Definition HUB</h6>
+                <div className="d-flex flex-column gap-4">
+                  {[
+                    { label: 'Present Engagement', color: 'success' },
+                    { label: 'Absent Delta', color: 'danger' },
+                    { label: 'Late Arrival Vector', color: 'warning' },
+                    { label: 'Institutional Holiday', color: 'dark opacity-25' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="d-flex align-items-center gap-3">
+                      <div className={`bg-${item.color} rounded-circle border`} style={{ width: '14px', height: '14px' }}></div>
+                      <span className="smallest fw-bold text-secondary text-uppercase ls-1">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="border-0 shadow-sm rounded-4 p-4 bg-dark text-white border-bottom border-5 border-primary">
+                <h6 className="fw-bold text-uppercase smallest ls-2 mb-4 opacity-50 border-bottom border-white border-opacity-10 pb-3">Operational Consistency Index</h6>
+                <div className="display-5 fw-bold mb-2 ls-1">{stats.percentage}%</div>
+                <p className="smallest mb-4 opacity-75 fw-medium ls-1 lh-base">Make sure to maintain above 75% attendance for exam eligibility.</p>
+                <div className="mb-4">
+                   <ProgressBar now={parseFloat(stats.percentage)} variant="primary" style={{ height: '8px' }} className="bg-white bg-opacity-10 border-0 shadow-none rounded-pill" />
+                </div>
+                <div className="d-flex flex-column gap-2 mt-2">
+                   <Button variant="outline-light" className="w-100 fw-bold smallest py-3 rounded-pill border-light border-opacity-25 shadow-none text-uppercase ls-1">Contact Support</Button>
+                </div>
+              </Card>
+            </Col>
+          </Row>
         </div>
       </main>
     </div>
   );
-};
-
-const LegendItem = ({ status, label }: any) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-    <div style={{ 
-      width: '32px', height: '32px', borderRadius: '8px', 
-      backgroundColor: getStatusBg(status), display: 'flex', alignItems: 'center', 
-      justifyContent: 'center', color: getStatusColor(status) 
-    }}>
-      {getStatusIcon(status)}
-    </div>
-    <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{label}</span>
-  </div>
-);
-
-// Helper Components
-const StatCard = ({ label, value, color, icon }: any) => (
-  <div className="card" style={{ padding: '1.25rem', borderLeft: `4px solid ${color}` }}>
-    <div style={{ color, marginBottom: '0.5rem' }}>{icon}</div>
-    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</div>
-    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</div>
-  </div>
-);
-
-const NavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }> = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} style={{ 
-    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', borderRadius: 'var(--btn-radius)', border: 'none', 
-    backgroundColor: active ? '#f1f5f9' : 'transparent', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: '0.95rem',
-    fontWeight: active ? 600 : 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all 0.2s'
-  }}>
-    {icon} {label}
-  </button>
-);
-
-const navBtnStyle: React.CSSProperties = {
-  padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', 
-  fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', transition: 'all 0.2s'
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'present': return '#059669';
-    case 'absent': return '#dc2626';
-    case 'late': return '#ca8a04';
-    case 'holiday': return '#7c3aed';
-    default: return '#64748b';
-  }
-};
-
-const getStatusBg = (status: string) => {
-  switch (status) {
-    case 'present': return '#ecfdf5';
-    case 'absent': return '#fef2f2';
-    case 'late': return '#fef9c3';
-    case 'holiday': return '#faf5ff';
-    default: return '#f8fafc';
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'present': return <CheckCircle2 size={18} />;
-    case 'absent': return <XCircle size={18} />;
-    case 'late': return <Clock size={18} />;
-    case 'holiday': return <Calendar size={18} />;
-    default: return <AlertCircle size={18} />;
-  }
 };
 
 export default StudentAttendance;

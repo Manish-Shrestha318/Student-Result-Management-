@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  Search, 
-  Plus, 
-  MoreVertical, 
-  Download,
-  DollarSign
-} from 'lucide-react';
+import { Row, Col, Card, Table, Button, Form, Badge, InputGroup, Pagination } from 'react-bootstrap';
 
 const FeeManagement: React.FC = () => {
   const [fees, setFees] = useState<any[]>([]);
@@ -83,134 +77,119 @@ const FeeManagement: React.FC = () => {
     }
   };
 
-  const getStatusStyle = (status: string) => {
-    switch(status) {
-      case 'paid': return { bg: '#dcfce7', text: '#15803d' };
-      case 'partial': return { bg: '#fef9c3', text: '#a16207' };
-      case 'overdue': return { bg: '#fee2e2', text: '#dc2626' };
-      default: return { bg: '#f1f5f9', text: '#64748b' };
+  const getStatusVariant = (status: string) => {
+    switch(status.toLowerCase()) {
+      case 'paid': return 'success-soft';
+      case 'partial': return 'warning-soft';
+      case 'overdue': return 'danger-soft';
+      default: return 'light';
     }
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Finance & Fee Management" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Financial Administration" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
-            <MetricCard label="Total Collected" value={`$${summary?.totalCollected || 0}`} color="#16a34a" />
-            <MetricCard label="Pending Balance" value={`$${summary?.totalPending || 0}`} color="#dc2626" />
-            <MetricCard label="Collection Rate" value={summary?.collectionRate || '0%'} color="#2563eb" />
-            <MetricCard label="Total Fee Records" value={summary?.totalFees || 0} color="#64748b" />
-          </div>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Metric Grid ── */}
+          <Row className="g-4 mb-5">
+            <MetricCol label="TOTAL REVENUE" value={`$${summary?.totalCollected || 0}`} variant="success" />
+            <MetricCol label="OUTSTANDING" value={`$${summary?.totalPending || 0}`} variant="danger" />
+            <MetricCol label="COLLECTION EFFICIENCY" value={summary?.collectionRate || '0%'} variant="primary" />
+            <MetricCol label="LEDGER ENTRIES" value={summary?.totalFees || 0} variant="dark" />
+          </Row>
 
-          {/* Action Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
-              <div style={{ position: 'relative', width: '300px' }}>
-                <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={18} />
-                <input 
+          {/* ── Filter Command Bar ── */}
+          <div className="d-flex flex-column flex-xxl-row justify-content-between align-items-xxl-center mb-4 gap-4">
+            <div className="d-flex flex-column flex-md-row gap-3 flex-grow-1">
+              <InputGroup className="w-auto shadow-sm">
+                <Form.Control 
                   type="text" 
-                  placeholder="Search student or fee type..." 
+                  placeholder="Query ledger by name or type..." 
+                  className="py-2 smaller border-light-dark shadow-none fw-medium"
+                  style={{ width: '320px' }}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none' }}
                 />
-              </div>
-              <select 
+              </InputGroup>
+              <Form.Select 
+                className="w-auto shadow-sm border-light-dark smaller fw-bold py-2 ls-1 text-uppercase"
                 value={selectedClass} 
                 onChange={(e) => setSelectedClass(e.target.value)}
-                style={{ padding: '0.8rem 1.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: '#fff', cursor: 'pointer' }}
               >
-                <option value="">All Classes</option>
-                <option value="10A">Class 10A</option>
-                <option value="10B">Class 10B</option>
-                <option value="9A">Class 9A</option>
-              </select>
+                <option value="">ALL ACADEMIC COHORTS</option>
+                <option value="10A">COHORT 10A</option>
+                <option value="10B">COHORT 10B</option>
+                <option value="9A">COHORT 9A</option>
+              </Form.Select>
             </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Download size={18} /> Export
-              </button>
-              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Plus size={18} /> Create Invoice
-              </button>
+            <div className="d-flex gap-2">
+              <Button variant="outline-dark" className="fw-bold px-4 py-2 rounded-pill smaller ls-1 border-0 bg-white shadow-sm">
+                 EXPORT LEDGER
+              </Button>
+              <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm ls-1">
+                 GENERATE INVOICE
+              </Button>
             </div>
           </div>
 
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Student Detail</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Fee Particulars</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Financials</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Due Date</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Status</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Management</th>
+          {/* ── Financial Ledger ── */}
+          <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-5">
+            <div className="table-responsive">
+              <Table hover className="align-middle mb-0">
+                <thead className="bg-light-soft border-bottom border-light-dark">
+                  <tr>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Student Principal</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Fee Particulars</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Financial State</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Settlement Deadline</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Current Standing</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Action Deck</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>Loading ledger...</td></tr>
+                    <tr><td colSpan={6} className="py-5 text-center text-muted fw-bold small italic">Synchronizing ledger records...</td></tr>
                   ) : filteredFees.length === 0 ? (
-                    <tr><td colSpan={6} style={{ padding: '3rem', textAlign: 'center' }}>No fee records found.</td></tr>
+                    <tr><td colSpan={6} className="py-5 text-center text-muted small fw-medium">No financial records indexed in current scope.</td></tr>
                   ) : (
                     currentFees.map((fee) => {
-                      const style = getStatusStyle(fee.status);
                       const balance = fee.amount - fee.paidAmount;
+                      const variant = getStatusVariant(fee.status);
                       return (
-                        <tr key={fee._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <div style={{ fontWeight: 600 }}>{fee.studentId?.userId?.name || 'Unknown Student'}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>ID: {fee.studentId?.rollNumber} • Class {fee.studentId?.class}</div>
+                        <tr key={fee._id}>
+                          <td className="px-4 py-3 border-0">
+                            <div className="fw-bold text-dark small">{fee.studentId?.userId?.name || 'UNKNOWN ACCOUNT'}</div>
+                            <div className="smallest text-muted text-uppercase fw-bold ls-1 mt-1">ROLL: {fee.studentId?.rollNumber} • COH : {fee.studentId?.class}</div>
                           </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <span style={{ fontSize: '0.9rem', fontWeight: 500, textTransform: 'capitalize' }}>{fee.feeType} Fees</span>
+                          <td className="px-4 py-3 border-0">
+                            <span className="smaller fw-bold text-secondary text-uppercase ls-1">{fee.feeType} MODULE</span>
                           </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <div style={{ fontSize: '0.9rem' }}>
-                              <span style={{ color: 'var(--text-secondary)' }}>Total:</span> <strong>${fee.amount}</strong>
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: '#16a34a' }}>
-                              Paid: ${fee.paidAmount}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: balance > 0 ? '#dc2626' : '#16a34a' }}>
-                              Bal: ${balance}
+                          <td className="px-4 py-3 border-0">
+                            <div className="smaller fw-bold text-dark mb-1">TOTAL: ${fee.amount}</div>
+                            <div className="smallest text-success fw-bold text-uppercase ls-1">COLLECTED: ${fee.paidAmount}</div>
+                            <div className={`smallest fw-bold text-uppercase ls-1 ${balance > 0 ? 'text-danger' : 'text-success'}`}>
+                              REMAINING: ${balance}
                             </div>
                           </td>
-                          <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                            {new Date(fee.dueDate).toLocaleDateString()}
+                          <td className="px-4 py-3 small text-muted border-0 fw-medium">
+                            {new Date(fee.dueDate).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                           </td>
-                          <td style={{ padding: '1.25rem 1.5rem' }}>
-                            <span style={{ 
-                              padding: '0.3rem 0.6rem', 
-                              borderRadius: '6px', 
-                              backgroundColor: style.bg, 
-                              color: style.text, 
-                              fontSize: '0.75rem', 
-                              fontWeight: 700, 
-                              textTransform: 'uppercase' 
-                            }}>
+                          <td className="px-4 py-3 border-0">
+                            <Badge bg={variant} text={variant.split('-')[0]} className="fw-bold smaller text-uppercase px-3 py-2 border rounded-pill ls-1 w-100">
                               {fee.status}
-                            </span>
+                            </Badge>
                           </td>
-                          <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                              <button 
-                                onClick={() => handleUpdatePayment(fee._id)}
-                                title="Record Payment" 
-                                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #16a34a', background: '#fff', cursor: 'pointer', color: '#16a34a' }}
-                              >
-                                <DollarSign size={16} />
-                              </button>
-                              <button title="Options" style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                                <MoreVertical size={16} />
-                              </button>
+                          <td className="px-4 py-3 text-end border-0">
+                            <div className="d-flex justify-content-end gap-1">
+                              <Button variant="outline-success" size="sm" className="fw-bold border-0 bg-success-soft text-success rounded-pill px-3 py-1 smaller shadow-none" onClick={() => handleUpdatePayment(fee._id)}>
+                                RECONCILE
+                              </Button>
+                              <Button variant="outline-secondary" size="sm" className="fw-bold border-0 bg-light text-secondary rounded-pill px-3 py-1 smaller shadow-none">
+                                LOG
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -218,34 +197,41 @@ const FeeManagement: React.FC = () => {
                     })
                   )}
                 </tbody>
-              </table>
+              </Table>
             </div>
 
-            {/* Pagination */}
+            {/* ── Pagination Segment ── */}
             {totalPages > 1 && (
-              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filteredFees.length)} of {filteredFees.length}</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
-                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
-                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
+              <div className="card-footer bg-white border-top border-light-dark p-4 d-flex justify-content-between align-items-center">
+                <span className="smaller text-secondary fw-medium">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, filteredFees.length)} of {filteredFees.length} entries</span>
+                <Pagination className="mb-0 gap-1 pagination-sm">
+                  <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Pagination.Item key={page} active={page === currentPage} onClick={() => setCurrentPage(page)}>
+                      {page}
+                    </Pagination.Item>
                   ))}
-                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
-                </div>
+                  <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                </Pagination>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </main>
     </div>
   );
 };
 
-const MetricCard: React.FC<{ label: string, value: string | number, color: string }> = ({ label, value, color }) => (
-  <div className="card" style={{ borderLeft: `4px solid ${color}` }}>
-    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>{label}</p>
-    <h3 style={{ fontSize: '1.5rem', margin: 0, color }}>{value}</h3>
-  </div>
+const MetricCol: React.FC<{ label: string, value: string | number, variant: string }> = ({ label, value, variant }) => (
+  <Col md={3}>
+    <Card className={`border-0 shadow-sm rounded-4 h-100 border-start border-5 border-${variant}`}>
+      <Card.Body className="p-4 py-3">
+        <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{label}</span>
+        <h4 className={`fw-bold text-dark mb-0 ls-1`}>{value}</h4>
+      </Card.Body>
+    </Card>
+  </Col>
 );
 
 export default FeeManagement;
+

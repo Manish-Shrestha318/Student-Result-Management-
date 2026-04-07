@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  GraduationCap, 
-  Calendar, 
-  Bell, 
-  FileText,
-  LogOut,
-  Download,
-  Search,
-  Eye,
-  CheckCircle2,
-  XCircle,
-  AlertCircle
-} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Card, Table, Badge, Button, Form, Spinner } from 'react-bootstrap';
 import AdminHeader from '../../components/AdminHeader';
 
 interface ReportData {
@@ -116,139 +103,155 @@ const StudentReports: React.FC = () => {
     navigate('/login');
   };
 
+  const getGradeVariant = (grade: string) => {
+    if (['A+', 'A', 'B+'].includes(grade)) return 'success';
+    if (['B', 'C+', 'C'].includes(grade)) return 'warning';
+    return 'danger';
+  };
+
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Sidebar */}
-      <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-        <div style={{ marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
+      <aside className="bg-white border-end d-flex flex-column px-4 py-5" style={{ width: '280px' }}>
+        <div className="mb-5 text-center">
+           <h4 className="fw-bold text-primary ls-1">SMARTRESULTS</h4>
+           <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
         </div>
         
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
-          <NavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
-          <NavItem icon={<Calendar size={20} />} label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
-          <NavItem icon={<Bell size={20} />} label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
-          <NavItem icon={<FileText size={20} />} label="Reports" active />
+        <nav className="flex-grow-1 d-flex flex-column gap-1">
+          <NavItem label="Dashboard" onClick={() => navigate('/dashboard/student')} />
+          <NavItem label="Results" onClick={() => navigate('/dashboard/student/results')} />
+          <NavItem label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
+          <NavItem label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
+          <NavItem label="Reports" active />
         </nav>
-
-        <button 
-          onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-        >
-          <LogOut size={20} />
-          Logout
-        </button>
       </aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Academic Reports" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Student Reports" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Controls */}
-          <div className="card" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Term</label>
-              <select 
-                value={term} 
-                onChange={(e) => setTerm(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="First Term">First Term</option>
-                <option value="Second Term">Second Term</option>
-                <option value="Final">Final Board</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Select Year</label>
-              <input 
-                type="number" 
-                value={year} 
-                onChange={(e) => setYear(parseInt(e.target.value))}
-                style={inputStyle}
-              />
-            </div>
-            <button 
-              onClick={fetchReportData} 
-              disabled={loading}
-              style={{ ...btnStyle, backgroundColor: 'var(--primary)', color: '#fff' }}
-            >
-              {loading ? 'Loading...' : <><Eye size={18} /> View Report</>}
-            </button>
-            {reportData && (
-              <button 
-                onClick={handleDownloadPDF}
-                style={{ ...btnStyle, backgroundColor: '#059669', color: '#fff' }}
-              >
-                <Download size={18} /> Download PDF
-              </button>
-            )}
-          </div>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Select Term ── */}
+          <Card className="border-0 shadow-sm rounded-4 p-4 mb-5">
+             <Row className="g-3 align-items-end text-uppercase smallest ls-1 fw-bold">
+                <Col md={3}>
+                  <Form.Group>
+                    <Form.Label className="text-muted mb-2">Term</Form.Label>
+                    <Form.Select 
+                      value={term} 
+                      onChange={(e) => setTerm(e.target.value)}
+                      className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
+                    >
+                      <option value="First Term">First Term</option>
+                      <option value="Second Term">Second Term</option>
+                      <option value="Final">Final Term</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={3}>
+                  <Form.Group>
+                    <Form.Label className="text-muted mb-2">Year</Form.Label>
+                    <Form.Control 
+                      type="number" 
+                      value={year} 
+                      onChange={(e) => setYear(parseInt(e.target.value))}
+                      className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={3}>
+                  <Button 
+                    onClick={fetchReportData} 
+                    disabled={loading}
+                    variant="primary"
+                    className="w-100 fw-bold smallest py-3 rounded-pill ls-1 text-uppercase shadow-sm"
+                  >
+                    {loading ? 'BUFFERING...' : 'PULL ANALYTICS'}
+                  </Button>
+                </Col>
+                <Col md={3}>
+                  {reportData && (
+                    <Button 
+                      onClick={handleDownloadPDF}
+                      variant="success"
+                      className="w-100 fw-bold smallest py-3 rounded-pill ls-1 text-uppercase shadow-sm"
+                    >
+                      DOWNLOAD PDF
+                    </Button>
+                  )}
+                </Col>
+             </Row>
+          </Card>
 
           {reportData ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Summary Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-                <StatCard label="Overall %" value={`${reportData.summary.overallPercentage}%`} color="var(--primary)" icon={<AwardIcon />} />
-                <StatCard label="Grade" value={reportData.summary.overallGrade} color="#7c3aed" icon={<MedalIcon />} />
-                <StatCard label="Attendance" value={reportData.summary.attendance} color="#ca8a04" icon={<Calendar size={20} />} />
-                <StatCard 
-                  label="Result Status" 
-                  value={reportData.summary.result} 
-                  color={reportData.summary.result === 'PASS' ? '#059669' : '#dc2626'} 
-                  icon={reportData.summary.result === 'PASS' ? <CheckCircle2 size={20} /> : <XCircle size={20} />} 
-                />
-              </div>
+            <div className="d-flex flex-column gap-5">
+              {/* ── Aggregate Performance Visualization ── */}
+              <Row className="g-4">
+                <Col sm={3}>
+                   <MetricCard label="AGGREGATE SCORE" value={`${reportData.summary.overallPercentage}%`} variant="primary" trend="SCALED PERCENTILE" />
+                </Col>
+                <Col sm={3}>
+                   <MetricCard label="LETTER GRADE" value={reportData.summary.overallGrade} variant="info" trend="ACADEMIC STANDING" />
+                </Col>
+                <Col sm={3}>
+                   <MetricCard label="INSTITUTIONAL ATTENDANCE" value={reportData.summary.attendance} variant="warning" trend="PRESENCE RATIO" />
+                </Col>
+                <Col sm={3}>
+                   <MetricCard label="DETERMINATION RESULT" value={reportData.summary.result} variant={reportData.summary.result === 'PASS' ? 'success' : 'danger'} trend="STATE EVALUATION" />
+                </Col>
+              </Row>
 
-              {/* Marks Table */}
-              <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0 }}>Subject-wise Breakdown</h3>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Generated for {reportData.student.name}</span>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#f8fafc', textAlign: 'left' }}>
-                      <th style={thStyle}>Subject</th>
-                      <th style={thStyle}>Marks</th>
-                      <th style={thStyle}>Total</th>
-                      <th style={thStyle}>Percentage</th>
-                      <th style={thStyle}>Grade</th>
-                      <th style={thStyle}>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reportData.marks.map((m, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={tdStyle}>{m.subject}</td>
-                        <td style={tdStyle}>{m.marksObtained}</td>
-                        <td style={tdStyle}>{m.totalMarks}</td>
-                        <td style={tdStyle}>{m.percentage}%</td>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: getGradeColor(m.grade) }}>{m.grade}</td>
-                        <td style={tdStyle}>{m.remarks}</td>
+              {/* ── Granular Subject Breakdown ── */}
+              <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary">
+                <Card.Header className="bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                   <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Instructional Breakdown Matrix</h6>
+                   <span className="smallest text-muted fw-bold text-uppercase ls-1 border-start ps-3 ms-3">Authenticated: <strong className="text-primary">{reportData.student.name.toUpperCase()}</strong></span>
+                </Card.Header>
+                <div className="table-responsive">
+                  <Table borderless hover className="align-middle mb-0 smallest fw-medium">
+                    <thead className="bg-light-soft text-uppercase smallest fw-bold ls-1 opacity-75">
+                      <tr className="border-bottom border-light">
+                        <th className="px-4 py-3">Subject</th>
+                        <th className="px-4 py-3 text-center">Marks Obtained</th>
+                        <th className="px-4 py-3 text-center">Total Marks</th>
+                        <th className="px-4 py-3 text-center">Grade</th>
+                        <th className="px-4 py-3 text-end">Remarks</th>
                       </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ backgroundColor: '#f8fafc', fontWeight: 800 }}>
-                      <td style={tdStyle}>TOTAL</td>
-                      <td style={tdStyle}>{reportData.summary.totalMarksObtained}</td>
-                      <td style={tdStyle}>{reportData.summary.totalMarks}</td>
-                      <td style={tdStyle}>{reportData.summary.overallPercentage}%</td>
-                      <td style={{ ...tdStyle, color: getGradeColor(reportData.summary.overallGrade) }}>{reportData.summary.overallGrade}</td>
-                      <td style={tdStyle}>{reportData.summary.result}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {reportData.marks.map((m, idx) => (
+                        <tr key={idx} className="border-bottom border-light shadow-sm-hover transition-all">
+                          <td className="px-4 py-4 fw-bold text-dark ls-1 text-uppercase">{m.subject}</td>
+                          <td className="px-4 py-4 text-center fw-bold fs-6">{m.marksObtained}</td>
+                          <td className="px-4 py-4 text-center text-muted fw-bold">{m.totalMarks}</td>
+                          <td className="px-4 py-4 text-center">
+                             <Badge bg={`${getGradeVariant(m.grade)}-soft`} text={getGradeVariant(m.grade)} className="fw-bold smaller text-uppercase px-3 py-2 rounded-pill ls-1 border">{m.grade} - {m.percentage}%</Badge>
+                          </td>
+                          <td className="px-4 py-4 text-end fw-bold text-muted text-uppercase smallest ls-1">{m.remarks || 'SATISFACTORY'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-light-soft border-top border-primary border-2 fw-bold">
+                      <tr>
+                        <td className="px-4 py-4 ls-1">AGGREGATE TOTAL</td>
+                        <td className="px-4 py-4 text-center fs-5 text-primary">{reportData.summary.totalMarksObtained}</td>
+                        <td className="px-4 py-4 text-center text-muted">{reportData.summary.totalMarks}</td>
+                        <td className="px-4 py-4 text-center fs-6 text-dark">{reportData.summary.overallPercentage}%</td>
+                        <td className="px-4 py-4 text-end">
+                           <Badge bg={reportData.summary.result === 'PASS' ? 'success' : 'danger'} className="fw-bold px-4 py-2 text-uppercase ls-1 rounded-1">{reportData.summary.result}</Badge>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </Table>
+                </div>
+              </Card>
             </div>
           ) : !loading && !error ? (
-            <div className="card" style={{ textAlign: 'center', padding: '5rem' }}>
-              <FileText size={64} color="var(--border-color)" style={{ marginBottom: '1.5rem' }} />
-              <h3>No Report Card Loaded</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>Select a term and click "View Report" to see your academic breakdown.</p>
-            </div>
+            <Card className="border-0 shadow-sm rounded-4 d-flex align-items-center justify-content-center p-5 text-center bg-white" style={{ minHeight: '400px' }}>
+               <div className="max-width-400">
+                  <h6 className="text-secondary fw-bold smallest text-uppercase ls-1 opacity-50 mb-3">Void Terminal State</h6>
+                  <p className="text-muted smaller fw-medium ls-1 px-4 opacity-75 uppercase">Specify evaluation parameters and pull analytics to initialize state visualization.</p>
+               </div>
+            </Card>
           ) : null}
         </div>
       </main>
@@ -256,66 +259,21 @@ const StudentReports: React.FC = () => {
   );
 };
 
-// Styles & Helpers
-const inputStyle = {
-  padding: '0.75rem 1rem',
-  borderRadius: '10px',
-  border: '1px solid var(--border-color)',
-  fontSize: '0.9rem',
-  outline: 'none',
-  backgroundColor: '#fff'
-};
-
-const btnStyle = {
-  padding: '0.75rem 1.5rem',
-  borderRadius: '10px',
-  border: 'none',
-  fontSize: '0.9rem',
-  fontWeight: 600,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  transition: 'all 0.2s'
-};
-
-const thStyle = { padding: '1.25rem 1.5rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' };
-const tdStyle = { padding: '1.25rem 1.5rem', fontSize: '0.9rem' };
-
-const NavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }> = ({ icon, label, active, onClick }) => (
-  <button onClick={onClick} style={{ 
-    display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', borderRadius: 'var(--btn-radius)', border: 'none', 
-    backgroundColor: active ? '#f1f5f9' : 'transparent', color: active ? 'var(--primary)' : 'var(--text-secondary)', fontSize: '0.95rem',
-    fontWeight: active ? 600 : 500, cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all 0.2s'
-  }}>
-    {icon} {label}
+const NavItem: React.FC<{ label: string, active?: boolean, onClick?: () => void }> = ({ label, active, onClick }) => (
+  <button onClick={onClick} className={`btn w-100 text-start py-2 px-3 rounded-pill border-0 mb-1 transition-all ${active ? 'bg-primary-soft text-primary fw-bold shadow-sm' : 'bg-transparent text-secondary fw-semibold'}`} style={{ fontSize: '0.94rem' }}>
+    <span className="ls-1 text-uppercase smallest">{label}</span>
   </button>
 );
 
-const StatCard = ({ label, value, color, icon }: any) => (
-  <div className="card" style={{ padding: '1.5rem', borderLeft: `4px solid ${color}` }}>
-    <div style={{ color, marginBottom: '0.75rem' }}>{icon}</div>
-    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</div>
-    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</div>
-  </div>
+const MetricCard: React.FC<{ label: string, value: string, variant: string, trend: string }> = ({ label, value, variant, trend }) => (
+  <Card className={`border-0 shadow-sm rounded-4 h-100 border-start border-5 border-${variant}`}>
+    <Card.Body className="p-4 py-3 text-center text-sm-start">
+      <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{label}</span>
+      <h3 className="fw-bold text-dark mb-1 ls-1">{value}</h3>
+      <div className={`smallest fw-bold text-uppercase ls-1 text-${variant}`}>{trend}</div>
+    </Card.Body>
+  </Card>
 );
-
-const AwardIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
-  </svg>
-);
-
-const MedalIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><circle cx="12" cy="18" r="4"/><path d="M12 14v8"/><path d="M9 18h6"/>
-  </svg>
-);
-
-const getGradeColor = (grade: string) => {
-  if (['A+', 'A', 'B+'].includes(grade)) return '#059669';
-  if (['B', 'C+', 'C'].includes(grade)) return '#ca8a04';
-  return '#dc2626';
-};
 
 export default StudentReports;
+

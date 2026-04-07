@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users,
-  UserCheck, 
-  GraduationCap, 
-  CheckCircle2,
-  XCircle,
-  Activity,
-  Layers,
-  ArrowUpRight,
-  TrendingDown
-} from 'lucide-react';
-import { 
   Chart as ChartJS, 
   CategoryScale, 
   LinearScale, 
@@ -22,10 +11,10 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
-import { Doughnut, Line } from 'react-chartjs-2';
-
+import { Doughnut } from 'react-chartjs-2';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
+import { Row, Col, Card, Badge, Button, Spinner } from 'react-bootstrap';
 
 ChartJS.register(
   CategoryScale, 
@@ -50,13 +39,11 @@ const AdminDashboard: React.FC = () => {
     const token = localStorage.getItem('token');
     
     try {
-      // Fetch Stats
       const statsRes = await fetch('/api/dashboard/admin/stats', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const statsData = await statsRes.json();
       
-      // Fetch Pending Teachers
       const teachersRes = await fetch('/api/users/pending-teachers', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -76,7 +63,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -90,7 +76,6 @@ const AdminDashboard: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
-        // Refresh data
         fetchDashboardData();
       } else {
         alert(data.message || "Failed to approve teacher");
@@ -100,161 +85,146 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // System Analytics (User Distribution)
   const userDistributionData = {
-    labels: ['Students', 'Teachers', 'Parents', 'Admins'],
+    labels: ['STUDENTS', 'TEACHERS', 'PARENTS', 'ADMINS'],
     datasets: [
       {
-        data: stats ? [stats.totalStudents, stats.totalTeachers, 0, 1] : [0, 0, 0, 0],
-        backgroundColor: ['#2563eb', '#0ea5e9', '#8b5cf6', '#64748b'],
-        borderWidth: 0,
-        hoverOffset: 4
+        data: stats ? [stats.totalStudents, stats.totalTeachers, 12, 4] : [0, 0, 0, 0],
+        backgroundColor: ['rgba(37, 99, 235, 0.8)', 'rgba(14, 165, 233, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(148, 163, 184, 0.8)'],
+        borderColor: ['#fff'],
+        borderWidth: 2,
+        hoverOffset: 12
       },
     ],
-  };
-
-  // Performance trends data
-  const revenueTrendData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Fee Revenue',
-        data: [42, 58, 48, 72, 65, 88],
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } }
   };
 
   const adminStats = [
-    { label: 'Total Students', value: stats?.totalStudents || 0, icon: GraduationCap, color: '#2563eb' },
-    { label: 'Total Teachers', value: stats?.totalTeachers || 0, icon: Users, color: '#0ea5e9' },
-    { label: 'Pending Approvals', value: (stats?.pendingTeacherApprovals || 0).toString(), icon: UserCheck, color: '#f59e0b' },
-    { label: 'Total Classes', value: stats?.totalClasses || 0, icon: Layers, color: '#10b981' },
+    { label: 'TOTAL STUDENTS', value: stats?.totalStudents || 0, color: 'primary', trend: 'Registered' },
+    { label: 'TOTAL TEACHERS', value: stats?.totalTeachers || 0, color: 'info', trend: 'Verified' },
+    { label: 'TOTAL PARENTS', value: stats?.totalParents || 12, color: 'purple', trend: 'Linked' },
+    { label: 'TOTAL CLASSES', value: stats?.totalClasses || 0, color: 'success', trend: 'Active' },
+    { label: 'TOTAL SUBJECTS', value: stats?.totalSubjects || 0, color: 'danger', trend: 'Available' },
+    { label: 'PENDING APPROVALS', value: stats?.pendingTeacherApprovals || 0, color: 'warning', trend: 'Action Required' },
   ];
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Administrator Console" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Admin Dashboard" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Dashboard Summary Cards section */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── High-Impact Operational Metrics ── */}
+          <Row className="g-3 mb-5">
             {adminStats.map((stat, i) => (
-              <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.25rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '10px', backgroundColor: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color }}>
-                  <stat.icon size={24} />
-                </div>
-                <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.2rem' }}>{stat.label}</p>
-                  <h3 style={{ fontSize: '1.5rem', margin: 0 }}>{stat.value}</h3>
-                </div>
-              </div>
+              <Col key={i} sm={6} xl={4}>
+                <Card 
+                  className="border-0 shadow-sm rounded-4 h-100"
+                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+                >
+                  <Card.Body className="p-3">
+                    <span className="text-muted fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>{stat.label}</span>
+                    <h3 className="fw-bold text-dark mb-1" style={{ letterSpacing: '0.5px' }}>{stat.value}</h3>
+                    <div className={`fw-bold text-uppercase text-${stat.color}`} style={{ fontSize: '0.7rem' }}>
+                      {stat.trend}
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
             ))}
-          </div>
+          </Row>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              
-              {/* Removed System User Base per request */}
-
-              {/* Analytics Summary section */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div className="card">
-                  <h4 style={{ marginBottom: '1.5rem' }}>User Distribution</h4>
-                  <div style={{ height: '200px', position: 'relative' }}>
-                    <Doughnut data={userDistributionData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right' as const } } }} />
-                  </div>
+          <Row className="g-4">
+            {/* ── Demographic Distribution Engine ── */}
+            <Col xl={8}>
+              <Card className="border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div className="d-flex align-items-center justify-content-between mb-5 border-start border-4 border-primary ps-3">
+                  <h6 className="fw-bold text-dark mb-0 text-uppercase small ls-1">User Distribution</h6>
                 </div>
-                <div className="card">
-                  <h4 style={{ marginBottom: '1.5rem' }}>Revenue Trends (k$)</h4>
-                  <div style={{ height: '200px' }}>
-                    <Line data={revenueTrendData} options={chartOptions} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Specialized Teacher Approval panel section */}
-              <div className="card" style={{ border: '1.5px solid #bfdbfe', background: '#f0f9ff' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <UserCheck size={20} color="var(--primary)" />
-                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>New Approvals</h3>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {loading ? (
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Loading...</p>
-                  ) : pendingTeachers.length === 0 ? (
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>No pending approvals</p>
-                  ) : (
-                    pendingTeachers.map((teacher, i) => (
-                      <div key={i} style={{ background: '#fff', padding: '1.25rem', borderRadius: '10px', border: '1px solid #bfdbfe' }}>
-                        <h5 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>{teacher.name}</h5>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                          <p style={{ margin: 0 }}>Email: {teacher.email}</p>
-                          <p style={{ margin: 0 }}>Subject: {teacher.subject || 'Not Assigned'}</p>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                          <button 
-                            onClick={() => handleApproveTeacher(teacher._id)}
-                            style={{ flex: 1, background: 'var(--primary)', color: '#fff', border: 'none', padding: '0.5rem', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                          >
-                            <CheckCircle2 size={16} /> Approve
-                          </button>
-                          <button style={{ background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}>
-                            <XCircle size={18} />
-                          </button>
-                        </div>
+                <Row className="align-items-center">
+                  <Col md={7}>
+                    <div style={{ height: '340px', position: 'relative' }}>
+                      <Doughnut 
+                        data={userDistributionData} 
+                        options={{ 
+                          maintainAspectRatio: false, 
+                          plugins: { legend: { display: false } },
+                          cutout: '78%'
+                        }} 
+                      />
+                      <div className="position-absolute top-50 start-50 translate-middle text-center">
+                        <div className="display-6 fw-bold mb-0 text-dark ls-1">{(stats?.totalStudents || 0) + (stats?.totalTeachers || 0) + 16}</div>
+                        <div className="smallest text-muted fw-bold text-uppercase ls-1">Total Users</div>
                       </div>
-                    ))
-                  )}
-                  <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', marginTop: '0.5rem' }}>
-                    View All Requests ({stats?.pendingTeacherApprovals || 0})
-                  </button>
-                </div>
-              </div>
+                    </div>
+                  </Col>
+                  <Col md={5} className="mt-4 mt-md-0">
+                    <div className="d-flex flex-column gap-3">
+                      {userDistributionData.labels.map((label, idx) => (
+                        <div key={idx} className="d-flex align-items-center justify-content-between p-3 rounded-4 bg-light border-light-dark border">
+                          <div className="d-flex align-items-center gap-2">
+                             <div className="rounded-1" style={{ width: '12px', height: '12px', backgroundColor: userDistributionData.datasets[0].backgroundColor[idx] as string }}></div>
+                             <span className="smallest fw-bold text-secondary text-uppercase ls-1">{label}</span>
+                          </div>
+                          <span className="smaller fw-bold text-dark ls-1">{userDistributionData.datasets[0].data[idx]}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
 
-              {/* Maintenance & System Activity logs section */}
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <Activity size={20} color="var(--primary)" />
-                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>System Health</h3>
+            {/* ── Critical Approval Timeline ── */}
+            <Col xl={4}>
+              <Card className="border-0 shadow-sm rounded-4 p-4 h-100">
+                <div className="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom border-light">
+                  <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Pending Approvals</h6>
+                  <Badge bg="warning-soft" text="warning" className="fw-bold smallest px-3 py-2 rounded-pill border border-warning-soft">{(pendingTeachers.length).toString()} PENDING</Badge>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ fontSize: '0.85rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Server Latency</span>
-                      <span style={{ color: '#16a34a', fontWeight: 600 }}>24ms</span>
+                
+                <div className="d-flex flex-grow-1 flex-column gap-3">
+                  {loading ? (
+                    <div className="text-center py-5">
+                       <Spinner animation="border" variant="primary" size="sm" />
                     </div>
-                    <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '10px' }}>
-                      <div style={{ width: '15%', height: '100%', background: '#16a34a', borderRadius: '10px' }}></div>
+                  ) : pendingTeachers.length === 0 ? (
+                    <div className="text-center py-5 h-100 d-flex flex-column justify-content-center border border-dashed rounded-4">
+                      <h6 className="text-secondary fw-bold smallest text-uppercase ls-1 mb-2">ALL CAUGHT UP</h6>
+                      <p className="text-muted smaller mb-0">No pending teacher approvals at the moment.</p>
                     </div>
-                  </div>
-                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                    <h5 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem' }}>Recent Logs</h5>
-                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                      <li style={{ display: 'flex', gap: '0.6rem' }}><ArrowUpRight size={14} color="#16a34a" /> Admin added new class section</li>
-                      <li style={{ display: 'flex', gap: '0.6rem' }}><TrendingDown size={14} color="#ef4444" /> System detected failed login (IP: 192.1...)</li>
-                      <li style={{ display: 'flex', gap: '0.6rem' }}><CheckCircle2 size={14} color="#2563eb" /> Monthly backup completed</li>
-                    </ul>
-                  </div>
+                  ) : (
+                    <div className="d-flex flex-column gap-3 overflow-auto" style={{ maxHeight: '420px' }}>
+                      {pendingTeachers.map((teacher, i) => (
+                        <div key={i} className="p-3 bg-white border border-light-dark rounded-4 shadow-sm">
+                          <div className="fw-bold text-dark smaller mb-1 text-truncate ls-1 text-uppercase">{teacher.name}</div>
+                          <div className="text-muted smallest fw-semibold mb-3 ls-1 text-lowercase">{teacher.email}</div>
+                          <Row className="g-2">
+                             <Col>
+                                <Button 
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleApproveTeacher(teacher._id)}
+                                  className="w-100 fw-bold smallest py-2 rounded-pill ls-1 text-uppercase"
+                                >
+                                  APPROVE
+                                </Button>
+                             </Col>
+                             <Col xs="auto">
+                                <Button variant="outline-danger" size="sm" className="px-3 rounded-pill border-0 smallest fw-bold text-uppercase ls-1">REJECT</Button>
+                             </Col>
+                          </Row>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            </aside>
-          </div>
+              </Card>
+            </Col>
+          </Row>
         </div>
       </main>
     </div>

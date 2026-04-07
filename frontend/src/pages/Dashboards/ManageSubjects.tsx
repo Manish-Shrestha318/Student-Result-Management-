@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import {
-  Plus, Edit, Trash2, X, Save, BookOpen, UserCheck
-} from 'lucide-react';
+import { Modal, Button, Form, Row, Col, Table, Badge, Pagination, InputGroup } from 'react-bootstrap';
 
 const ManageSubjects: React.FC = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -14,7 +12,7 @@ const ManageSubjects: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -59,7 +57,7 @@ const ManageSubjects: React.FC = () => {
   const openAddModal = () => {
     setModalMode('add');
     setForm({ name: '', code: '', class: '', teacherId: '', fullMarks: 100, passMarks: 40 });
-    setIsModalOpen(true);
+    setShowModal(true);
   };
 
   const openEditModal = (sub: any) => {
@@ -73,7 +71,7 @@ const ManageSubjects: React.FC = () => {
       fullMarks: sub.fullMarks || 100,
       passMarks: sub.passMarks || 40,
     });
-    setIsModalOpen(true);
+    setShowModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +87,7 @@ const ManageSubjects: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok || data.success) {
-        setIsModalOpen(false);
+        setShowModal(false);
         fetchSubjects();
       } else {
         alert(data.message || 'Operation failed');
@@ -133,121 +131,109 @@ const ManageSubjects: React.FC = () => {
   const currentSubjects = filtered.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-  // color by subject type index  
-  const colors = ['#2563eb', '#0ea5e9', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
-
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Manage Subjects" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Curriculum Authority" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Page Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Curriculum Header ── */}
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 pb-3 border-bottom border-light-dark gap-4">
             <div>
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Subject Directory</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>
-                Define subjects, assign teachers, and set grade thresholds.
-              </p>
+              <h3 className="fw-bold text-dark mb-1">Subjects</h3>
+              <p className="text-secondary small mb-0">Manage all subjects, marks, and teacher assignments.</p>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Search subjects..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                style={{ padding: '0.7rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none', fontSize: '0.9rem', width: '220px' }}
-              />
-              <button className="btn-primary" onClick={openAddModal}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
-                <Plus size={18} /> Add Subject
-              </button>
+            <div className="d-flex gap-3 align-items-center">
+              <InputGroup className="shadow-none border-light-dark" style={{ width: '280px' }}>
+                <Form.Control
+                  placeholder="Filter by subject/code..."
+                  className="py-2 border-end-0 shadow-none smaller fw-medium"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+              <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm" onClick={openAddModal}>
+                REGISTER SUBJECT
+              </Button>
             </div>
           </div>
 
-          {/* Subject Table */}
+          {/* ── Data Terminal ── */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>Loading subjects...</div>
+            <div className="py-5 text-center text-muted fw-bold">Synchronizing curriculum records...</div>
           ) : filtered.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
-              <BookOpen size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
-              <h4 style={{ color: 'var(--text-secondary)' }}>No subjects found</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Try adding a subject or changing search terms.</p>
+            <div className="card shadow-sm border-0 rounded-4 py-5 text-center">
+              <div className="card-body">
+                <h5 className="text-secondary fw-bold mb-2">No subjects matched your criteria</h5>
+                <p className="text-muted small mb-0">Try refining your filter or creating a new subject record.</p>
+              </div>
             </div>
           ) : (
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Subject</th>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Code</th>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Class</th>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Assigned Teacher</th>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Marks (Full / Pass)</th>
-                      <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+            <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
+              <div className="table-responsive">
+                <Table hover className="align-middle mb-0">
+                  <thead className="bg-light border-bottom border-light-dark">
+                    <tr>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Module Name</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Unique Code</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Target Cohort</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Strategic Lead</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Benchmark (Full/Pass)</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Governance</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentSubjects.map((sub, idx) => (
-                      <tr key={sub._id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: colors[idx % colors.length] + '20', color: colors[idx % colors.length], display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <BookOpen size={16} />
-                            </div>
-                            <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{sub.name}</span>
-                          </div>
+                    {currentSubjects.map((sub) => (
+                      <tr key={sub._id} className="transition-all">
+                        <td className="px-4 py-3">
+                          <span className="fw-bold text-dark">{sub.name}</span>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <span style={{ padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: '#f1f5f9', fontSize: '0.8rem', fontWeight: 600, fontFamily: 'monospace' }}>
+                        <td className="px-4 py-3">
+                          <code className="bg-secondary bg-opacity-10 text-primary px-2 py-1 rounded small fw-bold">
                             {sub.code}
-                          </span>
+                          </code>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{sub.class}</td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                            <UserCheck size={15} color="var(--primary)" />
-                            {getTeacherName(sub.teacherId)}
+                        <td className="px-4 py-3 text-secondary smaller fw-medium">{sub.class}</td>
+                        <td className="px-4 py-3">
+                          <span className="small fw-semibold text-dark">{getTeacherName(sub.teacherId)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="d-flex align-items-center gap-2">
+                             <Badge bg="success-soft" text="success" className="fw-bold smaller border px-2 py-1">{sub.fullMarks}</Badge>
+                             <span className="text-muted smaller">/</span>
+                             <Badge bg="danger-soft" text="danger" className="fw-bold smaller border px-2 py-1">{sub.passMarks}</Badge>
                           </div>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                            <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', background: '#dcfce7', color: '#15803d', fontSize: '0.8rem', fontWeight: 600 }}>{sub.fullMarks}</span>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>/</span>
-                            <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', background: '#fee2e2', color: '#b91c1c', fontSize: '0.8rem', fontWeight: 600 }}>{sub.passMarks}</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                            <button onClick={() => openEditModal(sub)} title="Edit"
-                              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', color: 'var(--primary)' }}>
-                              <Edit size={15} />
-                            </button>
-                            <button onClick={() => handleDelete(sub._id)} title="Delete"
-                              style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff', cursor: 'pointer', color: '#dc2626' }}>
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+                        <td className="px-4 py-3 text-end">
+                           <div className="d-flex justify-content-end gap-1">
+                              <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light" onClick={() => openEditModal(sub)}>
+                                UPDATE
+                              </Button>
+                              <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(sub._id)}>
+                                DELETE
+                              </Button>
+                           </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                 </table>
+                </Table>
               </div>
 
-              {/* Pagination */}
+              {/* ── Control Flow Pagination ── */}
               {totalPages > 1 && (
-                <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filtered.length)} of {filtered.length} subjects</span>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
-                    {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
-                      <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
+                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white">
+                  <span className="smaller text-secondary fw-medium">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, filtered.length)} of {filtered.length} resources</span>
+                  <Pagination className="mb-0 gap-1 pagination-sm">
+                    <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>
+                        {p}
+                      </Pagination.Item>
                     ))}
-                    <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
-                  </div>
+                    <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
+                  </Pagination>
                 </div>
               )}
             </div>
@@ -255,79 +241,106 @@ const ManageSubjects: React.FC = () => {
         </div>
       </main>
 
-      {/* Add/Edit Modal */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '550px', padding: '2rem', position: 'relative' }}>
-            <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-              <X size={22} />
-            </button>
-            <h3 style={{ margin: '0 0 1.75rem', fontSize: '1.25rem' }}>
-              {modalMode === 'add' ? 'Create New Subject' : 'Edit Subject'}
-            </h3>
+      {/* ── Operational Terminal (Modal) ── */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered className="border-0 shadow-lg">
+        <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+          <Modal.Title className="fw-bold text-dark fs-5">
+            {modalMode === 'add' ? 'REGISTER NEW MODULE' : 'RECONFIGURE MODULE'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleSubmit}>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Subject Full Name</Form.Label>
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. Mathematics" 
+                  value={form.name} 
+                  onChange={e => setForm({ ...form, name: e.target.value })} 
+                />
+              </Col>
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Registry Code</Form.Label>
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. MATH101" 
+                  value={form.code} 
+                  onChange={e => setForm({ ...form, code: e.target.value })} 
+                />
+              </Col>
+            </Row>
 
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Subject Name</label>
-                  <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Mathematics" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Subject Code</label>
-                  <input required value={form.code} onChange={e => setForm({ ...form, code: e.target.value })}
-                    placeholder="e.g. MATH101" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-              </div>
+            <Form.Group className="mb-3">
+              <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Assigned Cohort (Class)</Form.Label>
+              <Form.Control 
+                required 
+                type="text" 
+                className="py-2 border-light-dark shadow-none" 
+                placeholder="e.g. Grade 10" 
+                value={form.class} 
+                onChange={e => setForm({ ...form, class: e.target.value })} 
+              />
+            </Form.Group>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Class</label>
-                <input required value={form.class} onChange={e => setForm({ ...form, class: e.target.value })}
-                  placeholder="e.g. Grade 10" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-              </div>
+            <Form.Group className="mb-3">
+              <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Strategic Module Lead (Teacher)</Form.Label>
+              <Form.Select 
+                required 
+                className="py-2 border-light-dark shadow-none" 
+                value={form.teacherId} 
+                onChange={e => setForm({ ...form, teacherId: e.target.value })}
+              >
+                <option value="">Choose a verified instructor...</option>
+                {teachers.map(t => (
+                  <option key={t._id} value={t._id}>{t.name} — {t.email}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                  Assign Teacher
-                </label>
-                <select required value={form.teacherId} onChange={e => setForm({ ...form, teacherId: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: '#fff' }}>
-                  <option value="">— Select a Teacher —</option>
-                  {teachers.map(t => (
-                    <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
-                  ))}
-                </select>
-              </div>
+            <Row className="g-3 mb-4">
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Max Capacity (Marks)</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  required 
+                  className="py-2 border-light-dark shadow-none" 
+                  value={form.fullMarks} 
+                  onChange={e => setForm({ ...form, fullMarks: Number(e.target.value) })} 
+                  min={1} 
+                />
+              </Col>
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Threshold (Pass Marks)</Form.Label>
+                <Form.Control 
+                  type="number" 
+                  required 
+                  className="py-2 border-light-dark shadow-none" 
+                  value={form.passMarks} 
+                  onChange={e => setForm({ ...form, passMarks: Number(e.target.value) })} 
+                  min={1} 
+                />
+              </Col>
+            </Row>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Full Marks</label>
-                  <input type="number" required value={form.fullMarks} onChange={e => setForm({ ...form, fullMarks: Number(e.target.value) })}
-                    min={1} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Pass Marks</label>
-                  <input type="number" required value={form.passMarks} onChange={e => setForm({ ...form, passMarks: Number(e.target.value) })}
-                    min={1} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={formLoading}
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                  {formLoading ? 'Saving...' : <><Save size={16} /> {modalMode === 'add' ? 'Create Subject' : 'Save Changes'}</>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="d-flex gap-2 pt-2">
+              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-2" onClick={() => setShowModal(false)}>
+                DISCARD
+              </Button>
+              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-2" disabled={formLoading}>
+                {formLoading ? 'PROCESSING...' : (modalMode === 'add' ? 'CONFIRM REGISTRY' : 'SAVE CHANGES')}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default ManageSubjects;
+

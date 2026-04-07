@@ -1,20 +1,6 @@
-import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  BookOpen, 
-  Edit3, 
-  FileBarChart, 
-  MessageSquare, 
-  LogOut, 
-  Plus,
-  ExternalLink,
-  Search,
-  MoreVertical,
-  Layers,
-  TrendingUp,
-  AlertCircle
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Row, Col, Card, Table, Button, Form, Badge, InputGroup } from 'react-bootstrap';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -27,7 +13,7 @@ import {
   Legend 
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useNavigate } from 'react-router-dom';
+import AdminHeader from '../../components/AdminHeader';
 
 ChartJS.register(
   CategoryScale, 
@@ -39,8 +25,6 @@ ChartJS.register(
   Tooltip, 
   Legend
 );
-
-import AdminHeader from '../../components/AdminHeader';
 
 const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -72,19 +56,8 @@ const TeacherDashboard: React.FC = () => {
     }
   };
 
-  const teacherStats = [
-    { label: 'Assigned Classes', value: stats.assignedClasses.toString(), icon: Layers, color: '#2563eb' },
-    { label: 'Total Students', value: stats.totalStudents.toString(), icon: Users, color: '#0ea5e9' },
-    { label: 'Subjects Handled', value: stats.subjectsHandled.toString(), icon: BookOpen, color: '#8b5cf6' },
-  ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -109,7 +82,7 @@ const TeacherDashboard: React.FC = () => {
         }
 
         if (noticesData.success && noticesData.data) {
-          setAnnouncements(noticesData.data.slice(0, 3));
+          setAnnouncements(Array.isArray(noticesData.data) ? noticesData.data.slice(0, 3) : []);
         }
 
       } catch (err) {
@@ -125,247 +98,225 @@ const TeacherDashboard: React.FC = () => {
   const userData = JSON.parse(localStorage.getItem('user') || '{}');
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Teacher Sidebar Navigation */}
-      <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-        <div style={{ marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
+      {/* ── Teacher Sidebar ── */}
+      <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', zIndex: 10 }}>
+        <div className="mb-5 px-3">
+          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+          <span className="smallest text-muted fw-bold text-uppercase ls-1">Teacher</span>
         </div>
         
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active />
-          <NavItem icon={<Layers size={20} />} label="Classes" />
-          <NavItem icon={<Users size={20} />} label="Students" />
-          <NavItem icon={<Edit3 size={20} />} label="Mark Entry" />
-          <NavItem icon={<FileBarChart size={20} />} label="Reports" />
-          <NavItem icon={<MessageSquare size={20} />} label="Messages" />
+        <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
+          <NavItem label="Dashboard" active />
+          <NavItem label="Classes" />
+          <NavItem label="Students" />
+          <NavItem label="Results" />
+          <NavItem label="Stats" />
+          <NavItem label="Messages" />
         </nav>
-
-        <button 
-          onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-        >
-          <LogOut size={20} />
-          Logout
-        </button>
       </aside>
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      {/* ── Teacher Main ── */}
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
         <AdminHeader title="Teacher Dashboard" error={error} />
 
-        <div style={{ padding: '3rem' }}>
-          {/* Action Header section */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Status Header ── */}
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
             <div>
-              <h3 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Welcome back, {userData.name ? userData.name.split(' ')[0] : 'Teacher'}!</h3>
-              <p style={{ color: 'var(--text-secondary)' }}>You have {messages.length > 0 ? messages.length : 'no'} new messages.</p>
+              <h3 className="fw-bold text-dark mb-1">Welcome: {userData.name || 'Teacher'}</h3>
+              <p className="text-secondary small mb-0 fw-medium">Status: Logged In | {messages.length} new messages.</p>
             </div>
-            <button className="btn-primary" style={{ width: 'auto', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <Edit3 size={18} />
-              Enter Marks
-            </button>
+            <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm ls-1 smallest text-uppercase">
+               GO TO RESULTS
+            </Button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '3rem' }}>
-            {teacherStats.map((stat, i) => (
-              <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '12px', backgroundColor: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: stat.color }}>
-                  <stat.icon size={28} />
-                </div>
-                <div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</p>
-                  <h3 style={{ fontSize: '1.75rem', marginBottom: 0 }}>{stat.value}</h3>
-                </div>
-              </div>
+          {/* ── Key Metrics ── */}
+          <Row className="g-4 mb-5">
+            {[
+               { label: 'CLASSES', value: stats.assignedClasses, color: 'primary' },
+               { label: 'STUDENTS', value: stats.totalStudents, color: 'info' },
+               { label: 'SUBJECTS', value: stats.subjectsHandled, color: 'success' },
+            ].map((stat, i) => (
+              <Col key={i} md={4}>
+                <Card className="border-0 shadow-sm rounded-4 h-100">
+                  <Card.Body className="p-4">
+                    <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-2">{stat.label}</span>
+                    <h2 className="display-5 fw-bold text-dark mb-0 ls-1">{stat.value}</h2>
+                  </Card.Body>
+                </Card>
+              </Col>
             ))}
-          </div>
+          </Row>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Student Management Table section */}
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h3>Assigned Students</h3>
-                  <div style={{ position: 'relative' }}>
-                    <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={16} />
-                    <input type="text" placeholder="Search student..." style={{ padding: '0.5rem 1rem 0.5rem 2.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.875rem', outline: 'none' }} />
+          <Row className="g-4">
+            <Col xl={8}>
+              {/* ── Student List ── */}
+              <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <Card.Header className="bg-white border-0 p-4 pb-0">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="fw-bold text-dark mb-0 text-uppercase smallest ls-1">My Students</h5>
+                    <InputGroup className="w-auto shadow-none">
+                      <Form.Control 
+                        placeholder="Search..." 
+                        className="py-1 smaller border-light-dark shadow-none fw-medium" 
+                        style={{ width: '220px' }}
+                      />
+                    </InputGroup>
                   </div>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-color)' }}>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Student Name</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Attendance</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Performance</th>
-                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loading ? (
-                        <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading students...</td></tr>
-                      ) : students.length === 0 ? (
-                        <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No students found.</td></tr>
-                      ) : (
-                        students.map((student: any, i: number) => (
-                          <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{student.name}</span>
-                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{student.email}</span>
-                                  <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 500, marginTop: '0.2rem' }}>Class: {student.class} | Roll No: {student.id}</span>
-                                </div>
-                              </td>
-                              <td style={{ padding: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }}></div>
-                                  {student.attendance}
-                                </div>
-                              </td>
-                              <td style={{ padding: '1rem' }}><span style={{ padding: '0.25rem 0.6rem', borderRadius: '6px', backgroundColor: '#eef2ff', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem' }}>{student.performance}</span></td>
-                              <td style={{ padding: '1rem' }}>
-                                <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><MoreVertical size={18} /></button>
-                              </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', marginTop: '1.5rem', width: '100%', textAlign: 'center' }}>View All Students →</button>
-              </div>
+                </Card.Header>
+                <Card.Body className="p-0">
+                  <div className="table-responsive">
+                    <Table hover className="align-middle mb-0">
+                      <thead className="bg-light-soft border-bottom border-light-dark">
+                        <tr>
+                           <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Name</th>
+                          <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-center">Attendance</th>
+                          <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-center">Performance</th>
+                          <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading ? (
+                           <tr><td colSpan={4} className="py-5 text-center text-muted fw-bold small italic">Loading students...</td></tr>
+                        ) : students.length === 0 ? (
+                           <tr><td colSpan={4} className="py-5 text-center text-muted small fw-medium">No students found.</td></tr>
+                        ) : (
+                          students.map((student: any, i: number) => (
+                            <tr key={i}>
+                                <td className="px-4 py-3">
+                                  <div className="d-flex flex-column">
+                                    <span className="fw-bold text-dark smallest text-uppercase ls-1">{student.name}</span>
+                                    <span className="smallest text-muted fw-bold text-lowercase">{student.email}</span>
+                                    <Badge bg="light" text="primary" className="mt-2 border fw-bold smallest text-start d-inline-block ls-1" style={{ width: 'fit-content' }}>
+                                      CHRT: {student.class} | ID: {student.id}
+                                    </Badge>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                   <Badge bg="success-soft" text="success" className="rounded-pill px-3 py-2 smallest fw-bold border text-uppercase">
+                                      {student.attendance} %
+                                   </Badge>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                   <Badge bg="primary-soft" text="primary" className="rounded-pill px-3 py-2 smallest fw-bold border text-uppercase">
+                                      {student.performance}
+                                   </Badge>
+                                </td>
+                                <td className="px-4 py-3 text-end">
+                                    <Button variant="link" size="sm" className="text-secondary text-decoration-none fw-bold smallest border px-3 rounded-pill ls-1">VIEW</Button>
+                                </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </Table>
+                  </div>
+                  <div className="p-3 text-center border-top border-light-dark bg-white">
+                     <Button variant="link" className="text-primary text-decoration-none fw-bold smallest ls-1 text-uppercase">VIEW ALL STUDENTS &rarr;</Button>
+                  </div>
+                </Card.Body>
+              </Card>
 
-              {/* Class Trend Visual section */}
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h3>Class Performance Trends</h3>
-                  <select style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.875rem', outline: 'none' }}>
-                    <option>Weekly View</option>
-                    <option>Monthly View</option>
-                    <option>Term View</option>
-                  </select>
+              {/* ── Class Performance ── */}
+              <Card className="border-0 shadow-sm rounded-4 p-4 border-bottom border-4 border-primary">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                   <h5 className="fw-bold text-dark mb-0 smallest text-uppercase ls-2">CLASS PERFORMANCE</h5>
+                  <Form.Select className="w-auto shadow-none border-light-dark smallest fw-bold py-1 text-uppercase">
+                     <option>THIS TERM</option>
+                    <option>PREVIOUS TERMS</option>
+                  </Form.Select>
                 </div>
-                <div style={{ height: '280px' }}>
+                <div className="bg-light-soft rounded-4 p-3" style={{ height: '340px' }}>
                   {loading ? (
-                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>Loading chart data...</div>
+                     <div className="h-100 d-flex align-items-center justify-content-center text-muted fw-bold smallest italic ls-2 uppercase">Loading chart...</div>
                   ) : classPerformanceData.labels.length > 0 ? (
                     <Bar data={classPerformanceData} options={chartOptions} />
                   ) : (
-                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No performance data available</div>
+                     <div className="h-100 d-flex align-items-center justify-content-center text-muted smallest fw-bold ls-2 text-uppercase opacity-50 border border-dashed rounded-4">NO DATA TO DISPLAY</div>
                   )}
                 </div>
-              </div>
-            </div>
+              </Card>
+            </Col>
 
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Quick Communication panel */}
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <MessageSquare size={20} color="var(--primary)" />
-                    <h3 style={{ margin: 0, fontSize: '1.125rem' }}>Recent Messages</h3>
-                  </div>
-                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Plus size={20}/></button>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {messages.length === 0 && !loading && (
-                    <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No new messages.</div>
-                  )}
-                  {messages.map((msg: any, i: number) => (
-                    <div key={i} style={{ padding: '1rem', borderRadius: '10px', background: msg.unread ? '#f0f7ff' : '#fff', border: msg.unread ? '1px solid #bfdbfe' : '1px solid var(--border-color)', position: 'relative' }}>
-                      {msg.unread && <span style={{ position: 'absolute', right: '10px', top: '10px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>}
-                      <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>{msg.from}</h5>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.subject}</p>
-                      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{msg.time}</p>
+            <Col xl={4}>
+              <div className="d-flex flex-column gap-4 pb-5">
+                {/* ── Messages ── */}
+                <Card className="border-0 shadow-sm rounded-4">
+                  <Card.Body className="p-4">
+                    <div className="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3 border-light-dark">
+                        <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-2">MESSAGES</h6>
+                        <Button variant="link" className="text-primary p-0 text-decoration-none fw-bold smallest text-uppercase ls-1">VIEW ALL</Button>
                     </div>
-                  ))}
-                  <button className="btn-primary" style={{ fontSize: '0.9rem', padding: '0.6rem' }}>Open Inbox</button>
-                </div>
-              </div>
+                    <div className="d-flex flex-column gap-3">
+                      {messages.length === 0 && !loading && (
+                         <div className="py-5 text-center text-muted smallest fw-bold italic ls-2 border border-dashed rounded-4 opacity-50 uppercase">NO MESSAGES</div>
+                      )}
+                      {messages.map((msg: any, i: number) => (
+                        <div key={i} className={`p-3 rounded-4 border transition-all cursor-pointer ${msg.unread ? 'border-primary bg-primary-soft bg-opacity-10' : 'border-light-dark bg-light-soft'}`}>
+                          <h6 className="fw-bold text-dark mb-1 smallest text-uppercase ls-1">{msg.from}</h6>
+                          <p className="smallest text-secondary mb-2 lh-base text-wrap word-break">{msg.subject}</p>
+                          <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{msg.time}</span>
+                        </div>
+                      ))}
+                       <Button variant="primary" className="fw-bold w-100 py-3 rounded-pill shadow-sm smallest ls-1 text-uppercase mt-2">VIEW INBOX</Button>
+                    </div>
+                  </Card.Body>
+                </Card>
 
-              {/* Announcements section */}
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <Bell size={20} color="var(--primary)" />
-                  <h3 style={{ margin: 0, fontSize: '1.125rem' }}>School Announcements</h3>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {announcements.length === 0 ? (
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No recent announcements.</p>
-                  ) : (
-                    announcements.map((ann, i) => (
-                      <div key={i} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', borderLeft: '4px solid var(--primary)' }}>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(ann.createdAt).toLocaleDateString()}</p>
-                        <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>{ann.title}</h4>
-                        <p style={{ fontSize: '0.875rem' }}>{ann.content.substring(0, 80)}...</p>
-                      </div>
-                    ))
-                  )}
-                  <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', padding: 0 }}>View All Notices →</button>
-                </div>
-              </div>
+                {/* ── Institutional Briefs ── */}
+                <Card className="border-0 shadow-sm rounded-4 border-end border-4 border-primary">
+                   <Card.Body className="p-4">
+                     <h6 className="fw-bold text-dark mb-4 text-uppercase smallest ls-2 border-bottom pb-3 border-light-dark">RECENT NOTICES</h6>
+                    <div className="d-flex flex-column gap-4">
+                      {announcements.length === 0 ? (
+                         <div className="p-5 text-center text-muted smallest fw-bold text-uppercase ls-2 italic opacity-50 border border-dashed rounded-4">NO RECENT NOTICES</div>
+                      ) : (
+                        announcements.map((ann, i) => (
+                          <div key={i} className="border-start border-light-dark ps-3 py-1 last-pb-0">
+                             <span className="smallest text-primary fw-bold text-uppercase ls-1 d-block mb-1">{new Date(ann.createdAt).toLocaleDateString()}</span>
+                             <h6 className="fw-bold mb-1 smallest text-uppercase ls-1">{ann.title}</h6>
+                             <p className="smallest text-secondary mb-0 lh-base">{ann.content.substring(0, 80)}...</p>
+                          </div>
+                        ))
+                      )}
+                       <Button variant="link" className="text-primary text-decoration-none fw-bold smallest p-0 text-start ls-1 text-uppercase">VIEW ALL NOTICES &rarr;</Button>
+                    </div>
+                   </Card.Body>
+                </Card>
 
-              {/* Performance Summaries section */}
-              <div className="card">
-                <h3 style={{ fontSize: '1.125rem', marginBottom: '1.25rem' }}>Performance Insights</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <TrendingUp size={20} color="#16a34a" />
+                {/* ── System Insights ── */}
+                <Card className="border-0 shadow-sm rounded-4 bg-dark text-white">
+                  <Card.Body className="p-4">
+                     <h6 className="fw-bold text-white mb-4 text-uppercase smallest ls-2 border-bottom border-secondary border-opacity-25 pb-3">SUGGESTIONS</h6>
+                    <div className="d-flex flex-column gap-4">
+                       <div className="p-3 bg-white bg-opacity-10 rounded-4 border-start border-4 border-success">
+                           <h6 className="text-white fw-bold mb-1 smallest text-uppercase ls-1">GOOD PROGRESS</h6>
+                          <p className="smallest text-white-50 mb-0 lh-base opacity-75">Class 10-A math marks increased by 12.4% during the final term.</p>
+                       </div>
+                       <div className="p-3 bg-white bg-opacity-10 rounded-4 border-start border-4 border-danger">
+                           <h6 className="text-white fw-bold mb-1 smallest text-uppercase ls-1">ATTENTION NEEDED</h6>
+                          <p className="smallest text-white-50 mb-0 lh-base opacity-75">Class 10-B: Decreasing performance detected in a small group (5 students).</p>
+                       </div>
                     </div>
-                    <div>
-                      <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>Maths Improvement</h5>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Class 10-A showed a 12% increase in algebra scores this week.</p>
-                    </div>
-                  </div>
-                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <AlertCircle size={20} color="#e11d48" />
-                    </div>
-                    <div>
-                      <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem' }}>Low Attendance Alert</h5>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5 students from Class 10-B have missed more than 3 classes this term.</p>
-                    </div>
-                  </div>
-                </div>
-                <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', marginTop: '1.5rem' }}>View Specific Insights <ExternalLink size={14} /></button>
+                     <Button variant="outline-light" className="w-100 fw-bold border-light border-opacity-25 mt-4 smallest py-3 ls-1 rounded-pill text-uppercase shadow-none">VIEW DETAILS</Button>
+                  </Card.Body>
+                </Card>
               </div>
-            </aside>
-          </div>
+            </Col>
+          </Row>
         </div>
       </main>
     </div>
   );
 };
 
-// Nav Item Component
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => (
-  <button style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '0.75rem', 
-    padding: '0.875rem 1.25rem', 
-    borderRadius: 'var(--btn-radius)', 
-    border: 'none', 
-    backgroundColor: active ? '#f1f5f9' : 'transparent', 
-    color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-    fontSize: '0.95rem',
-    fontWeight: active ? 600 : 500,
-    cursor: 'pointer',
-    width: '100%',
-    textAlign: 'left',
-    transition: 'all 0.2s'
-  }}>
-    {icon}
-    {label}
+const NavItem: React.FC<{ label: string, active?: boolean, onClick?: () => void }> = ({ label, active, onClick }) => (
+  <button onClick={onClick} className={`btn w-100 text-start py-3 px-4 rounded-pill border-0 transition-all mb-1 ${active ? 'bg-primary text-white fw-bold shadow-sm' : 'bg-transparent text-secondary fw-semibold hover-bg-light'}`} style={{ fontSize: '0.85rem' }}>
+    <span className="ls-1 text-uppercase smallest">{label}</span>
   </button>
 );
 
 export default TeacherDashboard;
+

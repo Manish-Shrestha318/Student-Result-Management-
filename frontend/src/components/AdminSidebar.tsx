@@ -1,90 +1,51 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserCheck, 
-  GraduationCap, 
-  FileText, 
-  BarChart3, 
-  CreditCard, 
-  Bell,
-  BookOpen,
-  Layers,
-  LogOut 
-} from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavItemProps {
-  icon: React.ReactNode;
   label: string;
   path: string;
   active?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, path, active }) => {
+const NavItem: React.FC<NavItemProps> = ({ label, path, active }) => {
   const navigate = useNavigate();
   return (
     <button 
       onClick={() => navigate(path)}
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.75rem', 
-        padding: '0.875rem 1.25rem', 
-        borderRadius: 'var(--btn-radius)', 
-        border: 'none', 
-        backgroundColor: active ? '#f1f5f9' : 'transparent', 
-        color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-        fontSize: '0.95rem',
-        fontWeight: active ? 600 : 500,
-        cursor: 'pointer',
-        width: '100%',
-        textAlign: 'left',
-        transition: 'all 0.2s'
-      }}
+      className={`btn w-100 text-start py-2 px-3 rounded-3 border-0 mb-0 ${active ? 'bg-primary text-white shadow-sm fw-bold' : 'bg-transparent text-secondary fw-medium'}`}
+      style={{ fontSize: '0.88rem', transition: 'all 0.2s ease' }}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = '#f0f4ff'; }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
     >
-      {icon}
-      {label}
+      <span className="text-uppercase" style={{ letterSpacing: '0.5px' }}>{label}</span>
     </button>
   );
 };
 
 const AdminSidebar: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
-
   return (
-    <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-      <div style={{ marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+    <aside className="d-flex flex-column flex-shrink-0 p-3 bg-white border-end shadow-sm" style={{ width: '250px', height: '100vh', zIndex: 1000 }}>
+      <div className="mb-4 px-2 pt-2">
+        <h5 className="fw-bold text-primary mb-0" style={{ letterSpacing: '1px' }}>SMARTRESULTS</h5>
+        <span className="text-muted fw-bold text-uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.5px' }}>Admin Panel</span>
       </div>
       
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-        <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" path="/dashboard/admin" active={location.pathname === '/dashboard/admin'} />
-        <NavItem icon={<Users size={20} />} label="Manage Users" path="/dashboard/admin/users" active={location.pathname === '/dashboard/admin/users'} />
-        <NavItem icon={<UserCheck size={20} />} label="Teacher Approvals" path="/dashboard/admin/approvals" active={location.pathname === '/dashboard/admin/approvals'} />
-        <NavItem icon={<GraduationCap size={20} />} label="Student Records" path="/dashboard/admin/students" active={location.pathname === '/dashboard/admin/students'} />
-        <NavItem icon={<Layers size={20} />} label="Manage Classes" path="/dashboard/admin/classes" active={location.pathname === '/dashboard/admin/classes'} />
-        <NavItem icon={<BookOpen size={20} />} label="Manage Subjects" path="/dashboard/admin/subjects" active={location.pathname === '/dashboard/admin/subjects'} />
-        <NavItem icon={<FileText size={20} />} label="Reports" path="/dashboard/admin/reports" active={location.pathname === '/dashboard/admin/reports'} />
-        <NavItem icon={<BarChart3 size={20} />} label="Analytics" path="/dashboard/admin/analytics" active={location.pathname === '/dashboard/admin/analytics'} />
-        <NavItem icon={<CreditCard size={20} />} label="Fee Management" path="/dashboard/admin/fees" active={location.pathname === '/dashboard/admin/fees'} />
-        <NavItem icon={<Bell size={20} />} label="Notices & Board" path="/dashboard/admin/notices" active={location.pathname === '/dashboard/admin/notices'} />
-      </nav>
-
-      <button 
-        onClick={handleLogout}
-        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-      >
-        <LogOut size={20} />
-        Logout
-      </button>
+      <div className="flex-grow-1 overflow-auto pe-1 d-flex flex-column">
+        <NavItem label="Dashboard" path="/dashboard/admin" active={location.pathname === '/dashboard/admin'} />
+        <NavItem label="User Management" path="/dashboard/admin/users" active={location.pathname === '/dashboard/admin/users'} />
+        <NavItem label="Teacher Approvals" path="/dashboard/admin/approvals" active={location.pathname === '/dashboard/admin/approvals'} />
+        <NavItem label="Student Records" path="/dashboard/admin/students" active={location.pathname === '/dashboard/admin/students'} />
+        <NavItem label="Teacher Records" path="/dashboard/admin/teachers" active={location.pathname === '/dashboard/admin/teachers'} />
+        <NavItem label="Parent Records" path="/dashboard/admin/parents" active={location.pathname === '/dashboard/admin/parents'} />
+        <NavItem label="Classes" path="/dashboard/admin/classes" active={location.pathname === '/dashboard/admin/classes'} />
+        <NavItem label="Subjects" path="/dashboard/admin/subjects" active={location.pathname === '/dashboard/admin/subjects'} />
+        <NavItem label="Reports" path="/dashboard/admin/reports" active={location.pathname === '/dashboard/admin/reports'} />
+        <NavItem label="Analytics" path="/dashboard/admin/analytics" active={location.pathname === '/dashboard/admin/analytics'} />
+        <NavItem label="Fee Management" path="/dashboard/admin/fees" active={location.pathname === '/dashboard/admin/fees'} />
+        <NavItem label="Notices" path="/dashboard/admin/notices" active={location.pathname === '/dashboard/admin/notices'} />
+      </div>
     </aside>
   );
 };

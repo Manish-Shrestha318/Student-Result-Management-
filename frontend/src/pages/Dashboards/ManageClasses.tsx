@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import {
-  Plus, Edit, Trash2, X, Save, BookOpen, Users, Home, UserCheck
-} from 'lucide-react';
+import { Modal, Button, Form, Row, Col, Card, Badge, Pagination } from 'react-bootstrap';
 
 const ManageClasses: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
@@ -18,7 +16,7 @@ const ManageClasses: React.FC = () => {
   const currentClasses = classes.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(classes.length / itemsPerPage);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedClass, setSelectedClass] = useState<any>(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -64,7 +62,7 @@ const ManageClasses: React.FC = () => {
   const openAddModal = () => {
     setModalMode('add');
     setForm({ name: '', section: '', academicYear: new Date().getFullYear().toString(), classTeacher: '', roomNumber: '' });
-    setIsModalOpen(true);
+    setShowModal(true);
   };
 
   const openEditModal = (cls: any) => {
@@ -77,7 +75,7 @@ const ManageClasses: React.FC = () => {
       classTeacher: cls.classTeacher?._id || cls.classTeacher || '',
       roomNumber: cls.roomNumber || '',
     });
-    setIsModalOpen(true);
+    setShowModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,7 +91,7 @@ const ManageClasses: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok || data.success) {
-        setIsModalOpen(false);
+        setShowModal(false);
         fetchClasses();
       } else {
         alert(data.message || 'Operation failed');
@@ -127,167 +125,190 @@ const ManageClasses: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Manage Classes" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Class Governance" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Page Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Directory Header ── */}
+          <div className="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-light-dark">
             <div>
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Class Directory</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>
-                Create and manage all classes, sections, and teacher assignments.
-              </p>
+              <h3 className="fw-bold text-dark mb-1">Classroom Directory</h3>
+              <p className="text-secondary small mb-0">System-wide registry of all academic cohorts and physical room assignments.</p>
             </div>
-            <button className="btn-primary" onClick={openAddModal}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}>
-              <Plus size={18} /> Add New Class
-            </button>
+            <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm" onClick={openAddModal}>
+              ADD NEW CLASS
+            </Button>
           </div>
 
-          {/* Class Cards Grid */}
+          {/* ── Analysis Grid ── */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>Loading classes...</div>
+            <div className="py-5 text-center text-muted fw-bold">Synchronizing classroom data...</div>
           ) : classes.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
-              <BookOpen size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
-              <h4 style={{ color: 'var(--text-secondary)' }}>No classes yet</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Click "Add New Class" to get started.</p>
+            <div className="card shadow-sm border-0 rounded-4 py-5 text-center">
+              <div className="card-body">
+                <h5 className="text-secondary fw-bold mb-2">No active cohorts detected</h5>
+                <p className="text-muted small mb-0">Initiate the first academic class to begin management.</p>
+              </div>
             </div>
           ) : (
             <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-              {currentClasses.map((cls) => (
-                <div key={cls._id} className="card" style={{ padding: '1.75rem', position: 'relative', borderTop: '4px solid var(--primary)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                    <div>
-                      <h4 style={{ fontSize: '1.2rem', margin: 0 }}>{cls.name} — Section {cls.section}</h4>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
-                        Academic Year: {cls.academicYear}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => openEditModal(cls)} title="Edit"
-                        style={{ padding: '0.4rem', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#fff', cursor: 'pointer', color: 'var(--primary)' }}>
-                        <Edit size={15} />
-                      </button>
-                      <button onClick={() => handleDelete(cls._id)} title="Delete"
-                        style={{ padding: '0.4rem', border: '1px solid #fee2e2', borderRadius: '6px', background: '#fff', cursor: 'pointer', color: '#dc2626' }}>
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      <UserCheck size={15} color="var(--primary)" />
-                      <span><strong>Class Teacher:</strong> {getTeacherName(cls.classTeacher)}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      <Users size={15} color="#0ea5e9" />
-                      <span><strong>Students:</strong> {cls.students?.length || 0} enrolled</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      <BookOpen size={15} color="#8b5cf6" />
-                      <span><strong>Subjects:</strong> {cls.subjects?.length || 0} assigned</span>
-                    </div>
-                    {cls.roomNumber && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        <Home size={15} color="#f59e0b" />
-                        <span><strong>Room:</strong> {cls.roomNumber}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+              <Row className="g-4">
+                {currentClasses.map((cls) => (
+                  <Col key={cls._id} xs={12} md={6} xl={4}>
+                    <Card className="h-100 shadow-sm border-0 rounded-4 hover-lift transition-all border-top border-4 border-primary">
+                      <Card.Body className="p-4 d-flex flex-column">
+                        <div className="d-flex justify-content-between align-items-start mb-4">
+                          <div>
+                            <h5 className="fw-bold text-dark mb-1">{cls.name} — {cls.section}</h5>
+                            <Badge bg="light" text="primary" className="fw-bold smaller border py-2 px-3 rounded-pill text-uppercase">
+                              Academic Year {cls.academicYear}
+                            </Badge>
+                          </div>
+                          <div className="d-flex gap-1">
+                            <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light" onClick={() => openEditModal(cls)}>
+                              EDIT
+                            </Button>
+                            <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(cls._id)}>
+                              REMOVE
+                            </Button>
+                          </div>
+                        </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, classes.length)} of {classes.length} classes</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
-                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
-                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
-                  ))}
-                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
+                        <div className="mt-auto d-flex flex-column gap-2 text-secondary smaller">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold">CLASS TEACHER</span>
+                            <span className="text-dark bg-white border px-2 py-1 rounded small fw-medium">{getTeacherName(cls.classTeacher)}</span>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold">POPULATION</span>
+                            <span className="text-dark fw-bold">{cls.students?.length || 0} Learners</span>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold">CURRICULUM</span>
+                            <span className="text-dark fw-bold">{cls.subjects?.length || 0} Modules</span>
+                          </div>
+                          {cls.roomNumber && (
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="fw-bold">ROOM</span>
+                              <span className="badge bg-light text-dark fw-bold border">{cls.roomNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+
+              {/* ── Pagination ── */}
+              {totalPages > 1 && (
+                <div className="mt-5 d-flex justify-content-between align-items-center bg-white p-3 rounded-4 shadow-sm">
+                  <span className="smaller text-secondary fw-medium ps-2">Showing {indexOfFirst + 1}–{Math.min(indexOfLast, classes.length)} of {classes.length} entries</span>
+                  <Pagination className="mb-0 gap-1 pagination-sm">
+                    <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>
+                        {p}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
+                  </Pagination>
                 </div>
-              </div>
-            )}
+              )}
             </>
           )}
         </div>
       </main>
 
-      {/* Add/Edit Modal */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '520px', padding: '2rem', position: 'relative' }}>
-            <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: '1.5rem', top: '1.5rem', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-              <X size={22} />
-            </button>
-            <h3 style={{ margin: '0 0 1.75rem', fontSize: '1.25rem' }}>
-              {modalMode === 'add' ? 'Create New Class' : 'Edit Class'}
-            </h3>
+      {/* ── Operational Modal ── */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered className="border-0 shadow-lg">
+        <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+          <Modal.Title className="fw-bold text-dark fs-5">
+            {modalMode === 'add' ? 'CREATE CLASS' : 'UPDATE CLASS'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleSubmit}>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class Name</Form.Label>
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. Grade 10" 
+                  value={form.name} 
+                  onChange={e => setForm({ ...form, name: e.target.value })} 
+                />
+              </Col>
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Section</Form.Label>
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. A" 
+                  value={form.section} 
+                  onChange={e => setForm({ ...form, section: e.target.value })} 
+                />
+              </Col>
+            </Row>
 
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Class Name</label>
-                  <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Grade 10" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Section</label>
-                  <input required value={form.section} onChange={e => setForm({ ...form, section: e.target.value })}
-                    placeholder="e.g. A" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-              </div>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Academic Year</Form.Label>
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. 2025" 
+                  value={form.academicYear} 
+                  onChange={e => setForm({ ...form, academicYear: e.target.value })} 
+                />
+              </Col>
+              <Col md={6}>
+                <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Room (Optional)</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  className="py-2 border-light-dark shadow-none" 
+                  placeholder="e.g. 201" 
+                  value={form.roomNumber} 
+                  onChange={e => setForm({ ...form, roomNumber: e.target.value })} 
+                />
+              </Col>
+            </Row>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Academic Year</label>
-                  <input required value={form.academicYear} onChange={e => setForm({ ...form, academicYear: e.target.value })}
-                    placeholder="e.g. 2025" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>Room Number</label>
-                  <input value={form.roomNumber} onChange={e => setForm({ ...form, roomNumber: e.target.value })}
-                    placeholder="e.g. 201" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} />
-                </div>
-              </div>
+            <Form.Group className="mb-4">
+              <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class Teacher</Form.Label>
+              <Form.Select 
+                required 
+                className="py-2 border-light-dark shadow-none" 
+                value={form.classTeacher} 
+                onChange={e => setForm({ ...form, classTeacher: e.target.value })}
+              >
+                <option value="">Choose a verified teacher profile...</option>
+                {teachers.map(t => (
+                  <option key={t._id} value={t._id}>{t.name} — {t.email}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-              <div style={{ marginBottom: '1.75rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                  Assign Class Teacher
-                </label>
-                <select required value={form.classTeacher} onChange={e => setForm({ ...form, classTeacher: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: '#fff' }}>
-                  <option value="">— Select a Teacher —</option>
-                  {teachers.map(t => (
-                    <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)}
-                  style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={formLoading}
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                  {formLoading ? 'Saving...' : <><Save size={16} /> {modalMode === 'add' ? 'Create Class' : 'Save Changes'}</>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="d-flex gap-2 pt-2">
+              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-2" onClick={() => setShowModal(false)}>
+                DISCARD
+              </Button>
+              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-2" disabled={formLoading}>
+                {formLoading ? 'PROCESSING...' : (modalMode === 'add' ? 'CONFIRM' : 'SAVE CHANGES')}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default ManageClasses;
+

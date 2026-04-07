@@ -21,6 +21,9 @@ import ManageSubjects from './pages/Dashboards/ManageSubjects';
 import StudentNotices from './pages/Dashboards/StudentNotices';
 import StudentAttendance from './pages/Dashboards/StudentAttendance';
 import StudentReports from './pages/Dashboards/StudentReports';
+import StudentResults from './pages/Dashboards/StudentResults';
+import TeacherRecords from './pages/Dashboards/TeacherRecords';
+import ParentRecords from './pages/Dashboards/ParentRecords';
 
 const App: React.FC = () => {
   return (
@@ -47,11 +50,14 @@ const App: React.FC = () => {
         <Route path="/dashboard/admin/notices" element={<NoticeManagement />} />
         <Route path="/dashboard/admin/classes" element={<ManageClasses />} />
         <Route path="/dashboard/admin/subjects" element={<ManageSubjects />} />
+        <Route path="/dashboard/admin/teachers" element={<TeacherRecords />} />
+        <Route path="/dashboard/admin/parents" element={<ParentRecords />} />
 
         {/* Student Specific Routes */}
         <Route path="/dashboard/student/notices" element={<StudentNotices />} />
         <Route path="/dashboard/student/attendance" element={<StudentAttendance />} />
         <Route path="/dashboard/student/reports" element={<StudentReports />} />
+        <Route path="/dashboard/student/results" element={<StudentResults />} />
         <Route path="/dashboard/student/settings" element={<Settings />} />
 
         {/* Teacher Specific Routes */}

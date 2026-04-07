@@ -1,0 +1,11 @@
+                    studentId: s._id,
+                    subjectId: sub._id,
+                    examType: term === "Final" ? "Final Board" : "Mid Term",
+                    marksObtained: marksObtained,
+                    totalMarks: 100,
+                    term: term,
+                    year: 2025,
+                    remarks: marksObtained > 80 ? "Excellent" : marksObtained > 60 ? "Good" : "Needs Attention",
+                    createdAt: new Date(2025, 2 + (termIndex * 3), 15) // Mar, Jun, Sep
+                });
+            }

@@ -54,10 +54,10 @@ const seedDatabase = async () => {
   try {
     console.log("Starting Seeding Process...");
     await mongoose.connect(process.env.MONGO_URI as string);
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
 
     // Clear existing data
-    console.log("🧹 Clearing existing collections...");
+    console.log(" Clearing existing collections...");
     await Promise.all([
       User.deleteMany({}),
       Student.deleteMany({}),
@@ -71,12 +71,12 @@ const seedDatabase = async () => {
       Notice.deleteMany({}),
       ActivityLog.deleteMany({})
     ]);
-    console.log("✅ Collections cleared");
+    console.log(" Collections cleared");
 
     const password = await hashPassword("password123");
 
     // 1. Create Admins
-    console.log("👤 Creating Admins...");
+    console.log(" Creating Admins...");
     const admin1 = await User.create({
       name: "Manish Shrestha",
       email: "admin@school.com",
@@ -86,7 +86,7 @@ const seedDatabase = async () => {
     });
 
     // 2. Create Teachers
-    console.log("👨‍🏫 Creating Teachers...");
+    console.log(" Creating Teachers...");
     const teachersData = [];
     for (let i = 0; i < 7; i++) {
         const name = getRandomName();
@@ -131,10 +131,10 @@ const seedDatabase = async () => {
         });
     }
     const createdTeachers = await Teacher.insertMany(teacherProfiles);
-    console.log(`✅ Created ${createdTeachers.length} teacher profiles`);
+    console.log(` Created ${createdTeachers.length} teacher profiles`);
 
     // 3. Create Students and Parents
-    console.log("👨‍🎓 Creating Students and Parents...");
+    console.log(" Creating Students and Parents...");
     const studentUsers = [];
     const parentUsers = [];
     for (let i = 0; i < 15; i++) {
@@ -197,7 +197,7 @@ const seedDatabase = async () => {
         });
     }
     const createdStudents = await Student.insertMany(studentProfiles);
-    console.log(`✅ Created ${createdStudents.length} student profiles`);
+    console.log(` Created ${createdStudents.length} student profiles`);
 
     // Create Parent Profiles linked to students
     const parentProfiles = [];
@@ -212,10 +212,10 @@ const seedDatabase = async () => {
         });
     }
     const createdParents = await Parent.insertMany(parentProfiles);
-    console.log(`✅ Created ${createdParents.length} parent profiles`);
+    console.log(` Created ${createdParents.length} parent profiles`);
 
     // 4. Create Subjects
-    console.log("📚 Creating Subjects...");
+    console.log(" Creating Subjects...");
     const subjectData = [];
     for (const cls of classes) {
         for (let i = 0; i < subjectsList.length; i++) {
@@ -240,10 +240,10 @@ const seedDatabase = async () => {
             { $addToSet: { subjects: sub._id } }
         );
     }
-    console.log(`✅ Created ${createdSubjects.length} subjects`);
+    console.log(`Created ${createdSubjects.length} subjects`);
 
     // 5. Create Classes
-    console.log("🏫 Creating Classes...");
+    console.log(" Creating Classes...");
     for (const clsName of classes) {
         for (const sec of sections) {
             const classStudents = createdStudents.filter((s: any) => s.class === clsName && s.section === sec);
@@ -265,7 +265,7 @@ const seedDatabase = async () => {
     }
 
     // 6. Bulk Create Marks, Attendance, and Fees
-    console.log("📊 Generating Marks, Attendance, and Fees...");
+    console.log(" Generating Marks, Attendance, and Fees...");
     const marksData = [];
     const attendanceData = [];
     const feesData = [];
@@ -369,10 +369,10 @@ const seedDatabase = async () => {
     await Mark.insertMany(marksData);
     await Attendance.insertMany(attendanceData);
     await Fee.insertMany(feesData);
-    console.log("✅ Bulk data generated");
+    console.log(" Bulk data generated");
 
     // 7. Notices
-    console.log("📢 Creating Notices...");
+    console.log(" Creating Notices...");
     await Notice.insertMany([
         { title: "Sports Week", content: "Details to follow", category: "event", targetRoles: ["student"], publishDate: new Date(), createdBy: admin1._id, isActive: true },
         { title: "Exam Schedule", content: "Details to follow", category: "exam", targetRoles: ["student", "parent"], publishDate: new Date(), createdBy: admin1._id, isActive: true },
@@ -380,7 +380,7 @@ const seedDatabase = async () => {
     ]);
 
     // 8. Activity Logs
-    console.log("📜 Creating Activity Logs...");
+    console.log(" Creating Activity Logs...");
     const actLogs = [];
     for (let i = 0; i < 10; i++) {
         actLogs.push({
@@ -394,11 +394,11 @@ const seedDatabase = async () => {
     }
     await ActivityLog.insertMany(actLogs);
 
-    console.log("🚀 SEEDING COMPLETED SUCCESSFULLY!");
+    console.log(" SEEDING COMPLETED SUCCESSFULLY!");
     process.exit(0);
 
   } catch (error) {
-    console.error("❌ Seeding failed:", error);
+    console.error(" Seeding failed:", error);
     process.exit(1);
   }
 };

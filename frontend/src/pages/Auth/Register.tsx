@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +23,67 @@ const Register: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [dataFetching, setDataFetching] = useState(false);
   const [error, setError] = useState('');
+  
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [parentClassFilter, setParentClassFilter] = useState('');
+  const [filteredChildren, setFilteredChildren] = useState<any[]>([]);
+
+  // Fetch data for dropdowns
+  useEffect(() => {
+    const fetchData = async () => {
+      setDataFetching(true);
+      try {
+        const [clsRes, subjRes, studRes] = await Promise.all([
+          fetch('/api/public/classes'),
+          fetch('/api/public/subjects'),
+          fetch('/api/public/students')
+        ]);
+        
+        const clsData = await clsRes.json();
+        const subjData = await subjRes.json();
+        const studData = await studRes.json();
+        
+        if (clsData.success) setAllClasses(clsData.classes);
+        // Subject route returns array directly or {success, subjects}? 
+        // Based on subjectController it returns the array directly.
+        setAllSubjects(Array.isArray(subjData) ? subjData : (subjData.subjects || []));
+        if (studData.success) setAllStudents(studData.students);
+      } catch (err) {
+        console.error("Failed to fetch registration data", err);
+      } finally {
+        setDataFetching(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Filter children when parent selects a class
+  useEffect(() => {
+    if (parentClassFilter) {
+      const filtered = allStudents.filter(s => s.class === parentClassFilter);
+      setFilteredChildren(filtered);
+    } else {
+      setFilteredChildren([]);
+    }
+    // Clear selection if class changes
+    setChildName('');
+    setStudentID('');
+  }, [parentClassFilter, allStudents]);
+
+  const handleChildSelection = (studentId: string) => {
+    const student = allStudents.find(s => s._id === studentId);
+    if (student) {
+      setChildName(student.name);
+      setStudentID(student.studentID || '');
+    } else {
+      setChildName('');
+      setStudentID('');
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +139,13 @@ const Register: React.FC = () => {
         {error && (
           <div style={{ padding: '0.75rem', background: '#fee2e2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', fontSize: '0.9rem', border: '1px solid #fecaca' }}>
             {error}
+          </div>
+        )}
+
+        {dataFetching && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', gap: '0.5rem', color: 'var(--primary)', fontWeight: 600 }}>
+            <Loader2 className="animate-spin" size={20} />
+            <span style={{ fontSize: '0.9rem' }}>Loading registration options...</span>
           </div>
         )}
 
@@ -173,14 +240,15 @@ const Register: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Class</label>
-                <input 
-                  type="text" 
+                <select 
                   className="input-field" 
-                  placeholder="e.g. 10th Grade" 
                   required 
                   value={studentClass}
                   onChange={(e) => setStudentClass(e.target.value)}
-                />
+                >
+                  <option value="" disabled>Select Class...</option>
+                  {allClasses.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                </select>
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Roll Number</label>
@@ -197,28 +265,45 @@ const Register: React.FC = () => {
           )}
 
           {/* Conditional Fields for Parent */}
-          {role === 'Parent' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Child's Full Name</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  placeholder="Child's Name" 
-                  required 
-                  value={childName}
-                  onChange={(e) => setChildName(e.target.value)}
-                />
+           {role === 'Parent' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Student's Class</label>
+                  <select 
+                    className="input-field" 
+                    required 
+                    value={parentClassFilter}
+                    onChange={(e) => setParentClassFilter(e.target.value)}
+                  >
+                    <option value="">Select Child's Class...</option>
+                    {allClasses.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Child's Name</label>
+                  <select 
+                    className="input-field" 
+                    required 
+                    disabled={!parentClassFilter}
+                    value={allStudents.find(s => s.name === childName)?._id || ""}
+                    onChange={(e) => handleChildSelection(e.target.value)}
+                  >
+                    <option value="">{parentClassFilter ? "Select Child..." : "Choose Class First"}</option>
+                    {filteredChildren.map(s => <option key={s._id} value={s._id}>{s.name} ({s.studentID})</option>)}
+                  </select>
+                </div>
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Student ID</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Student ID (Auto-filled)</label>
                 <input 
                   type="text" 
                   className="input-field" 
-                  placeholder="e.g. SRMS-998" 
-                  required 
+                  placeholder="Select a child above" 
+                  readOnly
+                  disabled
                   value={studentID}
-                  onChange={(e) => setStudentID(e.target.value)}
+                  style={{ background: '#f8fafc', cursor: 'not-allowed' }}
                 />
               </div>
             </div>
@@ -229,14 +314,17 @@ const Register: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Subject Specialty</label>
-                <input 
-                  type="text" 
+                <select 
                   className="input-field" 
-                  placeholder="e.g. Mathematics" 
                   required 
                   value={teacherSubject}
                   onChange={(e) => setTeacherSubject(e.target.value)}
-                />
+                >
+                  <option value="" disabled>Select Subject...</option>
+                  {allSubjects.map((s: any) => (
+                    <option key={s._id} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Phone Number</label>
@@ -261,21 +349,6 @@ const Register: React.FC = () => {
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
-
-        <div style={{ display: 'flex', alignItems: 'center', margin: '1.5rem 0', gap: '1rem' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>OR</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
-        </div>
-
-        <button 
-          className="btn-secondary" 
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', border: '1px solid var(--border-color)' }}
-          onClick={() => alert("Redirecting to Google Account Creation...")}
-        >
-          <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style={{ width: '18px' }} />
-          Sign up with Google
-        </button>
 
         <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Already have an account? <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Login</Link>

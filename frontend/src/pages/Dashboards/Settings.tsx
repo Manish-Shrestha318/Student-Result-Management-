@@ -1,23 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  User, 
-  Lock, 
-  Camera, 
-  Save, 
-  ShieldCheck,
-  Bell,
-  Globe,
-  Monitor,
-  CheckCircle2,
-  LayoutDashboard,
-  GraduationCap,
-  Calendar,
-  FileText,
-  LogOut,
-  Settings as SettingsIcon
-} from 'lucide-react';
+import { Row, Col, Card, Form, Button, Alert, ListGroup, Image, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 const Settings: React.FC = () => {
@@ -25,7 +9,6 @@ const Settings: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Form states
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -88,13 +71,13 @@ const Settings: React.FC = () => {
         body: JSON.stringify({ name: profile.name })
       });
       
-      const data = await response.json();
       if (response.ok) {
         setSuccessMessage('Profile updated successfully!');
         const updatedUser = { ...currentUser, name: profile.name };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
+        const data = await response.json();
         setError(data.message || 'Failed to update profile');
       }
     } catch (err) {
@@ -135,12 +118,12 @@ const Settings: React.FC = () => {
         body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.new })
       });
       
-      const data = await response.json();
       if (response.ok) {
         setSuccessMessage('Password changed successfully!');
         setPasswords({ current: '', new: '', confirm: '' });
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
+        const data = await response.json();
         setError(data.message || 'Failed to change password');
       }
     } catch (err) {
@@ -179,200 +162,160 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       {currentUser.role === 'admin' ? (
         <AdminSidebar />
       ) : (
-        <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-          <div style={{ marginBottom: '3rem' }}>
-            <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+        <aside className="bg-white border-end d-flex flex-column px-4 py-5" style={{ width: '280px' }}>
+          <div className="mb-5">
+            <h4 className="fw-bold text-primary ls-1">SMARTRESULTS</h4>
+            <span className="smallest text-muted fw-bold text-uppercase ls-1">User Matrix</span>
           </div>
-          <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <nav className="flex-grow-1 d-flex flex-column gap-1">
             {currentUser.role === 'student' ? (
               <>
-                <LocalNavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
-                <LocalNavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
-                <LocalNavItem icon={<Calendar size={20} />} label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
-                <LocalNavItem icon={<Bell size={20} />} label="Notices" onClick={() => navigate('/dashboard/student/notices')} />
-                <LocalNavItem icon={<FileText size={20} />} label="Reports" onClick={() => navigate('/dashboard/student')} />
+                <NavItem label="Control Center" onClick={() => navigate('/dashboard/student')} />
+                <NavItem label="Result Matrix" onClick={() => navigate('/dashboard/student/results')} />
+                <NavItem label="Attendance Logs" onClick={() => navigate('/dashboard/student/attendance')} />
+                <NavItem label="Institutional Briefs" onClick={() => navigate('/dashboard/student/notices')} />
               </>
             ) : (
-              <>
-                <LocalNavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/teacher')} />
-              </>
+              <NavItem label="Control Center" onClick={() => navigate('/dashboard/teacher')} />
             )}
-          </nav>
-          <button 
-            onClick={handleLogout}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-          >
-            <LogOut size={20} />
-            Logout
-          </button>
-        </aside>
+        </nav>
+      </aside>
       )}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Account Settings" error={error} />
+      
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Settings" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
           {successMessage && (
-            <div style={{ padding: '1rem', background: '#dcfce7', color: '#15803d', borderRadius: '10px', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, border: '1px solid #bbf7d0' }}>
-              <CheckCircle2 size={20} /> {successMessage}
-            </div>
+            <Alert variant="success" className="border-0 rounded-4 shadow-sm mb-4 fw-bold smaller text-uppercase px-4">
+               {successMessage}
+            </Alert>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2.5rem' }}>
-            {/* Profile Sidebar */}
-            <aside style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2.5rem' }}>
-                <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
-                  <img 
-                    src={profile.profilePicture || 'https://via.placeholder.com/150'} 
-                    alt="Profile" 
-                    style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #f1f5f9' }} 
-                  />
-                  <label style={{ position: 'absolute', bottom: '0', right: '0', backgroundColor: 'var(--primary)', color: '#fff', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '3px solid #fff' }}>
-                    <Camera size={18} />
-                    <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handlePhotoUpload} />
-                  </label>
-                </div>
-                <h3 style={{ margin: '0 0 0.25rem 0' }}>{profile.name}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'capitalize' }}>{currentUser.role}</p>
-                <div style={{ marginTop: '1.5rem', padding: '0.5rem 1rem', background: '#eff6ff', color: 'var(--primary)', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <ShieldCheck size={14} /> Verified Account
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: '1rem 0' }}>
-                <SettingsNav icon={<User size={18} />} label="Personal Information" active />
-                <SettingsNav icon={<Lock size={18} />} label="Security & Password" />
-                <SettingsNav icon={<Bell size={18} />} label="Notifications" />
-                <SettingsNav icon={<Globe size={18} />} label="Regional & Language" />
-                <SettingsNav icon={<Monitor size={18} />} label="System Display" />
-              </div>
-            </aside>
-
-            {/* Main Settings Area */}
-            <section style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Profile Details Form */}
-              <div className="card">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <User size={20} color="var(--primary)" /> {profile.name}'s Profile
-                </h3>
-                <form onSubmit={handleUpdateProfile} style={{ display: 'grid', gap: '1.5rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Full Name</label>
-                    <input 
-                      type="text" 
-                      value={profile.name}
-                      onChange={(e) => setProfile({...profile, name: e.target.value})}
-                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
+          <Row className="g-5">
+            {/* ── Configuration Sidebar ── */}
+            <Col lg={4}>
+              <Card className="border-0 shadow-sm rounded-4 text-center p-4 mb-4">
+                <Card.Body>
+                  <div className="position-relative d-inline-block mb-4">
+                    <Image 
+                      src={profile.profilePicture || 'https://via.placeholder.com/150'} 
+                      roundedCircle 
+                      style={{ width: '120px', height: '120px', objectFit: 'cover', border: '5px solid #f8fafc' }} 
                     />
+                    <label className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center border-3 border-white shadow-sm cursor-pointer" style={{ width: '36px', height: '36px' }}>
+                      <span className="smaller">+</span>
+                      <input type="file" className="d-none" accept="image/*" onChange={handlePhotoUpload} />
+                    </label>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="submit" disabled={loading} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Save size={18} /> {loading ? 'Saving...' : 'Update Information'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                  <h4 className="fw-bold text-dark mb-1 ls-1">{profile.name}</h4>
+                  <p className="text-muted smallest fw-bold text-uppercase ls-1 mb-4">{currentUser.role} Account</p>
+                  <Badge bg="primary-soft" text="primary" className="fw-bold smaller text-uppercase px-3 py-2 border rounded-pill">
+                     IDENTITY VERIFIED
+                  </Badge>
+                </Card.Body>
+              </Card>
 
-              {/* Password Change Form */}
-              <div className="card">
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                   <Lock size={20} color="var(--primary)" /> Security & Password
-                </h3>
-                <form onSubmit={handleChangePassword} style={{ display: 'grid', gap: '1.5rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Current Password</label>
-                    <input 
-                      type="password" 
-                      value={passwords.current}
-                      onChange={(e) => setPasswords({...passwords, current: e.target.value})}
-                      placeholder="••••••••"
-                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>New Password</label>
-                      <input 
+              <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
+                <ListGroup variant="flush">
+                  <ListGroup.Item action active className="p-4 border-0 border-start border-4 border-primary fw-bold smaller text-uppercase ls-1 px-4">PERSONAL INFO</ListGroup.Item>
+                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">SECURITY</ListGroup.Item>
+                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">NOTIFICATIONS</ListGroup.Item>
+                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">PREFERENCES</ListGroup.Item>
+                </ListGroup>
+              </Card>
+            </Col>
+
+            {/* ── Main Configuration Terminal ── */}
+            <Col lg={8}>
+              <div className="d-flex flex-column gap-5">
+                {/* ── Identity Form ── */}
+                <Card className="border-0 shadow-sm rounded-4 p-4 p-lg-5">
+                   <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Personal Information</h5>
+                   <Form onSubmit={handleUpdateProfile}>
+                      <Form.Group className="mb-4">
+                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Name</Form.Label>
+                        <Form.Control 
+                          type="text" 
+                          value={profile.name}
+                          onChange={(e) => setProfile({...profile, name: e.target.value})}
+                          className="py-2 smaller border-light-dark shadow-none fw-medium"
+                          placeholder="REQUIRED FIELD"
+                        />
+                      </Form.Group>
+                      <div className="d-flex justify-content-end pt-2">
+                        <Button variant="primary" type="submit" disabled={loading} className="fw-bold px-5 py-2 rounded-pill shadow-sm ls-1 smaller">
+                           {loading ? 'SYNCHRONIZING...' : 'COMMIT CHANGES'}
+                        </Button>
+                      </div>
+                   </Form>
+                </Card>
+
+                {/* ── Security Form ── */}
+                <Card className="border-0 shadow-sm rounded-4 p-4 p-lg-5">
+                  <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Access Credentials</h5>
+                  <Form onSubmit={handleChangePassword}>
+                    <Form.Group className="mb-4">
+                      <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Current Cipher</Form.Label>
+                      <Form.Control 
                         type="password" 
-                        value={passwords.new}
-                        onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                        value={passwords.current}
+                        onChange={(e) => setPasswords({...passwords, current: e.target.value})}
+                        className="py-2 smaller border-light-dark shadow-none"
                         placeholder="••••••••"
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
                       />
+                    </Form.Group>
+                    <Row className="g-4 mb-5">
+                       <Col md={6}>
+                          <Form.Group>
+                            <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">New Access Cipher</Form.Label>
+                            <Form.Control 
+                              type="password" 
+                              value={passwords.new}
+                              onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                              className="py-2 smaller border-light-dark shadow-none"
+                              placeholder="••••••••"
+                            />
+                          </Form.Group>
+                       </Col>
+                       <Col md={6}>
+                          <Form.Group>
+                            <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Confirm Cipher</Form.Label>
+                            <Form.Control 
+                              type="password" 
+                              value={passwords.confirm}
+                              onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                              className="py-2 smaller border-light-dark shadow-none"
+                              placeholder="••••••••"
+                            />
+                          </Form.Group>
+                       </Col>
+                    </Row>
+                    <div className="d-flex justify-content-end">
+                       <Button variant="outline-dark" type="submit" disabled={loading} className="fw-bold px-5 py-2 rounded-pill smaller border-0 bg-light shadow-sm ls-1">
+                          UPDATE CIPHERS
+                       </Button>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Confirm New Password</label>
-                      <input 
-                        type="password" 
-                        value={passwords.confirm}
-                        onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
-                        placeholder="••••••••"
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} 
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="submit" disabled={loading} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <ShieldCheck size={18} /> Update Password
-                    </button>
-                  </div>
-                </form>
+                  </Form>
+                </Card>
               </div>
-            </section>
-          </div>
+            </Col>
+          </Row>
         </div>
       </main>
     </div>
   );
 };
 
-const SettingsNav: React.FC<{ icon: React.ReactNode, label: string, active?: boolean }> = ({ icon, label, active }) => (
-  <button style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '0.75rem', 
-    width: '100%', 
-    padding: '0.8rem 1.5rem', 
-    border: 'none', 
-    background: active ? '#eff6ff' : 'none', 
-    color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-    fontSize: '0.9rem', 
-    fontWeight: active ? 700 : 500, 
-    cursor: 'pointer',
-    borderLeft: active ? '4px solid var(--primary)' : '4px solid transparent'
-  }}>
-    {icon}
-    {label}
-  </button>
-);
-
-const LocalNavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }> = ({ icon, label, active, onClick }) => (
-  <button 
-    onClick={onClick}
-    style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.75rem', 
-      padding: '0.875rem 1.25rem', 
-      borderRadius: '8px', 
-      border: 'none', 
-      backgroundColor: active ? '#f1f5f9' : 'transparent', 
-      color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-      fontSize: '0.95rem',
-      fontWeight: active ? 600 : 500,
-      cursor: 'pointer',
-      width: '100%',
-      textAlign: 'left',
-      transition: 'all 0.2s'
-    }}
-  >
-    {icon}
-    {label}
+const NavItem: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => (
+  <button className="btn w-100 text-start py-2 px-3 rounded-pill border-0 transition-all text-secondary fw-semibold bg-transparent" onClick={onClick} style={{ fontSize: '0.9rem' }}>
+    <span className="ls-1 text-uppercase smallest">{label}</span>
   </button>
 );
 
 export default Settings;
+

@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import { AttendanceService } from "../services/attendanceService";
+import { AnalyticsService } from "../services/analyticsService";
 
 const attendanceService = new AttendanceService();
+const analyticsService = new AnalyticsService();
 
 export const markAttendance = async (req: Request, res: Response) => {
   try {
     const { studentId, date, status, subjectId, remarks } = req.body;
-    const markedBy = (req as any).user.id; // Get from auth middleware
+    const markedBy = (req as any).user.id;
 
     const attendance = await attendanceService.markAttendance({
       studentId,
@@ -34,9 +36,12 @@ export const getStudentAttendance = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
     const { startDate, endDate } = req.query;
+    
+    // Resolve student profile ID from userId or studentId
+    const resolvedStudentId = await analyticsService.resolveStudentProfileId(studentId as string);
 
     const attendance = await attendanceService.getAttendanceByStudent(
-      studentId as any,
+      resolvedStudentId.toString(),
       startDate ? new Date(startDate as string) : undefined,
       endDate ? new Date(endDate as string) : undefined
     );
@@ -65,10 +70,12 @@ export const getAttendanceReport = async (req: Request, res: Response) => {
       });
     }
 
+    const resolvedStudentId = await analyticsService.resolveStudentProfileId(String(studentId));
+
     const report = await attendanceService.getAttendanceReport(
-      studentId as any,
-      parseInt(month as string),
-      parseInt(year as string)
+      resolvedStudentId.toString(),
+      parseInt(String(month)),
+      parseInt(String(year))
     );
 
     res.json({

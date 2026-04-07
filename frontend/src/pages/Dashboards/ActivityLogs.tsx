@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  Terminal, 
-  UserPlus, 
-  ShieldCheck, 
-  CreditCard, 
-  BookOpen,
-  Search,
-  RefreshCw,
-  Clock,
-  ExternalLink
-} from 'lucide-react';
+import { Row, Col, Card, Badge, Button, Form, InputGroup, Spinner } from 'react-bootstrap';
 
 const ActivityLogs: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -28,7 +18,7 @@ const ActivityLogs: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setLogs(data.activities);
+        setLogs(data.activities || []);
       } else {
         setError(data.message || 'Failed to fetch logs');
       }
@@ -43,89 +33,105 @@ const ActivityLogs: React.FC = () => {
     fetchLogs();
   }, []);
 
-  const getCategoryIcon = (category: string) => {
-    switch(category) {
-      case 'auth': return <ShieldCheck size={18} color="#2563eb" />;
-      case 'user_management': return <UserPlus size={18} color="#16a34a" />;
-      case 'academic': return <BookOpen size={18} color="#8b5cf6" />;
-      case 'finance': return <CreditCard size={18} color="#f59e0b" />;
-      default: return <Terminal size={18} color="#64748b" />;
-    }
-  };
-
   const filteredLogs = logs.filter(log => 
     log.action.toLowerCase().includes(searchTerm.toLowerCase()) || 
     log.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.userId?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${d.toLocaleDateString()} — ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+  };
+
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="System Audit Logs" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="System Forensic Audit" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Operational Command Bar ── */}
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 pb-4 border-bottom">
             <div>
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Recent Activity</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Comprehensive log of all administrative and system actions for security auditing.</p>
+              <h5 className="fw-bold text-dark mb-1 ls-1 text-uppercase small border-start border-4 border-primary ps-3">Activity Stream Matrix</h5>
+              <p className="text-secondary smallest fw-bold text-uppercase ls-1 ms-3 mt-1 opacity-75">Immutable audit record of institutional state modifications.</p>
             </div>
-            <button onClick={fetchLogs} disabled={loading} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} /> Refresh Feed
-            </button>
+            <Button 
+              variant="outline-primary" 
+              size="sm" 
+              onClick={fetchLogs} 
+              disabled={loading} 
+              className="fw-bold rounded-pill px-4 py-2 ls-1 text-uppercase smallest shadow-sm"
+            >
+              {loading ? 'SYNCHRONIZING...' : 'FORCE REFRESH'}
+            </Button>
           </div>
 
-          <div className="card" style={{ marginBottom: '2rem' }}>
-            <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={20} />
-              <input 
-                type="text" 
-                placeholder="Filter logs by action, details, or administrator..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none' }}
-              />
-            </div>
-          </div>
+          {/* ── Analytical Query Terminal ── */}
+          <Card className="border-0 shadow-sm rounded-4 mb-5 p-2 overflow-hidden">
+             <InputGroup>
+                <div className="bg-white border-0 px-4 py-2 d-flex align-items-center opacity-50">
+                   <span className="smallest fw-bold text-uppercase ls-1">Query Hash:</span>
+                </div>
+                <Form.Control 
+                  type="text" 
+                  placeholder="FILTER BY AGENT, ACTION MANIFOLD, OR SYSTEM PARAMETERS..." 
+                  className="border-0 shadow-none py-3 smaller fw-bold text-uppercase ls-1"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+             </InputGroup>
+          </Card>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* ── Log Forensic Terminal ── */}
+          <div className="d-flex flex-column gap-4">
             {loading && logs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--text-secondary)' }}>Gathering system events...</div>
+              <div className="text-center py-5">
+                 <Spinner animation="border" variant="primary" style={{ width: '3rem', height: '3rem' }} />
+                 <p className="smallest fw-bold text-primary mt-4 ls-1 text-uppercase">Mapping system events...</p>
+              </div>
             ) : filteredLogs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem', color: 'var(--text-secondary)' }}>No audit logs matching your criteria.</div>
+              <Card className="border-0 shadow-sm rounded-4 py-5 text-center">
+                <Card.Body>
+                  <h6 className="text-secondary fw-bold smallest text-uppercase ls-1 opacity-50">Query Paradox</h6>
+                  <p className="text-muted smaller mb-0 mt-2">No historical records identified for the active parameters.</p>
+                </Card.Body>
+              </Card>
             ) : (
               filteredLogs.map((log) => (
-                <div key={log._id} className="card" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '1.5rem', alignItems: 'start', transition: 'transform 0.2s' }}>
-                  <div style={{ padding: '0.75rem', borderRadius: '12px', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {getCategoryIcon(log.category)}
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span style={{ fontWeight: 700, fontSize: '1rem' }}>{log.action}</span>
-                      <span style={{ fontSize: '0.75rem', padding: '0.1rem 0.6rem', borderRadius: '4px', backgroundColor: '#eff6ff', color: 'var(--primary)', textTransform: 'uppercase', fontWeight: 700 }}>
-                        {log.category.replace('_', ' ')}
-                      </span>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>{log.details}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>
-                          {log.userId?.name.charAt(0)}
-                        </div>
-                        {log.userId?.name}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Clock size={14} /> {new Date(log.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
-                    <ExternalLink size={18} />
-                  </button>
-                </div>
+                <Card key={log._id} className="border-0 shadow-sm rounded-4 hover-lift overflow-hidden border-start border-4 border-primary shadow-sm-hover">
+                  <Card.Body className="p-4 p-md-5">
+                     <Row className="align-items-start g-4">
+                        <Col lg={8}>
+                           <div className="d-flex align-items-center gap-3 mb-3">
+                             <Badge bg="primary-soft" text="primary" className="fw-bold smallest text-uppercase px-3 py-2 border rounded-pill ls-1 shadow-none">
+                                {log.category.replace('_', ' ')}
+                             </Badge>
+                             <span className="smallest text-muted fw-bold ls-1 text-uppercase opacity-75">REF: {log._id.slice(-8).toUpperCase()}</span>
+                           </div>
+                           <h6 className="fw-bold text-dark mb-2 fs-5 ls-1 text-uppercase">{log.action}</h6>
+                           <p className="text-secondary smaller fw-medium lh-lg mb-0">{log.details}</p>
+                        </Col>
+                        <Col lg={4} className="text-lg-end border-start-lg ps-lg-5">
+                           <div className="d-flex flex-column gap-3 justify-content-lg-end h-100">
+                             <div className="d-flex align-items-center gap-3 justify-content-lg-end">
+                                <div className="text-end">
+                                   <div className="smallest fw-bold text-dark ls-1 text-uppercase">{log.userId?.name}</div>
+                                   <div className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">Authorized Agent</div>
+                                </div>
+                                <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '42px', height: '42px', fontSize: '0.9rem' }}>
+                                  {log.userId?.name.charAt(0)}
+                                </div>
+                             </div>
+                             <div className="smallest fw-bold text-muted ls-1 text-uppercase border-top pt-3">
+                                {formatDate(log.createdAt)}
+                             </div>
+                           </div>
+                        </Col>
+                     </Row>
+                  </Card.Body>
+                </Card>
               ))
             )}
           </div>
@@ -136,3 +142,5 @@ const ActivityLogs: React.FC = () => {
 };
 
 export default ActivityLogs;
+
+

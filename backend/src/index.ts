@@ -19,6 +19,7 @@ import feeRoutes from "./routes/feeRoute";
 import noticeRoutes from "./routes/noticeRoute"; 
 import timetableRoutes from "./routes/timetableRoute";
 import chatRoutes from "./routes/chatRoutes";
+import publicRoutes from "./routes/publicRoute";
 import initCronJobs from "./utils/cronJobs";
 
 dotenv.config();
@@ -51,6 +52,7 @@ app.use("/api/academics/timetable", timetableRoutes);
 app.use("/api/fees", feeRoutes); 
 app.use("/api/notices", noticeRoutes); 
 app.use("/api/chats", chatRoutes);
+app.use("/api/public", publicRoutes);
 
 // Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));

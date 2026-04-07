@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  GraduationCap, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
-  Eye,
-  Phone,
-  BookOpen,
-  Hash
-} from 'lucide-react';
+import { Modal, Button, Form, Row, Col, Table, Badge, Pagination, InputGroup } from 'react-bootstrap';
 
 const StudentRecords: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
@@ -19,11 +9,11 @@ const StudentRecords: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [classFilter, setClassFilter] = useState('');
+  const [classFilter, setClassFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [currentEditingStudent, setCurrentEditingStudent] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     rollNumber: '',
@@ -60,14 +50,11 @@ const StudentRecords: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      console.log("Fetched student records (v2):", data);
 
       if (data && data.success && Array.isArray(data.users)) {
-        // Enforce role=student filter on client side as well for safety
         const onlyStudents = data.users.filter((u: any) => u.role === 'student');
         setStudents(onlyStudents);
         setFilteredStudents(onlyStudents);
-        console.log(`[CLIENT] Successfully set ${onlyStudents.length} student records.`);
       } else if (Array.isArray(data)) {
         const onlyStudents = data.filter((u: any) => u.role === 'student');
         setStudents(onlyStudents);
@@ -138,12 +125,7 @@ const StudentRecords: React.FC = () => {
       section: student.section || '',
       parentPhone: student.parentPhone || ''
     });
-    setIsEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setCurrentEditingStudent(null);
+    setShowEditModal(true);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -156,14 +138,6 @@ const StudentRecords: React.FC = () => {
     setIsSaving(true);
     const token = localStorage.getItem('token');
     try {
-      // Assuming we have an endpoint to update student profile directly if needed, or we just update the Student model via user controller
-      // According to backend routes, there isn't a direct exposed PUT /api/users/students/:id anymore.
-      // Wait, let's look at userRoute.ts! 
-      // Actually, userRoute.ts has `router.put("/:id", updateUserController)` which updates the USER model.
-      // To update student profile fields, we need the backend to support it. 
-      // If there's no endpoint, I will just send a PUT to /api/users/students/:id and we will add that to backend if we have to.
-      // Or we can just log that the user needs the backend route. Let's send the request to /api/users/students/profile/:profileId
-      // I will implement a quick backend route fix too if needed.
       const response = await fetch(`/api/users/students/${currentEditingStudent.profileId}`, {
         method: 'PUT',
         headers: { 
@@ -175,9 +149,8 @@ const StudentRecords: React.FC = () => {
       
       const data = await response.json();
       if (response.ok || data.success) {
-        alert("Student updated successfully!");
-        closeEditModal();
-        fetchStudents(); // refresh the list
+        setShowEditModal(false);
+        fetchStudents();
       } else {
         alert(data.message || 'Failed to update student data');
       }
@@ -191,210 +164,203 @@ const StudentRecords: React.FC = () => {
   const uniqueClasses = Array.from(new Set(students.map(s => s.class).filter(Boolean)));
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
         <AdminHeader title="Student Records" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Directory Header ── */}
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 pb-3 border-bottom border-light-dark gap-4">
             <div>
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Student Directory</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Maintain and manage all enrolled students and their academic details.</p>
+              <h3 className="fw-bold text-dark mb-1">Student Directory</h3>
+              <p className="text-secondary small mb-0">Manage student profiles and enrollment details.</p>
             </div>
-          </div>
-
-          <div className="card" style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '300px', position: 'relative' }}>
-                <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Search by name or roll number..." 
+            <div className="d-flex gap-3 align-items-center">
+              <InputGroup className="shadow-none border-light-dark" style={{ width: '320px' }}>
+                <Form.Control
+                  placeholder="Search..."
+                  className="py-2 shadow-none smaller fw-medium"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none' }} 
                 />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Filter size={20} color="var(--text-secondary)" />
-                <select 
-                  value={classFilter}
-                  onChange={(e) => setClassFilter(e.target.value)}
-                  style={{ padding: '0.8rem 1.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: '#fff', cursor: 'pointer' }}
-                >
-                  <option value="all">All Classes</option>
-                  {uniqueClasses.map(cls => (
-                    <option key={cls} value={cls}>Class {cls}</option>
-                  ))}
-                </select>
-              </div>
+              </InputGroup>
+              <Form.Select 
+                className="py-2 border-light-dark shadow-none smaller fw-bold" 
+                style={{ width: '180px' }}
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+              >
+                <option value="all">ALL CLASSES</option>
+                {uniqueClasses.map(cls => (
+                  <option key={cls} value={cls}>CLASS {cls}</option>
+                ))}
+              </Form.Select>
             </div>
           </div>
 
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ textAlign: 'left', backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Student Name</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Class / Section</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Roll No.</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Parent Contact</th>
-                    <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-secondary)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
+          {/* ── Data Grid ── */}
+          {loading ? (
+            <div className="py-5 text-center text-muted fw-bold">Loading students...</div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="card shadow-sm border-0 rounded-4 py-5 text-center">
+              <div className="card-body">
+                <h5 className="text-secondary fw-bold mb-2">No students found</h5>
+                <p className="text-muted small mb-0">Try searching for a different name or class.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
+              <div className="table-responsive">
+                <Table hover className="align-middle mb-0">
+                  <thead className="bg-light border-bottom border-light-dark">
                     <tr>
-                      <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading student records...</td>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Student</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Class</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Roll No</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Parent Info</th>
+                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Actions</th>
                     </tr>
-                  ) : filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No students found.</td>
-                    </tr>
-                  ) : (
-                    currentStudents.map((student) => (
-                      <tr key={student._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#e2e8f0', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
-                              <GraduationCap size={20} />
+                  </thead>
+                  <tbody>
+                    {currentStudents.map((student) => (
+                      <tr key={student._id}>
+                        <td className="px-4 py-3">
+                          <div className="d-flex align-items-center gap-3">
+                            <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold small" style={{ width: '38px', height: '38px' }}>
+                              {student.name?.[0]?.toUpperCase()}
                             </div>
                             <div>
-                              <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{student.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{student.email}</div>
+                               <div className="fw-bold text-dark">{student.name}</div>
+                               <div className="smaller text-muted">{student.email}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <BookOpen size={16} color="var(--primary)" />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Class {student.class} - {student.section}</span>
-                          </div>
+                        <td className="px-4 py-3">
+                           <Badge bg="light" text="dark" className="border px-3 py-2 rounded-pill fw-bold smaller">
+                              CLASS {student.class} — {student.section}
+                           </Badge>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)' }}>
-                            <Hash size={14} />
-                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{student.rollNumber}</span>
-                          </div>
+                        <td className="px-4 py-3">
+                           <span className="fw-bold text-primary smaller">{student.rollNumber}</span>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
-                              <Phone size={14} color="#16a34a" /> {student.parentPhone}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Guardian: {student.parentName}</div>
-                          </div>
+                        <td className="px-4 py-3">
+                           <div className="d-flex flex-column">
+                              <span className="small fw-semibold text-dark">{student.parentName}</span>
+                              <span className="smaller text-muted">{student.parentPhone}</span>
+                           </div>
                         </td>
-                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                            <button title="View Profile" style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                              <Eye size={16} />
-                            </button>
-                            <button onClick={() => openEditModal(student)} title="Edit Record" style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer', color: 'var(--primary)' }}>
-                              <Edit size={16} />
-                            </button>
-                            <button onClick={() => handleDelete(student._id, student.name)} title="Delete" style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff', cursor: 'pointer', color: '#dc2626' }}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                        <td className="px-4 py-3 text-end">
+                           <div className="d-flex justify-content-end gap-1">
+                              <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light" onClick={() => openEditModal(student)}>
+                                UPDATE
+                              </Button>
+                              <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(student._id, student.name)}>
+                                REMOVE
+                              </Button>
+                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filteredStudents.length)} of {filteredStudents.length}</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
-                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
-                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
-                  ))}
-                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
-                </div>
+                    ))}
+                  </tbody>
+                </Table>
               </div>
-            )}
-          </div>
+
+              {/* ── Control Flow Pagination ── */}
+              {totalPages > 1 && (
+                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white">
+                  <span className="smaller text-secondary fw-medium ps-2">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, filteredStudents.length)} of {filteredStudents.length} entries</span>
+                  <Pagination className="mb-0 gap-1 pagination-sm">
+                    <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>
+                        {p}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
+                  </Pagination>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Edit Student Modal */}
-      {isEditModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '500px' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem' }}>Edit Student Details</h3>
-            <form onSubmit={handleSaveEdit}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Class</label>
-                <select
-                  value={editForm.class}
-                  onChange={(e) => setEditForm({ ...editForm, class: e.target.value, section: '' })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: '#fff', outline: 'none' }}
-                  required
-                >
-                  <option value="">— Select Class —</option>
-                  {/* unique class names */}
-                  {[...new Set(availableClasses.map(c => c.name))].map(name => (
-                    <option key={name as string} value={name as string}>{name as string}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Section</label>
-                <select
-                  value={editForm.section}
-                  onChange={(e) => setEditForm({ ...editForm, section: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: '#fff', outline: 'none' }}
-                  required
-                  disabled={!editForm.class}
-                >
-                  <option value="">— Select Section —</option>
-                  {availableSections.map((sec: string) => (
-                    <option key={sec} value={sec}>{sec}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Roll Number</label>
-                <input 
-                  type="text" 
-                  value={editForm.rollNumber} 
-                  onChange={(e) => setEditForm({...editForm, rollNumber: e.target.value})} 
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-                  required
-                />
-              </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Parent Contact</label>
-                <input 
-                  type="text" 
-                  value={editForm.parentPhone} 
-                  onChange={(e) => setEditForm({...editForm, parentPhone: e.target.value})} 
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-                  required
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                <button type="button" onClick={closeEditModal} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-                <button type="submit" disabled={isSaving} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', cursor: isSaving ? 'not-allowed' : 'pointer' }}>
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* ── Profile Modification Terminal ── */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered className="border-0 shadow-lg">
+        <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
+          <Modal.Title className="fw-bold text-dark fs-5">MODIFY LEARNER PROFILE</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleSaveEdit}>
+            <Row className="g-3 mb-3">
+              <Col md={6}>
+                 <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class Assignment</Form.Label>
+                 <Form.Select
+                   className="py-2 border-light-dark shadow-none"
+                   value={editForm.class}
+                   onChange={(e) => setEditForm({ ...editForm, class: e.target.value, section: '' })}
+                   required
+                 >
+                   <option value="">Choose Class...</option>
+                   {[...new Set(availableClasses.map(c => c.name))].map(name => (
+                     <option key={name as string} value={name as string}>{name as string}</option>
+                   ))}
+                 </Form.Select>
+              </Col>
+              <Col md={6}>
+                 <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Section</Form.Label>
+                 <Form.Select
+                   className="py-2 border-light-dark shadow-none"
+                   value={editForm.section}
+                   onChange={(e) => setEditForm({ ...editForm, section: e.target.value })}
+                   required
+                   disabled={!editForm.class}
+                 >
+                   <option value="">Choose Section...</option>
+                   {availableSections.map((sec: string) => (
+                     <option key={sec} value={sec}>{sec}</option>
+                   ))}
+                 </Form.Select>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Administrative ID (Roll No)</Form.Label>
+               <Form.Control 
+                 type="text" 
+                 className="py-2 border-light-dark shadow-none" 
+                 value={editForm.rollNumber} 
+                 onChange={(e) => setEditForm({...editForm, rollNumber: e.target.value})} 
+                 required 
+               />
+            </Form.Group>
+
+            <Form.Group className="mb-4">
+               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Primary Emergency Contact</Form.Label>
+               <Form.Control 
+                 type="text" 
+                 className="py-2 border-light-dark shadow-none" 
+                 value={editForm.parentPhone} 
+                 onChange={(e) => setEditForm({...editForm, parentPhone: e.target.value})} 
+                 required 
+               />
+            </Form.Group>
+
+            <div className="d-flex gap-2 pt-2">
+              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-2" onClick={() => setShowEditModal(false)}>
+                DISCARD
+              </Button>
+              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-2" disabled={isSaving}>
+                {isSaving ? 'PROCESSING...' : 'CONFIRM UPDATES'}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default StudentRecords;
+

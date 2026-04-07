@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  GraduationCap, 
-  Calendar, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  Bell,
-  Search,
-  ChevronDown,
-  Clock,
-  User
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AdminHeader from '../../components/AdminHeader';
+import { Row, Col, Card, Badge, Form, InputGroup, Button, Spinner } from 'react-bootstrap';
 
 interface Notice {
   _id: string;
@@ -47,12 +35,12 @@ const StudentNotices: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setNotices(data.data || []);
+        setNotices(Array.isArray(data.data) ? data.data : []);
       } else {
-        setError(data.message || 'Failed to fetch notices');
+        setError(data.message || 'Failed to establish directive bridge.');
       }
     } catch (err) {
-      setError('Failed to load notices');
+      setError('Communication error: Institutional brief server unreachable.');
     } finally {
       setLoading(false);
     }
@@ -73,14 +61,24 @@ const StudentNotices: React.FC = () => {
     n.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getCategoryColor = (cat: string) => {
-    switch (cat) {
-      case 'academic': return { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' };
-      case 'event': return { bg: '#faf5ff', color: '#7c3aed', border: '#ddd6fe' };
-      case 'exam': return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
-      case 'holiday': return { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' };
-      case 'general': return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' };
-      default: return { bg: '#f8fafc', color: '#475569', border: '#e2e8f0' };
+  const getCategoryVariant = (cat: string) => {
+    switch (cat.toLowerCase()) {
+      case 'academic': return 'primary-soft';
+      case 'event': return 'info-soft';
+      case 'exam': return 'danger-soft';
+      case 'holiday': return 'success-soft';
+      case 'general': return 'light';
+      default: return 'light';
+    }
+  };
+
+  const getCategoryText = (cat: string) => {
+    switch (cat.toLowerCase()) {
+      case 'academic': return 'primary';
+      case 'event': return 'info';
+      case 'exam': return 'danger';
+      case 'holiday': return 'success';
+      default: return 'dark';
     }
   };
 
@@ -91,189 +89,143 @@ const StudentNotices: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
-      {/* Sidebar */}
-      <aside style={{ width: '280px', backgroundColor: '#fff', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem' }}>
-        <div style={{ marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 800 }}>SmartResults</h1>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
+      {/* ── Scholar Console ── */}
+      <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', zIndex: 10 }}>
+        <div className="mb-5 px-3">
+          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+          <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
         </div>
         
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" onClick={() => navigate('/dashboard/student')} />
-          <NavItem icon={<GraduationCap size={20} />} label="Results" onClick={() => navigate('/dashboard/student/results')} />
-          <NavItem icon={<Calendar size={20} />} label="Attendance" onClick={() => navigate('/dashboard/student/attendance')} />
-          <NavItem icon={<Bell size={20} />} label="Notices" active />
-          <NavItem icon={<FileText size={20} />} label="Reports" onClick={() => navigate('/dashboard/student/reports')} />
+        <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
+          <Link to="/dashboard/student" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Dashboard</span>
+          </Link>
+          <Link to="/dashboard/student/results" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Results</span>
+          </Link>
+          <Link to="/dashboard/student/attendance" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
+             <span className="ls-1 text-uppercase smallest">Attendance</span>
+          </Link>
+          <Link to="/dashboard/student/notices" className="nav-link bg-primary text-white rounded-pill py-3 px-4 fw-bold shadow-sm mb-1">
+             <span className="ls-1 text-uppercase smallest">Notices</span>
+          </Link>
         </nav>
-
-        <button 
-          onClick={handleLogout}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '1rem', cursor: 'pointer', marginTop: 'auto' }}
-        >
-          <LogOut size={20} />
-          Logout
-        </button>
       </aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="Notices & Announcements" error={error} />
+      {/* ── Primary Terminal ── */}
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Notices" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          {/* Filters Bar */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
-              <Search style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} size={18} />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notices..." 
-                style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '0.9rem', outline: 'none' }} 
-              />
-            </div>
-            <div style={{ position: 'relative' }}>
-              <select 
+        <div className="container-fluid p-4 p-lg-5">
+          {/* ── Command Bar ── */}
+          <div className="d-flex flex-column flex-md-row gap-4 mb-5 align-items-md-center justify-content-between pb-4 border-bottom border-light-dark">
+            <div className="d-flex flex-column flex-md-row gap-3 flex-grow-1" style={{ maxWidth: '700px' }}>
+              <InputGroup className="shadow-sm rounded-pill overflow-hidden border">
+                <Form.Control 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search notices..." 
+                  className="py-3 px-4 smaller border-0 shadow-none fw-bold ls-1 text-uppercase bg-white"
+                />
+              </InputGroup>
+              <Form.Select 
+                className="w-auto shadow-sm border-light-dark smaller fw-bold py-3 px-4 ls-1 text-uppercase rounded-pill appearance-none"
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                style={{ padding: '0.75rem 2.5rem 0.75rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '0.9rem', outline: 'none', appearance: 'none', cursor: 'pointer', background: '#fff' }}
               >
-                <option value="all">All Categories</option>
-                <option value="academic">Academic</option>
-                <option value="event">Events</option>
-                <option value="exam">Exams</option>
-                <option value="holiday">Holidays</option>
-                <option value="general">General</option>
-              </select>
-              <ChevronDown style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }} size={16} />
+                <option value="all">ALL CLASSES</option>
+                <option value="academic">ACADEMIC</option>
+                <option value="event">EVENTS</option>
+                <option value="exam">EXAMS</option>
+                <option value="holiday">HOLIDAYS</option>
+                <option value="general">GENERAL</option>
+              </Form.Select>
             </div>
+            <span className="smallest fw-bold text-secondary text-uppercase ls-1 opacity-50 px-3">{filteredNotices.length} ENTRIES INDEXED</span>
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
-              <p>Loading notices...</p>
-            </div>
+             <div className="d-flex justify-content-center align-items-center py-5">
+                <Spinner animation="border" variant="primary" style={{ width: '2rem', height: '2rem' }} />
+             </div>
           ) : filteredNotices.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '4rem' }}>
-              <Bell size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem', opacity: 0.3 }} />
-              <h3 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>No Notices Found</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>There are no notices matching your criteria.</p>
-            </div>
+            <Card className="border-0 shadow-sm rounded-4 text-center py-5 border-bottom border-4 border-primary">
+              <Card.Body>
+                <h6 className="text-secondary fw-bold smallest text-uppercase ls-2">COMMUNICATION VACUUM</h6>
+                <p className="text-muted smallest fw-bold ls-1 opacity-50 mt-2 uppercase">No directives matching your query parameters were identified.</p>
+              </Card.Body>
+            </Card>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: selectedNotice ? '1fr 1fr' : '1fr', gap: '2rem' }}>
-              {/* Notice List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {filteredNotices.map((notice) => {
-                  const catStyle = getCategoryColor(notice.category);
-                  const isSelected = selectedNotice?._id === notice._id;
-                  return (
-                    <div 
-                      key={notice._id}
-                      onClick={() => setSelectedNotice(notice)}
-                      className="card" 
-                      style={{ 
-                        cursor: 'pointer', 
-                        borderLeft: `4px solid ${catStyle.color}`,
-                        background: isSelected ? '#f8fafc' : '#fff',
-                        boxShadow: isSelected ? '0 0 0 2px var(--primary)' : undefined,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                        <span style={{ padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, background: catStyle.bg, color: catStyle.color, border: `1px solid ${catStyle.border}`, textTransform: 'capitalize' }}>
-                          {notice.category}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <Clock size={12} /> {formatDate(notice.createdAt)}
-                        </span>
+            <Row className="g-4">
+              <Col lg={selectedNotice ? 5 : 12}>
+                <div className="d-flex flex-column gap-3 mb-5">
+                  {filteredNotices.map((notice) => {
+                    const variant = getCategoryVariant(notice.category);
+                    const isSelected = selectedNotice?._id === notice._id;
+                    return (
+                      <Card 
+                        key={notice._id}
+                        onClick={() => setSelectedNotice(notice)}
+                        className={`border-0 shadow-sm rounded-4 cursor-pointer transition-all border-bottom border-1 ${isSelected ? 'border-start border-4 border-primary bg-white' : 'bg-white opacity-90 border-light-dark'}`}
+                      >
+                        <Card.Body className="p-4">
+                          <div className="d-flex justify-content-between align-items-center mb-3">
+                            <Badge bg={variant} text={getCategoryText(notice.category)} className="fw-bold smallest text-uppercase px-3 py-2 border rounded-pill ls-1 shadow-none">
+                              {notice.category}
+                            </Badge>
+                            <span className="smallest text-muted fw-bold ls-1 text-uppercase opacity-50">{formatDate(notice.createdAt)}</span>
+                          </div>
+                          <h6 className="fw-bold text-dark mb-2 ls-1 uppercase smallest fw-bold">{notice.title}</h6>
+                          <p className="text-secondary smallest mb-3 lh-base fw-medium text-truncate">
+                            {notice.content}
+                          </p>
+                          <div className="d-flex justify-content-between align-items-center pt-3 border-top border-light-dark">
+                             <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{notice.createdBy?.name || 'ADMINISTRATOR'}</span>
+                             <Button variant="link" className="smallest text-primary fw-bold text-uppercase ls-1 p-0 text-decoration-none">{isSelected ? 'ACTIVE VIEW' : 'EXPAND'}</Button>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </Col>
+
+              {selectedNotice && (
+                <Col lg={7}>
+                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden position-sticky border-bottom border-4 border-primary" style={{ top: '2rem' }}>
+                    <Card.Body className="p-4 p-lg-5">
+                      <div className="mb-5">
+                        <Badge bg={getCategoryVariant(selectedNotice.category)} text={getCategoryText(selectedNotice.category)} className="fw-bold smallest text-uppercase px-4 py-2 border rounded-pill ls-1 mb-4">
+                          {selectedNotice.category} DIRECTIVE
+                        </Badge>
+                        <h3 className="fw-bold text-dark ls-1 mb-4">{selectedNotice.title}</h3>
+                        <div className="d-flex flex-column flex-sm-row gap-4 smallest fw-bold text-muted text-uppercase ls-1 border-bottom border-light-dark pb-4">
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">RELEASED:</span> <span>{formatDate(selectedNotice.createdAt)}</span></div>
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">ISSUED BY:</span> <span>{selectedNotice.createdBy?.name || 'REGISTRAR OFFICE'}</span></div>
+                        </div>
                       </div>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem' }}>{notice.title}</h4>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                        {notice.content.length > 120 ? notice.content.substring(0, 120) + '...' : notice.content}
-                      </p>
-                      {notice.createdBy && (
-                        <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          <User size={12} /> Posted by {notice.createdBy.name}
+                      <div className="text-dark smallest lh-lg fw-bold ls-1 opacity-75">
+                        {selectedNotice.content.split('\n').map((para, i) => (
+                          <p key={i} className="mb-4">{para}</p>
+                        ))}
+                      </div>
+                      {selectedNotice.expiryDate && (
+                        <div className="bg-danger-soft p-3 rounded-4 border-start border-4 border-danger mt-5">
+                          <span className="smallest fw-bold text-danger text-uppercase ls-2">REMOVAL SCHEDULED: {formatDate(selectedNotice.expiryDate)}</span>
                         </div>
                       )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Detail Panel */}
-              {selectedNotice && (
-                <div className="card" style={{ position: 'sticky', top: '2rem', alignSelf: 'flex-start' }}>
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <span style={{ 
-                      padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, 
-                      background: getCategoryColor(selectedNotice.category).bg, 
-                      color: getCategoryColor(selectedNotice.category).color, 
-                      border: `1px solid ${getCategoryColor(selectedNotice.category).border}`,
-                      textTransform: 'capitalize'
-                    }}>
-                      {selectedNotice.category}
-                    </span>
-                  </div>
-                  <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.35rem' }}>{selectedNotice.title}</h2>
-                  <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={14} /> {formatDate(selectedNotice.createdAt)}</span>
-                    {selectedNotice.createdBy && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}><User size={14} /> {selectedNotice.createdBy.name}</span>
-                    )}
-                  </div>
-                  <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '0 0 1.5rem 0' }} />
-                  <div style={{ fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-primary)' }}>
-                    {selectedNotice.content.split('\n').map((para, i) => (
-                      <p key={i} style={{ marginBottom: '1rem' }}>{para}</p>
-                    ))}
-                  </div>
-                  {selectedNotice.expiryDate && (
-                    <div style={{ marginTop: '1.5rem', padding: '0.75rem 1rem', background: '#fef2f2', color: '#b91c1c', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600 }}>
-                      Expires on: {formatDate(selectedNotice.expiryDate)}
-                    </div>
-                  )}
-                </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
               )}
-            </div>
+            </Row>
           )}
         </div>
       </main>
     </div>
   );
 };
-
-// Internal Side nav component
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick }) => (
-  <button 
-    onClick={onClick}
-    style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '0.75rem', 
-      padding: '0.875rem 1.25rem', 
-      borderRadius: 'var(--btn-radius)', 
-      border: 'none', 
-      backgroundColor: active ? '#f1f5f9' : 'transparent', 
-      color: active ? 'var(--primary)' : 'var(--text-secondary)', 
-      fontSize: '0.95rem',
-      fontWeight: active ? 600 : 500,
-      cursor: 'pointer',
-      width: '100%',
-      textAlign: 'left',
-      transition: 'all 0.2s'
-    }}
-  >
-    {icon}
-    {label}
-  </button>
-);
 
 export default StudentNotices;

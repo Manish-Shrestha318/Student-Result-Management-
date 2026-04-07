@@ -31,7 +31,12 @@ const MarkSchema: Schema = new Schema({
   grade: { type: String },
   remarks: { type: String },
   term: { type: String, required: true },
-  year: { type: Number, required: true }
+  year: { type: Number, required: true },
+  topicWise: [{
+    topicName: { type: String, required: true },
+    marksObtained: { type: Number, required: true },
+    totalMarks: { type: Number, required: true }
+  }]
 }, { timestamps: true });
 
 // Calculate grade before saving

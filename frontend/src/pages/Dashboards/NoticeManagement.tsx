@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { 
-  Bell, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Flag,
-  Calendar,
-  Users,
-  CheckCircle2
-} from 'lucide-react';
+import { Card, Button, Badge, Alert, Modal, Form, Row, Col, Pagination } from 'react-bootstrap';
 
 const NoticeManagement: React.FC = () => {
   const [notices, setNotices] = useState<any[]>([]);
@@ -26,8 +16,7 @@ const NoticeManagement: React.FC = () => {
   const currentNotices = notices.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(notices.length / itemsPerPage);
   
-  // New Notice Form Context
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [newNotice, setNewNotice] = useState<any>({
     title: '',
     content: '',
@@ -74,7 +63,7 @@ const NoticeManagement: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         setSuccessMessage('Notice published successfully!');
-        setShowForm(false);
+        setShowModal(false);
         setNewNotice({ title: '', content: '', category: 'general', targetRoles: ['student', 'teacher', 'parent'], publishDate: new Date().toISOString().split('T')[0] });
         fetchNotices();
         setTimeout(() => setSuccessMessage(null), 3000);
@@ -116,172 +105,191 @@ const NoticeManagement: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: 'var(--bg-color)' }}>
+    <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        <AdminHeader title="School Board & Notices" error={error} />
+      <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
+        <AdminHeader title="Institutional Bulletin" error={error} />
 
-        <div style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div className="container-fluid p-4 p-lg-5">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3 border-bottom pb-4">
             <div>
-              <h3 style={{ fontSize: '1.5rem', margin: 0 }}>Notice Management</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Publish announcements to students, parents, and teachers.</p>
+              <h3 className="fw-bold text-dark mb-1">Notice Management</h3>
+              <p className="text-secondary small mb-0 fw-medium">Broadcast announcements and critical policy updates.</p>
             </div>
-            <button onClick={() => setShowForm(!showForm)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Plus size={18} /> {showForm ? 'Cancel' : 'New Announcement'}
-            </button>
+            <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm" onClick={() => setShowModal(true)}>
+               NEW ANNOUNCEMENT
+            </Button>
           </div>
 
           {successMessage && (
-             <div style={{ padding: '1rem', background: '#dcfce7', color: '#15803d', borderRadius: '10px', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid #bbf7d0' }}>
-               <CheckCircle2 size={18} /> {successMessage}
-             </div>
+             <Alert variant="success" className="border-0 rounded-4 shadow-sm mb-4 fw-bold smaller text-uppercase px-4 py-3">
+                {successMessage}
+             </Alert>
           )}
 
-          {showForm && (
-            <div className="card" style={{ marginBottom: '2.5rem', border: '1px solid var(--primary)' }}>
-              <h4 style={{ marginBottom: '1.5rem' }}>Create New Announcement</h4>
-              <form onSubmit={handleCreateNotice} style={{ display: 'grid', gap: '1.25rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Title</label>
-                    <input 
-                      type="text"
-                      className="input-field" 
-                      required 
-                      value={newNotice.title} 
-                      onChange={(e) => setNewNotice({...newNotice, title: e.target.value})} 
-                      placeholder="e.g. Annual Sports Day 2025"
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Category</label>
-                    <select 
-                      className="input-field" 
-                      value={newNotice.category} 
-                      onChange={(e) => setNewNotice({...newNotice, category: e.target.value})}
-                    >
-                      <option value="general">General</option>
-                      <option value="academic">Academic</option>
-                      <option value="exam">Exam</option>
-                      <option value="event">Event</option>
-                      <option value="urgent">Urgent</option>
-                      <option value="holiday">Holiday</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Detailed Content</label>
-                  <textarea 
-                    className="input-field" 
-                    rows={4} 
-                    required 
-                    value={newNotice.content}
-                    onChange={(e) => setNewNotice({...newNotice, content: e.target.value})}
-                    placeholder="Write the full announcement details here..."
-                    style={{ resize: 'vertical' }}
-                  ></textarea>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Publish Date</label>
-                    <input 
-                      type="date" 
-                      className="input-field" 
-                      value={newNotice.publishDate}
-                      onChange={(e) => setNewNotice({...newNotice, publishDate: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600 }}>Target Audience</label>
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                       {['student', 'teacher', 'parent'].map(role => (
-                         <label key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
-                           <input type="checkbox" checked={newNotice.targetRoles.includes(role)} onChange={() => {
-                             const updated = newNotice.targetRoles.includes(role) 
-                               ? newNotice.targetRoles.filter((r: string) => r !== role)
-                               : [...newNotice.targetRoles, role];
-                             setNewNotice({...newNotice, targetRoles: updated});
-                           }} />
-                           <span style={{ textTransform: 'capitalize' }}>{role}</span>
-                         </label>
-                       ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                  <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
-                  <button type="submit" disabled={loading} className="btn-primary">Publish Announcement</button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="d-flex flex-column gap-4 pb-5">
             {loading && notices.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '5rem' }}>Retrieving bulletin board...</div>
+              <div className="py-5 text-center text-muted fw-bold italic small">Synchronizing board records...</div>
             ) : notices.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: '5rem' }}>
-                <Bell size={48} style={{ marginBottom: '1.5rem', color: 'var(--border-color)' }} />
-                <h3>No Notices Found</h3>
-                <p style={{ color: 'var(--text-secondary)' }}>The school bulletin is currently empty.</p>
-              </div>
+              <Card className="border-0 shadow-sm rounded-4 text-center py-5">
+                <Card.Body>
+                  <h5 className="text-dark fw-bold mb-1 small text-uppercase ls-1">BULLETIN EMPTY</h5>
+                  <p className="text-secondary smaller mb-0">No active announcements indexed in the repository.</p>
+                </Card.Body>
+              </Card>
             ) : (
               currentNotices.map(notice => (
-                <div key={notice._id} className="card" style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem', opacity: notice.isActive ? 1 : 0.6 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                      <span style={{ padding: '0.2rem 0.6rem', borderRadius: '4px', background: '#eff6ff', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>
-                        {notice.category}
-                      </span>
-                      <h4 style={{ margin: 0 }}>{notice.title}</h4>
-                    </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>{notice.content}</p>
-                    <div style={{ display: 'flex', gap: '2rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Users size={14} /> <i>To:</i> {notice.targetRoles.join(', ')}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Calendar size={14} /> <i>Date:</i> {new Date(notice.publishDate).toLocaleDateString()}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Flag size={14} /> {notice.isActive ? 'Active' : 'Archived'}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <button onClick={() => handleToggleStatus(notice._id)} style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: '#fff', cursor: 'pointer' }}>
-                      {notice.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
-                    </button>
-                    <button onClick={() => handleDelete(notice._id)} style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #fee2e2', background: '#fff', cursor: 'pointer', color: '#dc2626' }}>
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
+                <Card key={notice._id} className={`border-0 shadow-sm rounded-4 overflow-hidden transition-all ${notice.isActive ? '' : 'opacity-75'}`}>
+                  <Card.Body className="p-4">
+                    <Row className="align-items-start g-4">
+                      <Col>
+                        <div className="d-flex align-items-center gap-3 mb-3">
+                          <Badge bg="primary-soft" text="primary" className="fw-bold smallest text-uppercase px-3 py-2 border rounded-pill ls-1">
+                             {notice.category}
+                          </Badge>
+                          <h5 className="fw-bold text-dark mb-0 ls-1">{notice.title}</h5>
+                        </div>
+                        <p className="text-secondary small mb-4 lh-lg fw-medium">{notice.content}</p>
+                        <div className="d-flex flex-wrap gap-4 text-muted smallest fw-bold text-uppercase ls-1">
+                          <span>RECIPINETS: {notice.targetRoles.join(', ')}</span>
+                          <span>PUBLISHED: {new Date(notice.publishDate).toLocaleDateString()}</span>
+                          <span className={notice.isActive ? 'text-success' : 'text-warning'}>STATE: {notice.isActive ? 'ACTIVE' : 'ARCHIVED'}</span>
+                        </div>
+                      </Col>
+                      <Col xs="auto" className="d-flex flex-column gap-2">
+                        <Button variant="outline-dark" size="sm" className="fw-bold rounded-pill px-4 smaller border-0 bg-light shadow-sm" onClick={() => handleToggleStatus(notice._id)}>
+                          {notice.isActive ? "ARCHIVE" : "ACTIVATE"}
+                        </Button>
+                        <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger rounded-pill px-4 smaller shadow-sm" onClick={() => handleDelete(notice._id)}>
+                          DELETE
+                        </Button>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
               ))
             )}
 
-            {/* Pagination */}
+            {/* ── Dynamic Control Pagination ── */}
             {totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Showing {indexOfFirst + 1}–{Math.min(indexOfLast, notices.length)} of {notices.length} notices</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setCurrentPage(p => Math.max(p-1,1))} disabled={currentPage===1} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===1?'not-allowed':'pointer', opacity: currentPage===1?0.5:1, fontSize: '0.85rem' }}>Previous</button>
-                  {Array.from({length: totalPages},(_,i)=>i+1).map(p=>(
-                    <button key={p} onClick={()=>setCurrentPage(p)} style={{ padding: '0.5rem 0.8rem', borderRadius: '6px', border: p===currentPage?'none':'1px solid var(--border-color)', background: p===currentPage?'var(--primary)':'#fff', color: p===currentPage?'#fff':'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: p===currentPage?600:400 }}>{p}</button>
+              <div className="d-flex justify-content-between align-items-center mt-3 bg-white p-4 rounded-4 shadow-sm border-0">
+                <span className="smaller text-secondary fw-medium">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, notices.length)} of {notices.length} entries</span>
+                <Pagination className="mb-0 gap-1 pagination-sm">
+                  <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} />
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Pagination.Item key={page} active={page === currentPage} onClick={() => setCurrentPage(page)}>
+                      {page}
+                    </Pagination.Item>
                   ))}
-                  <button onClick={() => setCurrentPage(p => Math.min(p+1,totalPages))} disabled={currentPage===totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', cursor: currentPage===totalPages?'not-allowed':'pointer', opacity: currentPage===totalPages?0.5:1, fontSize: '0.85rem' }}>Next</button>
-                </div>
+                  <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} />
+                </Pagination>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      {/* ── Announcement Modal ── */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="border-0">
+        <Modal.Header closeButton className="border-0 p-4 pb-0">
+          <Modal.Title className="fw-bold text-dark ls-1">NEW ANNOUNCEMENT CREATION</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleCreateNotice}>
+            <Row className="g-4 mb-4">
+              <Col md={8}>
+                <Form.Group>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Announcement Title</Form.Label>
+                  <Form.Control 
+                    type="text"
+                    required
+                    value={newNotice.title} 
+                    onChange={(e) => setNewNotice({...newNotice, title: e.target.value})} 
+                    className="py-2 smaller border-light-dark shadow-none"
+                    placeholder="e.g., SEMESTER COMMENCEMENT"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Category Hub</Form.Label>
+                  <Form.Select 
+                    value={newNotice.category} 
+                    onChange={(e) => setNewNotice({...newNotice, category: e.target.value})}
+                    className="py-2 smaller border-light-dark shadow-none fw-bold"
+                  >
+                    <option value="general">GENERAL</option>
+                    <option value="academic">ACADEMIC</option>
+                    <option value="exam">EXAM BOARD</option>
+                    <option value="event">SCHOOL EVENT</option>
+                    <option value="urgent">URGENT HUB</option>
+                    <option value="holiday">INSTITUTIONAL HOLIDAY</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-4">
+              <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Announcement Directive</Form.Label>
+              <Form.Control 
+                as="textarea"
+                rows={5} 
+                required 
+                value={newNotice.content}
+                onChange={(e) => setNewNotice({...newNotice, content: e.target.value})}
+                className="py-2 smaller border-light-dark shadow-none"
+                placeholder="Declare the institutional directive here..."
+              />
+            </Form.Group>
+
+            <Row className="g-4 mb-5">
+               <Col md={6}>
+                 <Form.Group>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Effective Date</Form.Label>
+                  <Form.Control 
+                    type="date" 
+                    value={newNotice.publishDate}
+                    onChange={(e) => setNewNotice({...newNotice, publishDate: e.target.value})}
+                    className="py-2 smaller border-light-dark shadow-none"
+                  />
+                </Form.Group>
+               </Col>
+               <Col md={6}>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 d-block mb-3">Audience Distribution</Form.Label>
+                  <div className="d-flex gap-4 pt-1 px-1">
+                    {['student', 'teacher', 'parent'].map(role => (
+                      <Form.Check 
+                        key={role}
+                        type="checkbox"
+                        label={role.toUpperCase()}
+                        className="smaller fw-bold text-secondary"
+                        checked={newNotice.targetRoles.includes(role)}
+                        onChange={() => {
+                          const updated = newNotice.targetRoles.includes(role) 
+                            ? newNotice.targetRoles.filter((r: string) => r !== role)
+                            : [...newNotice.targetRoles, role];
+                          setNewNotice({...newNotice, targetRoles: updated});
+                        }}
+                      />
+                    ))}
+                  </div>
+               </Col>
+            </Row>
+
+            <div className="d-flex justify-content-end gap-3 border-top pt-4">
+               <Button variant="light" className="fw-bold border text-secondary px-4 smaller rounded-pill" onClick={() => setShowModal(false)}>
+                 TERMINATE
+               </Button>
+               <Button variant="primary" type="submit" disabled={loading} className="fw-bold px-5 smaller rounded-pill shadow-sm ls-1">
+                 {loading ? 'PROCESSING...' : 'PUBLISH DIRECTIVE'}
+               </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
 
 export default NoticeManagement;
+
