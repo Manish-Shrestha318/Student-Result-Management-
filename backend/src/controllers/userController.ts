@@ -13,8 +13,16 @@ export const getMyProfile = async (req: any, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const user = await User.findById(userId).select('-password -resetPasswordToken -resetPasswordExpire');
+    let user: any = await User.findById(userId).select('-password -resetPasswordToken -resetPasswordExpire').lean();
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // If student, attach profile data
+    if (user.role === 'student') {
+      const studentProfile = await Student.findOne({ userId }).lean();
+      if (studentProfile) {
+        user = { ...user, studentProfile };
+      }
+    }
 
     res.json({ success: true, user });
   } catch (error: any) {
@@ -205,7 +213,6 @@ export const verifyTeacherController = async (req: Request, res: Response) => {
     
     await user.save();
     console.log(`DEBUG: Teacher ${user.name} status updated to ${user.status}`);
-// ...
 
     // Log this action
     await logActivity({

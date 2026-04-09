@@ -295,15 +295,18 @@ export class TopicAnalysisService {
         };
       }
 
-      subjectAnalysis[subjectName].scores.push({
+      const scoreEntry = {
         examType: mark.examType,
         term: mark.term,
         year: mark.year,
         marks: mark.marksObtained,
         total: mark.totalMarks,
         percentage: percentage.toFixed(2),
-        grade: mark.grade
-      });
+        grade: mark.grade,
+        topicWise: mark.topicWise // Ensure topicWise is included here
+      };
+
+      subjectAnalysis[subjectName].scores.push(scoreEntry);
     }
 
     // Calculate averages and identify weak/strong subjects

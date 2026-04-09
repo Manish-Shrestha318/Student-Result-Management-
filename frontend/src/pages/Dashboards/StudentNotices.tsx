@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import StudentSidebar from '../../components/StudentSidebar';
 import AdminHeader from '../../components/AdminHeader';
 import { Row, Col, Card, Badge, Form, InputGroup, Button, Spinner } from 'react-bootstrap';
 
@@ -90,28 +91,7 @@ const StudentNotices: React.FC = () => {
 
   return (
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
-      {/* ── Scholar Console ── */}
-      <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', zIndex: 10 }}>
-        <div className="mb-5 px-3">
-          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
-          <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
-        </div>
-        
-        <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
-          <Link to="/dashboard/student" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Dashboard</span>
-          </Link>
-          <Link to="/dashboard/student/results" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Results</span>
-          </Link>
-          <Link to="/dashboard/student/attendance" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Attendance</span>
-          </Link>
-          <Link to="/dashboard/student/notices" className="nav-link bg-primary text-white rounded-pill py-3 px-4 fw-bold shadow-sm mb-1">
-             <span className="ls-1 text-uppercase smallest">Notices</span>
-          </Link>
-        </nav>
-      </aside>
+      <StudentSidebar />
 
       {/* ── Primary Terminal ── */}
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">

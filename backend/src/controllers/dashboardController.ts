@@ -53,68 +53,68 @@ export const getTeacherStats = async (req: Request, res: Response) => {
       }
     }
 
-    // 1. Fetch subjects handled by this teacher
-    const subjects = await Subject.find({ teacherId: teacherUserId });
-    const subjectIds = subjects.map(s => s._id);
+    // 1. Fetch subjects explicitly assigned to this teacher
+    const teacherSubjects = await Subject.find({ teacherId: teacherUserId });
+    
+    // 2. Extract unique Class/Section pairs from assigned subjects
+    const teacherAssignments = teacherSubjects.map(s => ({
+        class: s.class,
+        section: s.section
+    }));
 
-    // 2. Fetch classes that are assigned to this teacher (either they are classTeacher, OR the class has subjects taught by teacher)
-    const assignedClasses = await Class.find({
-      $or: [
-        { classTeacher: teacherUserId },
-        { subjects: { $in: subjectIds } }
-      ]
+    // 3. Fetch classes strictly restricted to the subjects the teacher handles
+    const teacherClasses = await Class.find({
+      $or: teacherAssignments.length > 0 ? teacherAssignments.map(a => ({
+          name: a.class,
+          section: a.section
+      })) : [{ name: "__NONE__" }]
     }).populate('students');
 
-    // 3. Collect unique students from these classes
-    const allStudentsMap = new Map();
-    assignedClasses.forEach(cls => {
-      cls.students.forEach((s: any) => {
-        allStudentsMap.set(s._id.toString(), {
-          ...s,
-          className: `${cls.name} - ${cls.section}`
-        });
-      });
+    const distinctClassesMap = new Map();
+    teacherClasses.forEach(c => {
+        const classKey = `${c.name} — ${c.section}`;
+        // Ensure the teacher actually handles a subject in this class
+        const teachesInThisClass = teacherAssignments.some(a => a.class === c.name && a.section === c.section);
+        if (teachesInThisClass && !distinctClassesMap.has(classKey)) {
+            distinctClassesMap.set(classKey, c);
+        }
     });
 
-    const studentIds = Array.from(allStudentsMap.keys());
-    const totalStudents = studentIds.length;
-    const totalAssignedClasses = assignedClasses.length;
-    const totalSubjectsHandled = subjects.length;
-
-    // Fetch actual student details for the recent students table
-    const recentStudentProfiles = await Student.find({ _id: { $in: studentIds } })
+    const studentIds = Array.from(new Set(teacherClasses.flatMap(c => c.students.map((s: any) => s._id.toString()))));
+    
+    // Fetch actual student details for the teacher portal
+    const StudentModel = require('../models/Student').default;
+    const studentProfiles = await StudentModel.find({ _id: { $in: studentIds } })
       .populate('userId', 'name email profilePicture')
       .lean();
 
-    const formattedStudents = recentStudentProfiles.map(s => ({
-      id: s.rollNumber,
-      name: (s.userId as any)?.name || 'Unknown',
-      email: (s.userId as any)?.email || '',
-      class: s.class + ' - ' + s.section,
-      attendance: '95%', // For simplicity in this demo, default
-      performance: 'A'
+    const formattedStudents = studentProfiles.map((s: any) => ({
+      _id: s._id,
+      rollNumber: s.rollNumber,
+      name: s.userId?.name || 'Unknown',
+      email: s.userId?.email || '',
+      class: s.class,
+      section: s.section
     }));
 
-    // Mock Messages for now
-    const messages = [
-      { from: 'System', subject: 'Dashboard Updated', time: '1h ago', unread: true },
-      { from: 'Admin', subject: 'Please enter final marks', time: '1d ago', unread: false }
-    ];
+    const distinctClassKeys = Array.from(distinctClassesMap.keys());
 
     res.json({
       success: true,
+      teacherId: teacherUserId,
       stats: {
-        assignedClasses: totalAssignedClasses,
-        totalStudents: totalStudents,
-        subjectsHandled: totalSubjectsHandled
+        assignedClasses: distinctClassKeys.length,
+        totalStudents: studentIds.length,
+        subjectsHandled: teacherSubjects.length
       },
       students: formattedStudents,
-      messages: messages,
+      assignedClassesList: Array.from(distinctClassesMap.values()),
+      subjects: teacherSubjects,
       classPerformanceData: {
-        labels: assignedClasses.slice(0, 5).map(c => `${c.name} ${c.section}`),
+        labels: distinctClassKeys.slice(0, 5),
         datasets: [{
           label: 'Average Score (%)',
-          data: assignedClasses.slice(0, 5).map(() => Math.floor(Math.random() * (95 - 65) + 65)),
+          data: distinctClassKeys.slice(0, 5).map(() => Math.floor(Math.random() * (95 - 65) + 65)),
           backgroundColor: '#2563eb',
           borderRadius: 6
         }]

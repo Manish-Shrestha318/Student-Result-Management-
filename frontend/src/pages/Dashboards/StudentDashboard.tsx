@@ -1,28 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Row, Col, Card, Badge, Button, Spinner, Table } from 'react-bootstrap';
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
-  Legend 
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Row, Col, Card, Badge, Spinner, Table } from 'react-bootstrap';
 import AdminHeader from '../../components/AdminHeader';
-
-ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  Title, 
-  Tooltip, 
-  Legend
-);
+import StudentSidebar from '../../components/StudentSidebar';
 
 const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -46,8 +26,29 @@ const StudentDashboard: React.FC = () => {
   useEffect(() => {
     if (user?._id) {
       fetchDashboardData();
+      fetchProfileData();
     }
   }, [user]);
+
+  const fetchProfileData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('/api/users/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        // Enriched user object with studentProfile
+        setUser(data.user);
+        // Also update localStorage so it's fresh for next page loads
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+    } catch (err) {
+      console.error("Failed to fetch full profile", err);
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -77,81 +78,39 @@ const StudentDashboard: React.FC = () => {
       }
 
     } catch (err) {
-      setError("Failed to synchronize academic telemetry.");
+      setError("Failed to load records.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownloadReport = async () => {
-    try {
-      const year = new Date().getFullYear();
-      const term = "Final"; 
-      const url = `/api/report-cards/generate?studentId=${user._id}&term=${term}&year=${year}`;
-      window.open(url, '_blank');
-    } catch (err) {
-      alert("Failed to generate report card directive.");
-    }
-  };
 
 
-  const chartData = {
-    labels: trends.length > 0 ? trends.map(t => t.term) : ['Term 1', 'Term 2', 'Final'],
-    datasets: [
-      {
-        label: 'Success Delta (%)',
-        data: trends.length > 0 ? trends.map(t => parseFloat(t.percentage)) : [0, 0, 0],
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37, 99, 235, 0.05)',
-        tension: 0.35,
-        fill: true,
-        pointRadius: 6,
-        pointBackgroundColor: '#fff',
-        pointBorderWidth: 3,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { padding: 12, cornerRadius: 8 }
-    },
-    scales: {
-      y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' as const } } },
-      x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' as const } } }
-    }
-  };
 
   const averageMarksValue = results.length > 0 ? (results.reduce((acc, curr) => acc + (curr.marksObtained || 0), 0) / results.reduce((acc, curr) => acc + (curr.totalMarks || 100), 0) * 100).toFixed(1) : '0';
-  const attendancePercentage = Array.isArray(attendance) && attendance.length > 0 ? ((attendance.filter((a: any) => a.status === 'present').length / attendance.length) * 100).toFixed(1) : '0';
+  const calculateAttendance = () => {
+    if (!Array.isArray(attendance) || attendance.length === 0) return '0';
+    
+    // Filter to only include valid student presence records (ignore weekday holidays)
+    const validRecords = attendance.filter((a: any) => {
+      const day = new Date(a.date).getDay();
+      if (a.status === 'holiday' && day !== 6) return false;
+      return true;
+    });
+
+    if (validRecords.length === 0) return '0';
+
+    const present = validRecords.filter((a: any) => a.status === 'present').length;
+    const totalInstructional = validRecords.filter((a: any) => a.status === 'present' || a.status === 'absent').length;
+
+    return totalInstructional > 0 ? ((present / totalInstructional) * 100).toFixed(1) : '0';
+  };
+
+  const attendancePercentage = calculateAttendance();
 
   return (
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
-      {/* ── Scholar Console ── */}
-      <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', zIndex: 10 }}>
-        <div className="mb-5 px-3">
-          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
-          <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
-        </div>
-        
-        <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
-          <Link to="/dashboard/student" className="nav-link bg-primary text-white rounded-pill py-3 px-4 fw-bold shadow-sm mb-1">
-             <span className="ls-1 text-uppercase smallest">Dashboard</span>
-          </Link>
-          <Link to="/dashboard/student/results" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Results</span>
-          </Link>
-          <Link to="/dashboard/student/attendance" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Attendance</span>
-          </Link>
-          <Link to="/dashboard/student/notices" className="nav-link text-secondary fw-semibold hover-bg-light rounded-pill py-3 px-4 mb-1">
-             <span className="ls-1 text-uppercase smallest">Notices</span>
-          </Link>
-        </nav>
-      </aside>
+      <StudentSidebar />
 
       {/* ── Primary Terminal ── */}
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
@@ -161,24 +120,30 @@ const StudentDashboard: React.FC = () => {
           {/* ── Status Header ── */}
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
             <div>
-              <h3 className="fw-bold text-dark mb-1">Welcome: {user?.name || 'Student'}</h3>
-              <p className="text-secondary small mb-0 fw-medium">Status: Logged In | Grade {user?.class || 'N/A'}</p>
+              <h3 className="fw-bold text-dark mb-1">
+                Welcome: {user?.name || 'Student'} 
+                {user?.studentProfile && (
+                  <span className="text-primary ms-3 smallest text-uppercase ls-1 fw-bold opacity-75">
+                    ({user.studentProfile.class} — {user.studentProfile.section})
+                  </span>
+                )}
+              </h3>
+              <p className="text-secondary small mb-0 fw-medium">
+                Status: Logged In | {user?.studentProfile ? `${user.studentProfile.class} — ${user.studentProfile.section}` : 'Grade N/A'}
+              </p>
             </div>
-            <Button variant="primary" className="fw-bold px-5 py-2 rounded-pill shadow-sm ls-1 smallest text-uppercase" onClick={handleDownloadReport}>
-               DOWNLOAD REPORT
-            </Button>
           </div>
 
           {/* ── Analytical Scorecards ── */}
           <Row className="g-4 mb-5">
             {[
-              { label: 'STATUS TREND', value: `${averageMarksValue}%`, color: 'primary' },
-              { label: 'ATTENDANCE RATIO', value: `${attendancePercentage}%`, color: 'info' },
-              { label: 'ACTIVE MODULES', value: results.length, color: 'success' },
-              { label: 'IDENTITY STATE', value: 'VERIFIED', color: 'dark' },
+              { label: 'GRADE', value: `${averageMarksValue}%`, color: 'primary' },
+              { label: 'ATTENDANCE', value: `${attendancePercentage}%`, color: 'info' },
+              { label: 'SUBJECTS', value: results.length, color: 'success' },
+              { label: 'STATUS', value: 'VERIFIED', color: 'dark' },
             ].map((stat, i) => (
               <Col key={i} sm={6} xl={3}>
-                <Card className={`border-0 shadow-sm rounded-4 h-100 border-start border-5 border-${stat.color}`}>
+                <Card className="border-0 shadow-sm rounded-4 h-100">
                   <Card.Body className="p-4">
                     <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{stat.label}</span>
                     <h3 className="fw-bold text-dark mb-0 ls-1">{stat.value}</h3>
@@ -190,17 +155,6 @@ const StudentDashboard: React.FC = () => {
 
           <Row className="g-4">
             <Col xl={8}>
-               {/* ── Success Pipeline ── */}
-               <Card className="border-0 shadow-sm rounded-4 p-4 mb-4 border-bottom border-4 border-primary">
-                  <div className="d-flex align-items-center justify-content-between mb-4 border-start border-4 border-primary ps-3">
-                     <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-2">Term Progress</h6>
-                     <Badge bg="primary-soft" text="primary" className="fw-bold smallest px-3 py-2 rounded-pill border border-primary-soft">IMPROVING</Badge>
-                  </div>
-                  <div style={{ height: '340px' }}>
-                     <Line data={chartData} options={chartOptions} />
-                  </div>
-               </Card>
-
                {/* ── Subject Evaluations ── */}
                <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                   <div className="card-header bg-white border-bottom p-4">
@@ -220,7 +174,11 @@ const StudentDashboard: React.FC = () => {
                         {results.length === 0 ? (
                           <tr><td colSpan={4} className="px-4 py-5 text-center text-muted fw-bold italic opacity-50 uppercase ls-1">No results available yet.</td></tr>
                         ) : (
-                          results.map((row, i) => (
+                          results
+                            .filter((row, index, self) => 
+                              self.findIndex(r => (r.subjectId?.name || r.subject) === (row.subjectId?.name || row.subject)) === index
+                            )
+                            .map((row, i) => (
                             <tr key={i} className="border-bottom border-light">
                               <td className="px-4 py-3 fw-bold text-dark text-uppercase">{row.subjectId?.name || 'Subject'}</td>
                               <td className="px-4 py-3 text-secondary text-uppercase smallest fw-bold ls-1">{row.examType}</td>
@@ -266,18 +224,10 @@ const StudentDashboard: React.FC = () => {
                      </div>
                   </Card>
 
-                  {/* ── Operational Directives ── */}
-                  <Card className="border-0 shadow-sm rounded-4 p-4 bg-dark text-white">
-                     <h6 className="fw-bold text-uppercase smallest ls-2 mb-4 border-bottom border-secondary border-opacity-25 pb-3">Quick Links</h6>
-                     <div className="d-flex flex-column gap-3">
-                         <Button onClick={() => navigate('/dashboard/student/results')} variant="outline-light" className="text-start border-light border-opacity-25 py-3 px-4 rounded-4 shadow-none smallest fw-bold text-uppercase ls-1 transition-all hover-bg-white hover-text-dark">View Results</Button>
-                         <Button onClick={() => navigate('/dashboard/student/attendance')} variant="outline-light" className="text-start border-light border-opacity-25 py-3 px-4 rounded-4 shadow-none smallest fw-bold text-uppercase ls-1 transition-all hover-bg-white hover-text-dark">View Attendance</Button>
-                         <Button variant="outline-light" className="text-start border-light border-opacity-25 py-3 px-4 rounded-4 shadow-none smallest fw-bold text-uppercase ls-1 transition-all hover-bg-white hover-text-dark">Help & Support</Button>
-                     </div>
-                  </Card>
+
 
                   {/* ── Standing Insights ── */}
-                  <Card className="border-0 shadow-sm rounded-4 p-4 border-end border-4 border-info">
+                  <Card className="border-0 shadow-sm rounded-4 p-4">
                      <h6 className="fw-bold text-dark mb-4 border-bottom pb-3 border-light-dark smallest text-uppercase ls-2">Academic Status</h6>
                      <div className="p-3 bg-light-soft rounded-4 border border-light-dark">
                         <div className="d-flex justify-content-between align-items-center mb-3">

@@ -11,10 +11,11 @@ router.put("/me", protect, updateMyProfile);                // Update own name
 router.put("/me/password", protect, changeMyPassword);      // Change own password (requires current password)
 router.post("/photo", protect, upload.single("photo"), uploadProfileController); // Upload own profile photo
 
+// ===== SHARED READ-ONLY ROUTES (Admin & Teacher) =====
+router.get("/", protect, authorizeRoles("admin", "teacher"), getUsers); // Get all users (filtered by role)
+
 // ===== ADMIN-ONLY ROUTES =====
 router.use(protect, authorizeRoles("admin"));
-
-router.get("/", getUsers);           // Get all users
 router.delete("/students/:id", deleteStudentProfileController); // Delete student record
 router.put("/students/:id", updateStudentProfileController); // Update student profile
 router.get("/pending-teachers", getPendingTeachersController); // Get pending teachers

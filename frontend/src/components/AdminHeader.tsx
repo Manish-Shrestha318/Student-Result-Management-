@@ -155,7 +155,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, error }) => {
             {showNotifications && (
               <div className="position-absolute top-100 end-0 mt-2 bg-white border-0 shadow-lg rounded-4 p-0 overflow-hidden" style={{ width: '340px', zIndex: 1050 }}>
                 <div className="p-4 border-bottom bg-light-soft d-flex justify-content-between align-items-center">
-                  <h6 className="mb-0 fw-bold smallest text-uppercase ls-2">Notifications</h6>
+                  <h6 className="mb-0 fw-bold smallest text-uppercase ls-2">Notices</h6>
                   <Badge bg="primary-soft" text="primary" className="fw-bold smallest rounded-pill">{notices.length}</Badge>
                 </div>
                 <div className="p-2 overflow-auto custom-scrollbar" style={{ maxHeight: '380px' }}>
@@ -175,7 +175,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, error }) => {
                   className="w-100 rounded-0 py-3 border-top fw-bold text-primary smallest text-uppercase ls-1 shadow-none"
                   onClick={() => navigate('/dashboard/admin/notices')}
                 >
-                  SEE ALL NOTICES
+                  VIEW ALL
                 </Button>
               </div>
             )}

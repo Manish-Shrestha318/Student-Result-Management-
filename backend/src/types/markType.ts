@@ -9,6 +9,11 @@ export interface MarkEntryDTO {
   term: string;
   year: number;
   remarks?: string;
+  topicWise?: Array<{
+    topicName: string;
+    marksObtained: number;
+    totalMarks: number;
+  }>;
 }
 
 export interface ReportQueryDTO {

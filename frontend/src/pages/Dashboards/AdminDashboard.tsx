@@ -99,12 +99,12 @@ const AdminDashboard: React.FC = () => {
   };
 
   const adminStats = [
-    { label: 'TOTAL STUDENTS', value: stats?.totalStudents || 0, color: 'primary', trend: 'Registered' },
-    { label: 'TOTAL TEACHERS', value: stats?.totalTeachers || 0, color: 'info', trend: 'Verified' },
-    { label: 'TOTAL PARENTS', value: stats?.totalParents || 12, color: 'purple', trend: 'Linked' },
-    { label: 'TOTAL CLASSES', value: stats?.totalClasses || 0, color: 'success', trend: 'Active' },
-    { label: 'TOTAL SUBJECTS', value: stats?.totalSubjects || 0, color: 'danger', trend: 'Available' },
-    { label: 'PENDING APPROVALS', value: stats?.pendingTeacherApprovals || 0, color: 'warning', trend: 'Action Required' },
+    { label: 'STUDENTS', value: stats?.totalStudents || 0, color: 'primary', trend: 'Registered' },
+    { label: 'TEACHERS', value: stats?.totalTeachers || 0, color: 'info', trend: 'Verified' },
+    { label: 'PARENTS', value: stats?.totalParents || 12, color: 'purple', trend: 'Linked' },
+    { label: 'CLASSES', value: stats?.totalClasses || 0, color: 'success', trend: 'Active' },
+    { label: 'SUBJECTS', value: stats?.totalSubjects || 0, color: 'danger', trend: 'Available' },
+    { label: 'APPROVALS', value: stats?.pendingTeacherApprovals || 0, color: 'warning', trend: 'Pending' },
   ];
 
   return (
@@ -112,23 +112,17 @@ const AdminDashboard: React.FC = () => {
       <AdminSidebar />
 
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
-        <AdminHeader title="Admin Dashboard" error={error} />
+        <AdminHeader title="Dashboard" error={error} />
 
         <div className="container-fluid p-4 p-lg-5">
-          {/* ── High-Impact Operational Metrics ── */}
           <Row className="g-3 mb-5">
             {adminStats.map((stat, i) => (
               <Col key={i} sm={6} xl={4}>
-                <Card 
-                  className="border-0 shadow-sm rounded-4 h-100"
-                  style={{ transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.1)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
-                >
-                  <Card.Body className="p-3">
-                    <span className="text-muted fw-bold text-uppercase d-block mb-1" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>{stat.label}</span>
-                    <h3 className="fw-bold text-dark mb-1" style={{ letterSpacing: '0.5px' }}>{stat.value}</h3>
-                    <div className={`fw-bold text-uppercase text-${stat.color}`} style={{ fontSize: '0.7rem' }}>
+                <Card className="border-0 shadow-sm rounded-4 h-100 bg-white">
+                  <Card.Body className="p-4">
+                    <span className="text-muted fw-bold text-uppercase d-block mb-1 smallest ls-1 opacity-50">{stat.label}</span>
+                    <h2 className="fw-bold text-dark mb-1 ls-1">{stat.value}</h2>
+                    <div className={`fw-bold text-uppercase smallest ls-1 text-${stat.color}`}>
                       {stat.trend}
                     </div>
                   </Card.Body>
@@ -138,11 +132,10 @@ const AdminDashboard: React.FC = () => {
           </Row>
 
           <Row className="g-4">
-            {/* ── Demographic Distribution Engine ── */}
             <Col xl={8}>
               <Card className="border-0 shadow-sm rounded-4 p-4 mb-4">
                 <div className="d-flex align-items-center justify-content-between mb-5 border-start border-4 border-primary ps-3">
-                  <h6 className="fw-bold text-dark mb-0 text-uppercase small ls-1">User Distribution</h6>
+                  <h6 className="fw-bold text-dark mb-0 text-uppercase small ls-1">Users</h6>
                 </div>
                 <Row className="align-items-center">
                   <Col md={7}>
@@ -157,7 +150,7 @@ const AdminDashboard: React.FC = () => {
                       />
                       <div className="position-absolute top-50 start-50 translate-middle text-center">
                         <div className="display-6 fw-bold mb-0 text-dark ls-1">{(stats?.totalStudents || 0) + (stats?.totalTeachers || 0) + 16}</div>
-                        <div className="smallest text-muted fw-bold text-uppercase ls-1">Total Users</div>
+                        <div className="smallest text-muted fw-bold text-uppercase ls-1">Total</div>
                       </div>
                     </div>
                   </Col>
@@ -178,48 +171,44 @@ const AdminDashboard: React.FC = () => {
               </Card>
             </Col>
 
-            {/* ── Critical Approval Timeline ── */}
             <Col xl={4}>
               <Card className="border-0 shadow-sm rounded-4 p-4 h-100">
                 <div className="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom border-light">
-                  <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Pending Approvals</h6>
+                  <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Approvals</h6>
                   <Badge bg="warning-soft" text="warning" className="fw-bold smallest px-3 py-2 rounded-pill border border-warning-soft">{(pendingTeachers.length).toString()} PENDING</Badge>
                 </div>
                 
-                <div className="d-flex flex-grow-1 flex-column gap-3">
+                <div className="d-flex flex-grow-1 flex-column gap-3 overflow-auto" style={{ maxHeight: '420px' }}>
                   {loading ? (
                     <div className="text-center py-5">
                        <Spinner animation="border" variant="primary" size="sm" />
                     </div>
                   ) : pendingTeachers.length === 0 ? (
                     <div className="text-center py-5 h-100 d-flex flex-column justify-content-center border border-dashed rounded-4">
-                      <h6 className="text-secondary fw-bold smallest text-uppercase ls-1 mb-2">ALL CAUGHT UP</h6>
-                      <p className="text-muted smaller mb-0">No pending teacher approvals at the moment.</p>
+                      <h6 className="text-secondary fw-bold smallest text-uppercase ls-1">ALL APPROVED</h6>
                     </div>
                   ) : (
-                    <div className="d-flex flex-column gap-3 overflow-auto" style={{ maxHeight: '420px' }}>
-                      {pendingTeachers.map((teacher, i) => (
-                        <div key={i} className="p-3 bg-white border border-light-dark rounded-4 shadow-sm">
-                          <div className="fw-bold text-dark smaller mb-1 text-truncate ls-1 text-uppercase">{teacher.name}</div>
-                          <div className="text-muted smallest fw-semibold mb-3 ls-1 text-lowercase">{teacher.email}</div>
-                          <Row className="g-2">
-                             <Col>
-                                <Button 
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={() => handleApproveTeacher(teacher._id)}
-                                  className="w-100 fw-bold smallest py-2 rounded-pill ls-1 text-uppercase"
-                                >
-                                  APPROVE
-                                </Button>
-                             </Col>
-                             <Col xs="auto">
-                                <Button variant="outline-danger" size="sm" className="px-3 rounded-pill border-0 smallest fw-bold text-uppercase ls-1">REJECT</Button>
-                             </Col>
-                          </Row>
-                        </div>
-                      ))}
-                    </div>
+                    pendingTeachers.map((teacher, i) => (
+                      <div key={i} className="p-3 bg-white border border-light-dark rounded-4 shadow-sm">
+                        <div className="fw-bold text-dark smallest mb-1 text-truncate ls-1 text-uppercase">{teacher.name}</div>
+                        <div className="text-muted smallest fw-semibold mb-3 ls-1">{teacher.email}</div>
+                        <Row className="g-2">
+                           <Col>
+                              <Button 
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleApproveTeacher(teacher._id)}
+                                className="w-100 fw-bold smallest py-2 rounded-pill ls-1 text-uppercase"
+                              >
+                                APPROVE
+                              </Button>
+                           </Col>
+                           <Col xs="auto">
+                              <Button variant="outline-danger" size="sm" className="px-3 rounded-pill border-0 smallest fw-bold text-uppercase ls-1">REJECT</Button>
+                           </Col>
+                        </Row>
+                      </div>
+                    ))
                   )}
                 </div>
               </Card>

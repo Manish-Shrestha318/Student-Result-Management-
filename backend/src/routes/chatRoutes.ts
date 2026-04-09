@@ -16,6 +16,9 @@ router.get("/conversation/:userId2", chatController.getConversation);
 // Get unread messages count
 router.get("/unread-count", chatController.getUnreadCount);
 
+// Get contacts (teachers for students/parents; students+parents for teacher)
+router.get("/contacts", chatController.getContacts);
+
 // Mark a specific message as read
 router.patch("/:chatId/read", chatController.markAsRead);
 

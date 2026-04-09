@@ -12,6 +12,28 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // ── Session Audit (Check for active token on mount) ──
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+
+    if (savedUser && token) {
+      try {
+        const user = JSON.parse(savedUser);
+        navigateByRole(user.role?.toLowerCase());
+      } catch (e) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    }
+  }, []);
+
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     setError('');
@@ -65,6 +87,13 @@ const Login: React.FC = () => {
         if (response.ok) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          
+          if (rememberMe) {
+            localStorage.setItem('rememberedEmail', email);
+          } else {
+            localStorage.removeItem('rememberedEmail');
+          }
+
           navigateByRole(data.user?.role?.toLowerCase());
         } else {
         setError(data.message || 'Invalid email or password.');

@@ -1,7 +1,8 @@
 import Subject, { ISubject } from "../models/Subject";
 
-export const getAllSubjects = async (): Promise<ISubject[]> => {
-  return await Subject.find().populate("teacherId", "name");
+export const getAllSubjects = async (filter?: { userId?: string }): Promise<ISubject[]> => {
+  const query = filter?.userId ? { teacherId: filter.userId } : {};
+  return await Subject.find(query).populate("teacherId", "name");
 };
 
 export const createSubject = async (data: any): Promise<ISubject> => {

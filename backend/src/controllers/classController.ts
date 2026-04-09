@@ -3,7 +3,13 @@ import { getAllClasses, createClass, updateClass, deleteClass } from "../service
 
 export const getClassesController = async (req: Request, res: Response) => {
   try {
-    const classes = await getAllClasses();
+    const userRole = (req as any).user.role;
+    const userId = (req as any).user.id;
+    
+    // If teacher, only return classes they are associated with
+    const query = userRole === 'teacher' ? { userId } : {};
+    const classes = await getAllClasses(query);
+    
     res.json({ success: true, classes });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

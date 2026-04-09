@@ -127,13 +127,21 @@ export class AttendanceService {
 
     const attendance = await this.getAttendanceByStudent(studentId.toString(), startDate, endDate);
     
-    const totalDays = attendance.length;
-    const present = attendance.filter(a => a.status === 'present').length;
-    const absent = attendance.filter(a => a.status === 'absent').length;
-    const late = attendance.filter(a => a.status === 'late').length;
-    const holiday = attendance.filter(a => a.status === 'holiday').length;
+    // Use only Saturdays as holidays, everything else is a school-day (if marked)
+    const validRecords = attendance.filter(a => {
+      const day = new Date(a.date).getDay();
+      if (a.status === 'holiday' && day !== 6) return false; // Ignore ghost holidays
+      return true;
+    });
+
+    const totalDays = validRecords.length;
+    const present = validRecords.filter(a => a.status === 'present').length;
+    const absent = validRecords.filter(a => a.status === 'absent').length;
+    const late = validRecords.filter(a => a.status === 'late').length;
+    const holiday = validRecords.filter(a => a.status === 'holiday').length;
     
-    const attendancePercentage = totalDays > 0 ? (present / totalDays) * 100 : 0;
+    // Only count present/absent for the percentage, ignore holidays
+    const attendancePercentage = (present + absent) > 0 ? (present / (present + absent)) * 100 : 0;
 
     // Get student details
     const student = await Student.findById(studentId).populate('userId');

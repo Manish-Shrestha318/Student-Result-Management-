@@ -26,6 +26,7 @@ const ManageUsers: React.FC = () => {
     status: 'active'
   });
   const [formLoading, setFormLoading] = useState(false);
+  const [allSubjects, setAllSubjects] = useState<any[]>([]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -51,6 +52,8 @@ const ManageUsers: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    const token = localStorage.getItem('token');
+    fetch('/api/subjects', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(data => setAllSubjects(data.subjects || data || []));
   }, []);
 
   useEffect(() => {
@@ -175,7 +178,7 @@ const ManageUsers: React.FC = () => {
            {/* ── Status Header ── */}
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4 border-bottom border-light-dark pb-4">
             <div>
-              <h3 className="fw-bold text-dark mb-1">Global Accounts Console</h3>
+              <h3 className="fw-bold text-dark mb-1">User Accounts</h3>
               <p className="text-secondary small mb-0 fw-medium">Manage all users, their roles, and account statuses.</p>
             </div>
             <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm ls-1 smallest text-uppercase" onClick={handleOpenAddModal}>
@@ -293,7 +296,7 @@ const ManageUsers: React.FC = () => {
 
             {totalPages > 1 && (
               <div className="p-4 border-top border-light-dark d-flex flex-column flex-sm-row justify-content-between align-items-center bg-white gap-3">
-                 <span className="smallest text-secondary fw-bold text-uppercase ls-1">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, filteredUsers.length)} of {filteredUsers.length} Nodes</span>
+                 <span className="smallest text-secondary fw-bold text-uppercase ls-1">Displaying {indexOfFirst + 1}–{Math.min(indexOfLast, filteredUsers.length)} of {filteredUsers.length} pages</span>
                  <Pagination className="mb-0 gap-1 pagination-sm">
                     <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
@@ -391,19 +394,52 @@ const ManageUsers: React.FC = () => {
             <Badge bg="white" text="primary" className="fw-bold smallest text-uppercase ls-1 px-3 py-2 mt-2 border-0">{selectedUser?.role} ACCOUNT</Badge>
          </Modal.Header>
          <Modal.Body className="p-4 p-lg-5">
-            <div className="d-flex flex-column gap-4">
-               {[
-                 { label: 'ELECTRONIC MAIL', value: selectedUser?.email, color: 'primary' },
-                 { label: 'OPERATIONAL STANDING', value: selectedUser?.status || (selectedUser?.isVerified ? 'VERIFIED' : 'PENDING'), color: 'success' },
-                 { label: 'REGISTRATION LOG', value: new Date(selectedUser?.createdAt).toLocaleDateString(), color: 'warning' },
-                 { label: 'IDENTITY ID', value: selectedUser?._id, color: 'dark' },
-               ].map((item, i) => (
-                  <div key={i} className={`p-4 rounded-4 border-start border-5 border-${item.color} bg-light-soft`}>
-                     <div className="smallest fw-bold text-secondary text-uppercase ls-1 mb-1">{item.label}</div>
-                     <div className="fw-bold text-dark ls-1 text-wrap word-break">{item.value}</div>
-                  </div>
-               ))}
-            </div>
+                {selectedUser?.role === 'teacher' && (() => {
+                   const teacherSubjects = allSubjects.filter(s => (s.teacherId?._id || s.teacherId) === selectedUser._id);
+                   const classesMap = teacherSubjects.reduce((acc: any, s: any) => {
+                      if (!acc[s.class]) acc[s.class] = [];
+                      acc[s.class].push(s.name);
+                      return acc;
+                   }, {});
+                   const distinctClasses = Object.keys(classesMap);
+
+                   return (
+                      <div className="p-4 rounded-4 border-start border-5 border-info bg-info bg-opacity-10 mb-4">
+                         <div className="smallest fw-bold text-info text-uppercase ls-1 mb-3">Teaching Spectrum</div>
+                         {distinctClasses.length > 0 ? (
+                            <div className="d-flex flex-column gap-3">
+                               {distinctClasses.map((cls, idx) => (
+                                  <div key={idx} className="bg-white p-3 rounded-4 shadow-sm border">
+                                     <div className="smallest fw-bold text-dark text-uppercase ls-1 mb-2 border-bottom pb-1 border-light">
+                                        CLASS: {cls}
+                                     </div>
+                                     <div className="d-flex flex-wrap gap-2">
+                                        {classesMap[cls].map((sub: string, sIdx: number) => (
+                                           <Badge key={sIdx} bg="primary-soft" text="primary" className="border-0 smallest fw-bold ls-1 px-3 py-2 rounded-pill">
+                                              {sub}
+                                           </Badge>
+                                        ))}
+                                     </div>
+                                  </div>
+                               ))}
+                            </div>
+                         ) : (
+                            <span className="smallest text-muted fw-bold italic opacity-75">No Class or Subject Nodes Assigned</span>
+                         )}
+                      </div>
+                   );
+                })()}
+                {[
+                  { label: 'ELECTRONIC MAIL', value: selectedUser?.email, color: 'primary' },
+                  { label: 'OPERATIONAL STANDING', value: selectedUser?.status || (selectedUser?.isVerified ? 'VERIFIED' : 'PENDING'), color: 'success' },
+                  { label: 'REGISTRATION LOG', value: new Date(selectedUser?.createdAt).toLocaleDateString(), color: 'warning' },
+                  { label: 'IDENTITY ID', value: selectedUser?._id, color: 'dark' },
+                ].map((item, i) => (
+                   <div key={i} className={`p-4 rounded-4 border-start border-5 border-${item.color} bg-light-soft`}>
+                      <div className="smallest fw-bold text-secondary text-uppercase ls-1 mb-1">{item.label}</div>
+                      <div className="fw-bold text-dark ls-1 text-wrap word-break">{item.value}</div>
+                   </div>
+                ))}
             <Button variant="primary" className="w-100 fw-bold py-3 rounded-pill mt-5 shadow-sm smallest ls-1 text-uppercase" onClick={() => { setIsViewModalOpen(false); handleEdit(selectedUser); }}>MODIFY IDENTITY PATH</Button>
          </Modal.Body>
       </Modal>

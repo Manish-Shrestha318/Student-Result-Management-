@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import StudentSidebar from '../../components/StudentSidebar';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
 import { Row, Col, Card, Form, Button, Alert, ListGroup, Image, Badge } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 
 const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -20,14 +20,7 @@ const Settings: React.FC = () => {
     confirm: ''
   });
 
-  const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  };
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -163,28 +156,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
-      {currentUser.role === 'admin' ? (
-        <AdminSidebar />
-      ) : (
-        <aside className="bg-white border-end d-flex flex-column px-4 py-5" style={{ width: '280px' }}>
-          <div className="mb-5">
-            <h4 className="fw-bold text-primary ls-1">SMARTRESULTS</h4>
-            <span className="smallest text-muted fw-bold text-uppercase ls-1">User Matrix</span>
-          </div>
-          <nav className="flex-grow-1 d-flex flex-column gap-1">
-            {currentUser.role === 'student' ? (
-              <>
-                <NavItem label="Control Center" onClick={() => navigate('/dashboard/student')} />
-                <NavItem label="Result Matrix" onClick={() => navigate('/dashboard/student/results')} />
-                <NavItem label="Attendance Logs" onClick={() => navigate('/dashboard/student/attendance')} />
-                <NavItem label="Institutional Briefs" onClick={() => navigate('/dashboard/student/notices')} />
-              </>
-            ) : (
-              <NavItem label="Control Center" onClick={() => navigate('/dashboard/teacher')} />
-            )}
-        </nav>
-      </aside>
-      )}
+      {currentUser.role === 'admin' ? <AdminSidebar /> : <StudentSidebar />}
       
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
         <AdminHeader title="Settings" error={error} />
@@ -222,10 +194,7 @@ const Settings: React.FC = () => {
 
               <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
                 <ListGroup variant="flush">
-                  <ListGroup.Item action active className="p-4 border-0 border-start border-4 border-primary fw-bold smaller text-uppercase ls-1 px-4">PERSONAL INFO</ListGroup.Item>
-                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">SECURITY</ListGroup.Item>
-                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">NOTIFICATIONS</ListGroup.Item>
-                  <ListGroup.Item action className="p-4 border-0 border-start border-4 border-transparent text-secondary fw-bold smallest text-uppercase ls-1 px-4">PREFERENCES</ListGroup.Item>
+                  <ListGroup.Item action active className="p-4 border-0 border-start border-4 border-primary fw-bold smaller text-uppercase ls-1 px-4">PROFILE SETTINGS</ListGroup.Item>
                 </ListGroup>
               </Card>
             </Col>
@@ -235,7 +204,7 @@ const Settings: React.FC = () => {
               <div className="d-flex flex-column gap-5">
                 {/* ── Identity Form ── */}
                 <Card className="border-0 shadow-sm rounded-4 p-4 p-lg-5">
-                   <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Personal Information</h5>
+                   <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Profile Settings</h5>
                    <Form onSubmit={handleUpdateProfile}>
                       <Form.Group className="mb-4">
                         <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Name</Form.Label>
@@ -249,18 +218,18 @@ const Settings: React.FC = () => {
                       </Form.Group>
                       <div className="d-flex justify-content-end pt-2">
                         <Button variant="primary" type="submit" disabled={loading} className="fw-bold px-5 py-2 rounded-pill shadow-sm ls-1 smaller">
-                           {loading ? 'SYNCHRONIZING...' : 'COMMIT CHANGES'}
+                           {loading ? 'SYNCHRONIZING...' : 'SAVE PROFILE'}
                         </Button>
                       </div>
                    </Form>
                 </Card>
 
-                {/* ── Security Form ── */}
+                {/* Change Password */}
                 <Card className="border-0 shadow-sm rounded-4 p-4 p-lg-5">
-                  <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Access Credentials</h5>
+                  <h5 className="fw-bold text-dark mb-4 ls-1 border-bottom pb-3 text-uppercase small">Change Password</h5>
                   <Form onSubmit={handleChangePassword}>
                     <Form.Group className="mb-4">
-                      <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Current Cipher</Form.Label>
+                      <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Current Password</Form.Label>
                       <Form.Control 
                         type="password" 
                         value={passwords.current}
@@ -270,35 +239,35 @@ const Settings: React.FC = () => {
                       />
                     </Form.Group>
                     <Row className="g-4 mb-5">
-                       <Col md={6}>
-                          <Form.Group>
-                            <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">New Access Cipher</Form.Label>
-                            <Form.Control 
-                              type="password" 
-                              value={passwords.new}
-                              onChange={(e) => setPasswords({...passwords, new: e.target.value})}
-                              className="py-2 smaller border-light-dark shadow-none"
-                              placeholder="••••••••"
-                            />
-                          </Form.Group>
-                       </Col>
-                       <Col md={6}>
-                          <Form.Group>
-                            <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Confirm Cipher</Form.Label>
-                            <Form.Control 
-                              type="password" 
-                              value={passwords.confirm}
-                              onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
-                              className="py-2 smaller border-light-dark shadow-none"
-                              placeholder="••••••••"
-                            />
-                          </Form.Group>
-                       </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">New Password</Form.Label>
+                          <Form.Control 
+                            type="password" 
+                            value={passwords.new}
+                            onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                            className="py-2 smaller border-light-dark shadow-none"
+                            placeholder="••••••••"
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Confirm New Password</Form.Label>
+                          <Form.Control 
+                            type="password" 
+                            value={passwords.confirm}
+                            onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                            className="py-2 smaller border-light-dark shadow-none"
+                            placeholder="••••••••"
+                          />
+                        </Form.Group>
+                      </Col>
                     </Row>
                     <div className="d-flex justify-content-end">
-                       <Button variant="outline-dark" type="submit" disabled={loading} className="fw-bold px-5 py-2 rounded-pill smaller border-0 bg-light shadow-sm ls-1">
-                          UPDATE CIPHERS
-                       </Button>
+                      <Button variant="outline-dark" type="submit" disabled={loading} className="fw-bold px-5 py-2 rounded-pill smaller border-0 bg-light shadow-sm ls-1">
+                        CHANGE PASSWORD
+                      </Button>
                     </div>
                   </Form>
                 </Card>
@@ -310,12 +279,6 @@ const Settings: React.FC = () => {
     </div>
   );
 };
-
-const NavItem: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => (
-  <button className="btn w-100 text-start py-2 px-3 rounded-pill border-0 transition-all text-secondary fw-semibold bg-transparent" onClick={onClick} style={{ fontSize: '0.9rem' }}>
-    <span className="ls-1 text-uppercase smallest">{label}</span>
-  </button>
-);
 
 export default Settings;
 

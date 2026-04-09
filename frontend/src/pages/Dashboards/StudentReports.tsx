@@ -201,9 +201,9 @@ const StudentReports: React.FC = () => {
               </Row>
 
               {/* ── Granular Subject Breakdown ── */}
-              <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary">
+              <Card className="border-0 shadow-sm rounded-4 overflow-hidden">
                 <Card.Header className="bg-white p-4 border-0 d-flex justify-content-between align-items-center">
-                   <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Instructional Breakdown Matrix</h6>
+                   <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Subject Breakdown</h6>
                    <span className="smallest text-muted fw-bold text-uppercase ls-1 border-start ps-3 ms-3">Authenticated: <strong className="text-primary">{reportData.student.name.toUpperCase()}</strong></span>
                 </Card.Header>
                 <div className="table-responsive">
@@ -230,7 +230,7 @@ const StudentReports: React.FC = () => {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-light-soft border-top border-primary border-2 fw-bold">
+                    <tfoot className="bg-light-soft border-top border-2 fw-bold">
                       <tr>
                         <td className="px-4 py-4 ls-1">AGGREGATE TOTAL</td>
                         <td className="px-4 py-4 text-center fs-5 text-primary">{reportData.summary.totalMarksObtained}</td>

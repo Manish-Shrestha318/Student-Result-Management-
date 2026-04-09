@@ -119,7 +119,7 @@ const TeacherApprovals: React.FC = () => {
                 <thead className="bg-light border-bottom border-light-dark">
                   <tr>
                     <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Applicant Details</th>
-                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Subject Discipline</th>
+                    <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Subjects</th>
                     <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Submission Date</th>
                     <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Verification State</th>
                     <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Actions</th>

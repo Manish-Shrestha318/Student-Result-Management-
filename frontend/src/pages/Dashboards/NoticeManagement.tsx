@@ -108,16 +108,16 @@ const NoticeManagement: React.FC = () => {
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
-        <AdminHeader title="Institutional Bulletin" error={error} />
+        <AdminHeader title="Notice" error={error} />
 
         <div className="container-fluid p-4 p-lg-5">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3 border-bottom pb-4">
             <div>
-              <h3 className="fw-bold text-dark mb-1">Notice Management</h3>
-              <p className="text-secondary small mb-0 fw-medium">Broadcast announcements and critical policy updates.</p>
+              <h3 className="fw-bold text-dark mb-1">Notice</h3>
+              <p className="text-secondary small mb-0 fw-medium">Create and manage school notices.</p>
             </div>
             <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm" onClick={() => setShowModal(true)}>
-               NEW ANNOUNCEMENT
+               New Notice
             </Button>
           </div>
 
@@ -129,12 +129,12 @@ const NoticeManagement: React.FC = () => {
 
           <div className="d-flex flex-column gap-4 pb-5">
             {loading && notices.length === 0 ? (
-              <div className="py-5 text-center text-muted fw-bold italic small">Synchronizing board records...</div>
+              <div className="py-5 text-center text-muted fw-bold italic small">Loading notices...</div>
             ) : notices.length === 0 ? (
               <Card className="border-0 shadow-sm rounded-4 text-center py-5">
                 <Card.Body>
-                  <h5 className="text-dark fw-bold mb-1 small text-uppercase ls-1">BULLETIN EMPTY</h5>
-                  <p className="text-secondary smaller mb-0">No active announcements indexed in the repository.</p>
+                  <h5 className="text-dark fw-bold mb-1 small text-uppercase ls-1">No Notices</h5>
+                  <p className="text-secondary smaller mb-0">There are no school notices right now.</p>
                 </Card.Body>
               </Card>
             ) : (
@@ -151,9 +151,9 @@ const NoticeManagement: React.FC = () => {
                         </div>
                         <p className="text-secondary small mb-4 lh-lg fw-medium">{notice.content}</p>
                         <div className="d-flex flex-wrap gap-4 text-muted smallest fw-bold text-uppercase ls-1">
-                          <span>RECIPINETS: {notice.targetRoles.join(', ')}</span>
-                          <span>PUBLISHED: {new Date(notice.publishDate).toLocaleDateString()}</span>
-                          <span className={notice.isActive ? 'text-success' : 'text-warning'}>STATE: {notice.isActive ? 'ACTIVE' : 'ARCHIVED'}</span>
+                          <span>Audience: {notice.targetRoles.join(', ')}</span>
+                          <span>Date: {new Date(notice.publishDate).toLocaleDateString()}</span>
+                          <span className={notice.isActive ? 'text-success' : 'text-warning'}>Status: {notice.isActive ? 'Active' : 'Archived'}</span>
                         </div>
                       </Col>
                       <Col xs="auto" className="d-flex flex-column gap-2">
@@ -192,27 +192,27 @@ const NoticeManagement: React.FC = () => {
       {/* ── Announcement Modal ── */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="border-0">
         <Modal.Header closeButton className="border-0 p-4 pb-0">
-          <Modal.Title className="fw-bold text-dark ls-1">NEW ANNOUNCEMENT CREATION</Modal.Title>
+          <Modal.Title className="fw-bold text-dark ls-1">New Notice</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleCreateNotice}>
             <Row className="g-4 mb-4">
               <Col md={8}>
                 <Form.Group>
-                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Announcement Title</Form.Label>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Title</Form.Label>
                   <Form.Control 
                     type="text"
                     required
                     value={newNotice.title} 
                     onChange={(e) => setNewNotice({...newNotice, title: e.target.value})} 
                     className="py-2 smaller border-light-dark shadow-none"
-                    placeholder="e.g., SEMESTER COMMENCEMENT"
+                    placeholder="e.g., School Holiday"
                   />
                 </Form.Group>
               </Col>
               <Col md={4}>
                 <Form.Group>
-                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Category Hub</Form.Label>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Category</Form.Label>
                   <Form.Select 
                     value={newNotice.category} 
                     onChange={(e) => setNewNotice({...newNotice, category: e.target.value})}
@@ -220,17 +220,17 @@ const NoticeManagement: React.FC = () => {
                   >
                     <option value="general">GENERAL</option>
                     <option value="academic">ACADEMIC</option>
-                    <option value="exam">EXAM BOARD</option>
-                    <option value="event">SCHOOL EVENT</option>
-                    <option value="urgent">URGENT HUB</option>
-                    <option value="holiday">INSTITUTIONAL HOLIDAY</option>
+                    <option value="exam">EXAM</option>
+                    <option value="event">EVENT</option>
+                    <option value="urgent">URGENT</option>
+                    <option value="holiday">HOLIDAY</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
 
             <Form.Group className="mb-4">
-              <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Announcement Directive</Form.Label>
+              <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Notice details</Form.Label>
               <Form.Control 
                 as="textarea"
                 rows={5} 
@@ -238,14 +238,14 @@ const NoticeManagement: React.FC = () => {
                 value={newNotice.content}
                 onChange={(e) => setNewNotice({...newNotice, content: e.target.value})}
                 className="py-2 smaller border-light-dark shadow-none"
-                placeholder="Declare the institutional directive here..."
+                placeholder="Write notice here..."
               />
             </Form.Group>
 
             <Row className="g-4 mb-5">
                <Col md={6}>
                  <Form.Group>
-                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Effective Date</Form.Label>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Date</Form.Label>
                   <Form.Control 
                     type="date" 
                     value={newNotice.publishDate}
@@ -255,7 +255,7 @@ const NoticeManagement: React.FC = () => {
                 </Form.Group>
                </Col>
                <Col md={6}>
-                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 d-block mb-3">Audience Distribution</Form.Label>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1 d-block mb-3">Recipients</Form.Label>
                   <div className="d-flex gap-4 pt-1 px-1">
                     {['student', 'teacher', 'parent'].map(role => (
                       <Form.Check 
@@ -278,10 +278,10 @@ const NoticeManagement: React.FC = () => {
 
             <div className="d-flex justify-content-end gap-3 border-top pt-4">
                <Button variant="light" className="fw-bold border text-secondary px-4 smaller rounded-pill" onClick={() => setShowModal(false)}>
-                 TERMINATE
+                 Cancel
                </Button>
                <Button variant="primary" type="submit" disabled={loading} className="fw-bold px-5 smaller rounded-pill shadow-sm ls-1">
-                 {loading ? 'PROCESSING...' : 'PUBLISH DIRECTIVE'}
+                 {loading ? 'Processing...' : 'Publish'}
                </Button>
             </div>
           </Form>

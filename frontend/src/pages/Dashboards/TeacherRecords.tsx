@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { Modal, Button, Form, Table, Badge, Pagination, InputGroup, Spinner, Card } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Badge, Pagination, InputGroup, Spinner, Card, Row, Col } from 'react-bootstrap';
 
 const TeacherRecords: React.FC = () => {
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [systemSubjects, setSystemSubjects] = useState<any[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,39 +15,45 @@ const TeacherRecords: React.FC = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentEditingTeacher, setCurrentEditingTeacher] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    subject: '',
-    phoneNumber: ''
-  });
+  const [editPhoneNumber, setEditPhoneNumber] = useState('');
+  const [editPrimarySubject, setEditPrimarySubject] = useState('');
+  const [assignedSubjectIds, setAssignedSubjectIds] = useState<string[]>([]);
+  
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchTeachers = async () => {
+  const fetchInitialData = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('/api/users?role=teacher', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
+      const [tchRes, subRes] = await Promise.all([
+         fetch('/api/users?role=teacher', { headers: { 'Authorization': `Bearer ${token}` } }),
+         fetch('/api/subjects', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      const tchData = await tchRes.json();
+      const subData = await subRes.json();
 
-      if (data && data.success && Array.isArray(data.users)) {
-        setTeachers(data.users);
-        setFilteredTeachers(data.users);
-      } else if (Array.isArray(data)) {
-        setTeachers(data);
-        setFilteredTeachers(data);
-      } else {
-        setError(data.message || 'Failed to fetch teachers');
+      if (tchData && tchData.success && Array.isArray(tchData.users)) {
+        setTeachers(tchData.users);
+      } else if (Array.isArray(tchData)) {
+        setTeachers(tchData);
       }
+      
+      if (Array.isArray(subData)) {
+        setSystemSubjects(subData);
+      } else if (subData.subjects && Array.isArray(subData.subjects)) {
+        setSystemSubjects(subData.subjects);
+      }
+      
     } catch (err) {
-      setError('An error occurred while fetching teacher records');
+      setError('An error occurred while fetching records.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTeachers();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -55,7 +62,7 @@ const TeacherRecords: React.FC = () => {
       result = result.filter(t => 
         (t.name && t.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (t.email && t.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (t.subject && t.subject.toLowerCase().includes(searchTerm.toLowerCase()))
+        (t.assignedSubjects?.some((s: any) => s.name.toLowerCase().includes(searchTerm.toLowerCase())))
       );
     }
     setFilteredTeachers(result);
@@ -77,7 +84,7 @@ const TeacherRecords: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        fetchTeachers();
+        fetchInitialData();
       } else {
         alert(data.message || 'Failed to delete teacher');
       }
@@ -88,11 +95,28 @@ const TeacherRecords: React.FC = () => {
 
   const openEditModal = (teacher: any) => {
     setCurrentEditingTeacher(teacher);
-    setEditForm({
-      subject: teacher.subject || '',
-      phoneNumber: teacher.phoneNumber || ''
-    });
+    setEditPhoneNumber(teacher.phoneNumber || '');
+    setEditPrimarySubject(teacher.subject || '');
+    
+    // Load currently assigned subjects from dynamic Subject match
+    const currentSubjects = teacher.assignedSubjects?.map((s: any) => s._id) || [];
+    setAssignedSubjectIds(currentSubjects);
     setShowEditModal(true);
+  };
+
+  const handleAddSubjectSlot = () => {
+    setAssignedSubjectIds([...assignedSubjectIds, '']);
+  };
+
+  const handleSubjectChange = (index: number, value: string) => {
+    const newAssignments = [...assignedSubjectIds];
+    newAssignments[index] = value;
+    setAssignedSubjectIds(newAssignments);
+  };
+
+  const handleRemoveSubjectSlot = (index: number) => {
+    const newAssignments = assignedSubjectIds.filter((_, i) => i !== index);
+    setAssignedSubjectIds(newAssignments);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -100,20 +124,25 @@ const TeacherRecords: React.FC = () => {
     setIsSaving(true);
     const token = localStorage.getItem('token');
     try {
-      // Assuming teacher profile endpoint similar to students
-      const response = await fetch(`/api/users/teachers/${currentEditingTeacher.profileId || currentEditingTeacher._id}`, {
+      const finalSubjects = assignedSubjectIds.filter(id => id.trim() !== ''); // Remove empty selections
+      
+      const response = await fetch(`/api/users/${currentEditingTeacher._id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+           phoneNumber: editPhoneNumber,
+           primarySubject: editPrimarySubject,
+           assignedSubjectIds: finalSubjects
+        })
       });
       
       const data = await response.json();
       if (response.ok || data.success) {
         setShowEditModal(false);
-        fetchTeachers();
+        fetchInitialData(); // Refresh to get synced data
       } else {
         alert(data.message || 'Failed to update teacher data');
       }
@@ -133,12 +162,12 @@ const TeacherRecords: React.FC = () => {
           <div className="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-light-dark">
             <div>
               <h3 className="fw-bold text-dark mb-1">Teacher Directory</h3>
-              <p className="text-secondary small mb-0">Manage all teacher profiles and subject assignments.</p>
+              <p className="text-secondary small mb-0">Manage all teacher profiles and sync subject assignments.</p>
             </div>
             <InputGroup className="shadow-none border-light-dark" style={{ width: '320px' }}>
               <Form.Control
                 placeholder="Search name or subject..."
-                className="py-2 shadow-none smaller fw-medium"
+                className="py-2 shadow-none smaller fw-medium bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -148,46 +177,62 @@ const TeacherRecords: React.FC = () => {
           {loading ? (
             <div className="py-5 text-center"><Spinner animation="border" variant="primary" /></div>
           ) : filteredTeachers.length === 0 ? (
-            <Card className="shadow-sm border-0 rounded-4 py-5 text-center">
-              <Card.Body><h5 className="text-secondary fw-bold">No records found</h5></Card.Body>
+            <Card className="shadow-sm border-0 rounded-4 py-5 text-center bg-white border">
+              <Card.Body><h5 className="text-secondary fw-bold mb-0">No records found</h5></Card.Body>
             </Card>
           ) : (
-            <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            <Card className="shadow-sm border rounded-4 overflow-hidden bg-white">
               <div className="table-responsive">
                 <Table hover className="align-middle mb-0">
                   <thead className="bg-light border-bottom border-light-dark">
                     <tr>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Teacher</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Subject</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Contact</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Action</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Teacher</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Subjects</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Contact</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1 text-end">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentTeachers.map((teacher) => (
-                      <tr key={teacher._id}>
-                        <td className="px-4 py-3">
-                          <div className="fw-bold text-dark">{teacher.name}</div>
-                          <div className="smaller text-muted">{teacher.email}</div>
-                        </td>
-                        <td className="px-4 py-3"><Badge bg="info-soft" text="info" className="border px-3 py-2 rounded-pill fw-bold smaller">{teacher.subject || 'N/A'}</Badge></td>
-                        <td className="px-4 py-3"><span className="smaller fw-medium">{teacher.phoneNumber || 'N/A'}</span></td>
-                        <td className="px-4 py-3 text-end">
-                           <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light me-1" onClick={() => openEditModal(teacher)}>EDIT</Button>
-                           <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(teacher._id, teacher.name)}>DELETE</Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {currentTeachers.map((teacher) => {
+                      const subjects = teacher.assignedSubjects || [];
+                      const count = subjects.length;
+                      return (
+                        <tr key={teacher._id} className="bg-white border-bottom">
+                          <td className="px-4 py-3">
+                            <div className="fw-bold text-dark">{teacher.name}</div>
+                            <div className="smallest text-muted fw-bold opacity-50">{teacher.email}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                             <div className="d-flex flex-wrap gap-2">
+                               {count === 0 ? (
+                                  <Badge bg="danger-soft" text="danger" className="px-3 py-2 rounded-pill fw-bold smallest border">Unassigned</Badge>
+                               ) : (
+                                  <Badge bg="primary-soft" text="primary" className="px-3 py-2 rounded-pill fw-bold smallest border">
+                                    {count} {count === 1 ? 'Subject' : 'Subjects'}
+                                  </Badge>
+                               )}
+                             </div>
+                          </td>
+                          <td className="px-4 py-3"><span className="smallest fw-bold text-uppercase ls-1">{teacher.phoneNumber || 'N/A'}</span></td>
+                          <td className="px-4 py-3 text-end">
+                             <div className="d-flex justify-content-end gap-3 px-2">
+                                <Button variant="link" className="text-primary fw-bold smallest text-uppercase p-0 text-decoration-none" onClick={() => openEditModal(teacher)}>UPDATE</Button>
+                                <Button variant="link" className="text-danger fw-bold smallest text-uppercase p-0 text-decoration-none" onClick={() => handleDelete(teacher._id, teacher.name)}>DELETE</Button>
+                             </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
               {totalPages > 1 && (
-                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white">
-                  <span className="smaller text-secondary fw-medium">Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filteredTeachers.length)} of {filteredTeachers.length}</span>
-                  <Pagination className="mb-0 gap-1 pagination-sm">
+                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white px-5">
+                  <span className="smaller text-secondary fw-medium opacity-75">Page {currentPage} of {totalPages}</span>
+                  <Pagination className="mb-0 gap-1 pagination-sm shadow-none border-0">
                     <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                      <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>{p}</Pagination.Item>
+                      <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>{p} </Pagination.Item>
                     ))}
                     <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} />
                   </Pagination>
@@ -198,21 +243,67 @@ const TeacherRecords: React.FC = () => {
         </div>
       </main>
 
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
-        <Modal.Header closeButton className="border-0 px-4 pt-4"><Modal.Title className="fw-bold">Edit Teacher</Modal.Title></Modal.Header>
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
+        <Modal.Header closeButton className="border-0 px-4 pt-4"><Modal.Title className="fw-bold fs-5">Update Teacher Profile</Modal.Title></Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleSaveEdit}>
-            <Form.Group className="mb-3">
-              <Form.Label className="smaller fw-bold text-secondary">Subject</Form.Label>
-              <Form.Control type="text" value={editForm.subject} onChange={(e) => setEditForm({...editForm, subject: e.target.value})} required className="py-2 shadow-none" />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Label className="smaller fw-bold text-secondary">Phone Number</Form.Label>
-              <Form.Control type="text" value={editForm.phoneNumber} onChange={(e) => setEditForm({...editForm, phoneNumber: e.target.value})} required className="py-2 shadow-none" />
-            </Form.Group>
-            <div className="d-flex gap-2">
-              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border" onClick={() => setShowEditModal(false)}>Cancel</Button>
-              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
+            <Row className="g-4 mb-4">
+               <Col md={6}>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Core Primary Subject</Form.Label>
+                  <Form.Control type="text" value={editPrimarySubject} onChange={(e) => setEditPrimarySubject(e.target.value)} required className="py-2 border-light shadow-none bg-light fw-bold" placeholder="E.g. Mathematics" />
+               </Col>
+               <Col md={6}>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Contact Phone</Form.Label>
+                  <Form.Control type="text" value={editPhoneNumber} onChange={(e) => setEditPhoneNumber(e.target.value)} required className="py-2 border-light shadow-none bg-light fw-bold" placeholder="Teacher Phone..." />
+               </Col>
+            </Row>
+
+            <div className="border-top pt-4 mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h6 className="smallest fw-bold text-primary text-uppercase ls-1 mb-0">Class Assignments <span className="text-secondary opacity-50">(Optional)</span></h6>
+                    <Button variant="outline-primary" size="sm" className="rounded-pill fw-bold smallest text-uppercase ls-1 py-1 px-3" onClick={handleAddSubjectSlot}>
+                        <i className="bi bi-plus-lg me-1"></i> Add Subject
+                    </Button>
+                </div>
+                
+                <Row className="g-3">
+                   {assignedSubjectIds.map((assignedId, index) => (
+                       <Col md={6} key={index}>
+                          <div className="d-flex align-items-center gap-2">
+                              <div className="flex-grow-1">
+                                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Assignment {index + 1}</Form.Label>
+                                  <Form.Select 
+                                    className="py-2 border-light shadow-none bg-light fw-bold" 
+                                    value={assignedId} 
+                                    onChange={(e) => handleSubjectChange(index, e.target.value)}
+                                  >
+                                    <option value="">-- Select Subject & Class --</option>
+                                    {systemSubjects.map(sub => (
+                                        <option key={sub._id} value={sub._id}>{sub.name} — {sub.class} ({sub.section})</option>
+                                    ))}
+                                  </Form.Select>
+                              </div>
+                              <div className="pt-4 mt-1">
+                                  <Button variant="light" className="border-0 text-danger" onClick={() => handleRemoveSubjectSlot(index)}>
+                                      <i className="bi bi-x-lg"></i>
+                                  </Button>
+                              </div>
+                          </div>
+                       </Col>
+                   ))}
+                   {assignedSubjectIds.length === 0 && (
+                       <Col md={12}>
+                          <div className="p-4 text-center border rounded-3 bg-light opacity-50">
+                             <span className="smallest fw-bold text-muted text-uppercase ls-1">No subjects assigned. Click 'Add Subject' to begin.</span>
+                          </div>
+                       </Col>
+                   )}
+                </Row>
+            </div>
+
+            <div className="d-flex gap-3 pt-3">
+              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill py-3 border-0 bg-light-dark opacity-75 smallest text-uppercase ls-1" onClick={() => setShowEditModal(false)}>Discard</Button>
+              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-3 shadow-none border-0 smallest text-uppercase ls-1" disabled={isSaving}>{isSaving ? 'Processing...' : 'Update'}</Button>
             </div>
           </Form>
         </Modal.Body>

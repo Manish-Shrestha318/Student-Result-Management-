@@ -3,7 +3,13 @@ import { getAllSubjects, createSubject, updateSubject, deleteSubject } from "../
 
 export const getSubjectsController = async (req: Request, res: Response) => {
   try {
-    const subjects = await getAllSubjects();
+    const userRole = (req as any).user.role;
+    const userId = (req as any).user.id;
+    
+    // If teacher, only return subjects they are associated with
+    const query = userRole === 'teacher' ? { userId } : {};
+    const subjects = await getAllSubjects(query);
+    
     res.json(subjects);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

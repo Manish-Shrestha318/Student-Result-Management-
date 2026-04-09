@@ -280,7 +280,7 @@ const Reports: React.FC = () => {
                     </Col>
                   </Row>
 
-                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary shadow-sm bg-white">
+                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden shadow-sm bg-white">
                     <Card.Header className="bg-white p-4 border-0 border-bottom">
                        <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Subject Marks</h6>
                     </Card.Header>
@@ -317,7 +317,7 @@ const Reports: React.FC = () => {
               )}
 
               {reportData && activeTab === 'attendance' && (
-                <Card className="border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white border-top border-4 border-info shadow-sm">
+                <Card className="border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white shadow-sm">
                   <h6 className="fw-bold text-dark mb-5 smallest text-uppercase ls-1 border-start border-4 border-info ps-3">Attendance Report</h6>
                   <Row className="align-items-center g-5">
                     <Col md={5}>
@@ -360,7 +360,7 @@ const Reports: React.FC = () => {
                     </Col>
                   </Row>
 
-                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden border-top border-4 border-primary shadow-sm bg-white">
+                  <Card className="border-0 shadow-sm rounded-4 overflow-hidden shadow-sm bg-white">
                     <Card.Header className="bg-white p-4 border-0 border-bottom">
                        <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Enrolled Subject Rankings</h6>
                     </Card.Header>

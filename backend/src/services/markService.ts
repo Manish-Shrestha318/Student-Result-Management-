@@ -13,60 +13,48 @@ import { Types } from "mongoose";
 
 export class MarkService {
   
-  // Create new mark entry
+  // Create or Update mark entry (Upsert)
   async createMark(data: MarkEntryDTO): Promise<IMark> {
-    // Convert string IDs to ObjectIds
     const studentObjectId = new Types.ObjectId(data.studentId);
     const subjectObjectId = new Types.ObjectId(data.subjectId);
 
-    // Check if student exists
-    const student = await Student.findById(studentObjectId);
-    if (!student) {
-      throw new Error("Student not found");
-    }
+    // Validate student and subject existence
+    const [student, subject] = await Promise.all([
+      Student.findById(studentObjectId),
+      Subject.findById(subjectObjectId)
+    ]);
 
-    // Check if subject exists
-    const subject = await Subject.findById(subjectObjectId);
-    if (!subject) {
-      throw new Error("Subject not found");
-    }
+    if (!student) throw new Error("Student not found");
+    if (!subject) throw new Error("Subject not found");
+    if (data.marksObtained > data.totalMarks) throw new Error("Marks obtained cannot exceed total marks");
 
-    // Check for duplicate entry
-    const existingMark = await Mark.findOne({
-      studentId: studentObjectId,
-      subjectId: subjectObjectId,
-      examType: data.examType,
-      term: data.term,
-      year: data.year
-    });
-
-    if (existingMark) {
-      throw new Error("Marks already entered for this subject and exam");
-    }
-
-    // Validate marks
-    if (data.marksObtained > data.totalMarks) {
-      throw new Error("Marks obtained cannot exceed total marks");
-    }
-
-    // Calculate grade automatically
+    // Recalculate Grade
     const grade = calculateGrade(data.marksObtained, data.totalMarks);
 
-    // Create mark with ObjectIds
-    const markData = {
+    const filter = {
       studentId: studentObjectId,
       subjectId: subjectObjectId,
+      term: data.term,
+      year: data.year
+    };
+
+    const update = {
       examType: data.examType,
       marksObtained: data.marksObtained,
       totalMarks: data.totalMarks,
-      term: data.term,
-      year: data.year,
       remarks: data.remarks,
+      topicWise: data.topicWise || [],
       grade
     };
-    
-    const mark = await Mark.create(markData);
-    return await mark.populate('subjectId');
+
+    // Use findOneAndUpdate with upsert to prevent multiple entries for the same term/subject
+    const mark = await Mark.findOneAndUpdate(filter, update, {
+      new: true,
+      upsert: true,
+      runValidators: true
+    }).populate('subjectId');
+
+    return mark;
   }
 
   // Get marks by student

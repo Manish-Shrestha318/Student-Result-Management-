@@ -138,8 +138,8 @@ const ParentDashboard: React.FC = () => {
             <Col lg={8}>
               <div className="d-flex flex-column gap-5">
                 {/* ── Progress Chart ── */}
-                <Card className="border-0 shadow-sm rounded-4 p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-5 border-start border-4 border-primary ps-3">
+                <Card className="border-0 shadow-sm rounded-4 p-4 shadow-sm">
+                  <div className="d-flex justify-content-between align-items-center mb-5 ps-3">
                     <div>
                       <h6 className="fw-bold text-dark mb-0 text-uppercase small ls-1">Progress</h6>
                       <span className="smallest text-muted fw-bold text-uppercase ls-1">Updated: Now</span>
@@ -152,8 +152,8 @@ const ParentDashboard: React.FC = () => {
                 </Card>
 
                 {/* ── Financial Ledger ── */}
-                <Card className="border-0 shadow-sm rounded-4 p-4 overflow-hidden">
-                  <div className="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-success ps-3">
+                <Card className="border-0 shadow-sm rounded-4 p-4 overflow-hidden shadow-sm">
+                  <div className="d-flex justify-content-between align-items-center mb-4 ps-3">
                     <h6 className="fw-bold text-dark mb-0 text-uppercase small ls-1">Fee Status</h6>
                     <Button variant="success" size="sm" className="fw-bold smallest px-4 rounded-pill ls-1 text-uppercase shadow-none border-0">Pay Fees</Button>
                   </div>

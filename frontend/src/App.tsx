@@ -24,6 +24,13 @@ import StudentReports from './pages/Dashboards/StudentReports';
 import StudentResults from './pages/Dashboards/StudentResults';
 import TeacherRecords from './pages/Dashboards/TeacherRecords';
 import ParentRecords from './pages/Dashboards/ParentRecords';
+import TeacherResults from './pages/Dashboards/TeacherResults';
+import TeacherAttendance from './pages/Dashboards/TeacherAttendance';
+import TeacherNotices from './pages/Dashboards/TeacherNotices';
+import TeacherAnalytics from './pages/Dashboards/TeacherAnalytics';
+import StudentMessages from './pages/Dashboards/StudentMessages';
+import TeacherMessages from './pages/Dashboards/TeacherMessages';
+import ParentMessages from './pages/Dashboards/ParentMessages';
 
 const App: React.FC = () => {
   return (
@@ -59,9 +66,18 @@ const App: React.FC = () => {
         <Route path="/dashboard/student/reports" element={<StudentReports />} />
         <Route path="/dashboard/student/results" element={<StudentResults />} />
         <Route path="/dashboard/student/settings" element={<Settings />} />
+        <Route path="/dashboard/student/messages" element={<StudentMessages />} />
 
         {/* Teacher Specific Routes */}
+        <Route path="/dashboard/teacher/results" element={<TeacherResults />} />
+        <Route path="/dashboard/teacher/attendance" element={<TeacherAttendance />} />
+        <Route path="/dashboard/teacher/notices" element={<TeacherNotices />} />
+        <Route path="/dashboard/teacher/analytics" element={<TeacherAnalytics />} />
         <Route path="/dashboard/teacher/settings" element={<Settings />} />
+        <Route path="/dashboard/teacher/messages" element={<TeacherMessages />} />
+
+        {/* Parent Messages */}
+        <Route path="/dashboard/parent/messages" element={<ParentMessages />} />
 
         {/* Fallback to Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

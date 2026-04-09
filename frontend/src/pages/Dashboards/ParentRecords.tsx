@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/AdminSidebar';
 import AdminHeader from '../../components/AdminHeader';
-import { Modal, Button, Form, Table, Badge, Pagination, InputGroup, Spinner, Card } from 'react-bootstrap';
+import { Modal, Button, Form, Table, Badge, Pagination, InputGroup, Spinner, Card, Row, Col } from 'react-bootstrap';
 
 const ParentRecords: React.FC = () => {
   const [parents, setParents] = useState<any[]>([]);
+  const [systemStudents, setSystemStudents] = useState<any[]>([]);
   const [filteredParents, setFilteredParents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,39 +15,44 @@ const ParentRecords: React.FC = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentEditingParent, setCurrentEditingParent] = useState<any>(null);
-  const [editForm, setEditForm] = useState({
-    childName: '',
-    studentID: ''
-  });
+  const [editPhoneNumber, setEditPhoneNumber] = useState('');
+  const [assignedStudentIds, setAssignedStudentIds] = useState<string[]>([]);
+  
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchParents = async () => {
+  const fetchInitialData = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('/api/users?role=parent', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
+      const [parentRes, studentRes] = await Promise.all([
+         fetch('/api/users?role=parent', { headers: { 'Authorization': `Bearer ${token}` } }),
+         fetch('/api/users?role=student', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      const parentData = await parentRes.json();
+      const studentData = await studentRes.json();
 
-      if (data && data.success && Array.isArray(data.users)) {
-        setParents(data.users);
-        setFilteredParents(data.users);
-      } else if (Array.isArray(data)) {
-        setParents(data);
-        setFilteredParents(data);
-      } else {
-        setError(data.message || 'Failed to fetch parents');
+      if (parentData && parentData.success && Array.isArray(parentData.users)) {
+        setParents(parentData.users);
+      } else if (Array.isArray(parentData)) {
+        setParents(parentData);
       }
+      
+      if (studentData && studentData.success && Array.isArray(studentData.users)) {
+        setSystemStudents(studentData.users);
+      } else if (Array.isArray(studentData)) {
+        setSystemStudents(studentData);
+      }
+      
     } catch (err) {
-      setError('An error occurred while fetching parent records');
+      setError('An error occurred while fetching records.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchParents();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -54,8 +60,7 @@ const ParentRecords: React.FC = () => {
     if (searchTerm) {
       result = result.filter(p => 
         (p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.email && p.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (p.childName && p.childName.toLowerCase().includes(searchTerm.toLowerCase()))
+        (p.email && p.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     setFilteredParents(result);
@@ -77,7 +82,7 @@ const ParentRecords: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        fetchParents();
+        fetchInitialData();
       } else {
         alert(data.message || 'Failed to delete parent');
       }
@@ -86,13 +91,46 @@ const ParentRecords: React.FC = () => {
     }
   };
 
+  const getPopulatedChildren = (parent: any) => {
+      if (!parent.children || !Array.isArray(parent.children)) return [];
+      
+      return parent.children.map((childId: any) => {
+          // If the DB already populated it as an object
+          if (childId && typeof childId === 'object' && childId._id) {
+             const matchingStudent = systemStudents.find(s => s.profileId === childId._id.toString());
+             if (matchingStudent) return matchingStudent;
+             return { _id: childId._id, name: 'Unknown Student', rollNumber: childId.rollNumber };
+          }
+          // If it's just an id string
+          const matchingStudent = systemStudents.find(s => s.profileId === childId.toString());
+          if (matchingStudent) return matchingStudent;
+          return null;
+      }).filter((c: any) => c !== null);
+  };
+
   const openEditModal = (parent: any) => {
     setCurrentEditingParent(parent);
-    setEditForm({
-      childName: parent.childName || '',
-      studentID: parent.studentID || ''
-    });
+    setEditPhoneNumber(parent.phone || '');
+    
+    // Load currently assigned students based on the profileId linkage
+    const currentChildren = getPopulatedChildren(parent).map((c: any) => c.profileId);
+    setAssignedStudentIds(currentChildren.length > 0 ? currentChildren : ['']);
     setShowEditModal(true);
+  };
+
+  const handleAddChildSlot = () => {
+    setAssignedStudentIds([...assignedStudentIds, '']);
+  };
+
+  const handleChildChange = (index: number, value: string) => {
+    const newAssignments = [...assignedStudentIds];
+    newAssignments[index] = value;
+    setAssignedStudentIds(newAssignments);
+  };
+
+  const handleRemoveChildSlot = (index: number) => {
+    const newAssignments = assignedStudentIds.filter((_, i) => i !== index);
+    setAssignedStudentIds(newAssignments);
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -100,20 +138,24 @@ const ParentRecords: React.FC = () => {
     setIsSaving(true);
     const token = localStorage.getItem('token');
     try {
-      // Assuming parent profile update endpoint similar to students
-      const response = await fetch(`/api/users/parents/${currentEditingParent.profileId || currentEditingParent._id}`, {
+      const finalChildren = assignedStudentIds.filter(id => id.trim() !== ''); // Remove empty selections
+      
+      const response = await fetch(`/api/users/${currentEditingParent._id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify({
+           phoneNumber: editPhoneNumber,
+           assignedStudentIds: finalChildren
+        })
       });
       
       const data = await response.json();
       if (response.ok || data.success) {
         setShowEditModal(false);
-        fetchParents();
+        fetchInitialData(); // Refresh to get synced data
       } else {
         alert(data.message || 'Failed to update parent data');
       }
@@ -133,12 +175,12 @@ const ParentRecords: React.FC = () => {
           <div className="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-light-dark">
             <div>
               <h3 className="fw-bold text-dark mb-1">Parent Directory</h3>
-              <p className="text-secondary small mb-0">Manage all parent profiles and student links.</p>
+              <p className="text-secondary small mb-0">Manage all parent profiles and sync student links.</p>
             </div>
             <InputGroup className="shadow-none border-light-dark" style={{ width: '320px' }}>
               <Form.Control
-                placeholder="Search name or student..."
-                className="py-2 shadow-none smaller fw-medium"
+                placeholder="Search name or contact..."
+                className="py-2 shadow-none smaller fw-medium bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -148,43 +190,61 @@ const ParentRecords: React.FC = () => {
           {loading ? (
             <div className="py-5 text-center"><Spinner animation="border" variant="primary" /></div>
           ) : filteredParents.length === 0 ? (
-            <Card className="shadow-sm border-0 rounded-4 py-5 text-center">
-              <Card.Body><h5 className="text-secondary fw-bold">No records found</h5></Card.Body>
+            <Card className="shadow-sm border-0 rounded-4 py-5 text-center bg-white border">
+              <Card.Body><h5 className="text-secondary fw-bold mb-0">No records found</h5></Card.Body>
             </Card>
           ) : (
-            <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
+            <Card className="shadow-sm border rounded-4 overflow-hidden bg-white">
               <div className="table-responsive">
                 <Table hover className="align-middle mb-0">
                   <thead className="bg-light border-bottom border-light-dark">
                     <tr>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Parent</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Child Name</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary">Student ID</th>
-                      <th className="px-4 py-3 smaller fw-bold text-uppercase text-secondary text-end">Action</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Parent</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Child</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1">Contact Phone</th>
+                      <th className="px-4 py-3 smallest fw-bold text-uppercase text-secondary ls-1 text-end">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentParents.map((parent) => (
-                      <tr key={parent._id}>
-                        <td className="px-4 py-3">
-                          <div className="fw-bold text-dark">{parent.name}</div>
-                          <div className="smaller text-muted">{parent.email}</div>
-                        </td>
-                        <td className="px-4 py-3"><span className="smaller fw-medium">{parent.childName || 'N/A'}</span></td>
-                        <td className="px-4 py-3"><Badge bg="primary-soft" text="primary" className="border px-3 py-2 rounded-pill fw-bold smaller">{parent.studentID || 'N/A'}</Badge></td>
-                        <td className="px-4 py-3 text-end">
-                           <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light me-1" onClick={() => openEditModal(parent)}>EDIT</Button>
-                           <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(parent._id, parent.name)}>DELETE</Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {currentParents.map((parent) => {
+                      const children = getPopulatedChildren(parent);
+                      const count = children.length;
+                      return (
+                        <tr key={parent._id} className="bg-white border-bottom">
+                          <td className="px-4 py-3">
+                            <div className="fw-bold text-dark">{parent.name}</div>
+                            <div className="smallest text-muted fw-bold opacity-50">{parent.email}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                             <div className="d-flex flex-wrap gap-2">
+                               {count === 0 ? (
+                                  <Badge bg="danger-soft" text="danger" className="px-3 py-2 rounded-pill fw-bold smallest border">Unassigned</Badge>
+                               ) : (
+                                  children.map((c: any, i: number) => (
+                                    <Badge key={i} bg="primary-soft" text="primary" className="px-3 py-2 rounded-pill fw-bold smallest border">
+                                       {c.name} ({c.rollNumber})
+                                    </Badge>
+                                  ))
+                               )}
+                             </div>
+                          </td>
+                          <td className="px-4 py-3"><span className="smallest fw-bold text-uppercase ls-1">{parent.phone || 'N/A'}</span></td>
+                          <td className="px-4 py-3 text-end">
+                             <div className="d-flex justify-content-end gap-3 px-2">
+                                <Button variant="link" className="text-primary fw-bold smallest text-uppercase p-0 text-decoration-none" onClick={() => openEditModal(parent)}>UPDATE</Button>
+                                <Button variant="link" className="text-danger fw-bold smallest text-uppercase p-0 text-decoration-none" onClick={() => handleDelete(parent._id, parent.name)}>DELETE</Button>
+                             </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
               {totalPages > 1 && (
-                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white">
-                  <span className="smaller text-secondary fw-medium">Showing {indexOfFirst + 1}–{Math.min(indexOfLast, filteredParents.length)} of {filteredParents.length}</span>
-                  <Pagination className="mb-0 gap-1 pagination-sm">
+                <div className="p-4 border-top border-light-dark d-flex justify-content-between align-items-center bg-white px-5">
+                  <span className="smaller text-secondary fw-medium opacity-75">Page {currentPage} of {totalPages}</span>
+                  <Pagination className="mb-0 gap-1 pagination-sm shadow-none border-0">
                     <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} />
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                       <Pagination.Item key={p} active={p === currentPage} onClick={() => setCurrentPage(p)}>{p} </Pagination.Item>
@@ -198,21 +258,63 @@ const ParentRecords: React.FC = () => {
         </div>
       </main>
 
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
-        <Modal.Header closeButton className="border-0 px-4 pt-4"><Modal.Title className="fw-bold">Edit Parent</Modal.Title></Modal.Header>
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
+        <Modal.Header closeButton className="border-0 px-4 pt-4"><Modal.Title className="fw-bold fs-5">Update Parent Profile</Modal.Title></Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleSaveEdit}>
-            <Form.Group className="mb-3">
-              <Form.Label className="smaller fw-bold text-secondary">Child's Name</Form.Label>
-              <Form.Control type="text" value={editForm.childName} onChange={(e) => setEditForm({...editForm, childName: e.target.value})} required className="py-2 shadow-none" />
-            </Form.Group>
-            <Form.Group className="mb-4">
-              <Form.Label className="smaller fw-bold text-secondary">Student ID</Form.Label>
-              <Form.Control type="text" value={editForm.studentID} onChange={(e) => setEditForm({...editForm, studentID: e.target.value})} required className="py-2 shadow-none" />
-            </Form.Group>
-            <div className="d-flex gap-2">
-              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border" onClick={() => setShowEditModal(false)}>Cancel</Button>
-              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
+            <Row className="g-4 mb-4">
+               <Col md={12}>
+                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Contact Phone</Form.Label>
+                  <Form.Control type="text" value={editPhoneNumber} onChange={(e) => setEditPhoneNumber(e.target.value)} required className="py-2 border-light shadow-none bg-light fw-bold" placeholder="Parent Contact Number..." />
+               </Col>
+            </Row>
+
+            <div className="border-top pt-4 mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h6 className="smallest fw-bold text-primary text-uppercase ls-1 mb-0">Child</h6>
+                    <Button variant="outline-primary" size="sm" className="rounded-pill fw-bold smallest text-uppercase ls-1 py-1 px-3" onClick={handleAddChildSlot}>
+                        <i className="bi bi-plus-lg me-1"></i> Add Child
+                    </Button>
+                </div>
+                
+                <Row className="g-3">
+                   {assignedStudentIds.map((assignedId, index) => (
+                       <Col md={6} key={index}>
+                          <div className="d-flex align-items-center gap-2">
+                              <div className="flex-grow-1">
+                                  <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Student {index + 1}</Form.Label>
+                                  <Form.Select 
+                                    className="py-2 border-light shadow-none bg-light fw-bold" 
+                                    value={assignedId} 
+                                    onChange={(e) => handleChildChange(index, e.target.value)}
+                                  >
+                                    <option value="">-- Select Child --</option>
+                                    {systemStudents.map(student => (
+                                        <option key={student.profileId} value={student.profileId}>{student.name} — {student.class} ({student.section})</option>
+                                    ))}
+                                  </Form.Select>
+                              </div>
+                              <div className="pt-4 mt-1">
+                                  <Button variant="light" className="border-0 text-danger" onClick={() => handleRemoveChildSlot(index)}>
+                                      <i className="bi bi-x-lg"></i>
+                                  </Button>
+                              </div>
+                          </div>
+                       </Col>
+                   ))}
+                   {assignedStudentIds.length === 0 && (
+                       <Col md={12}>
+                          <div className="p-4 text-center border rounded-3 bg-light opacity-50">
+                             <span className="smallest fw-bold text-muted text-uppercase ls-1">No children linked. Click 'Add Child' to establish linkage.</span>
+                          </div>
+                       </Col>
+                   )}
+                </Row>
+            </div>
+
+            <div className="d-flex gap-3 pt-3">
+              <Button variant="light" className="flex-grow-1 fw-bold rounded-pill py-3 border-0 bg-light-dark opacity-75 smallest text-uppercase ls-1" onClick={() => setShowEditModal(false)}>Discard</Button>
+              <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-3 shadow-none border-0 smallest text-uppercase ls-1" disabled={isSaving}>{isSaving ? 'Processing...' : 'Update'}</Button>
             </div>
           </Form>
         </Modal.Body>

@@ -6,6 +6,9 @@ import { Modal, Button, Form, Row, Col, Card, Badge, Pagination } from 'react-bo
 const ManageClasses: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [systemStudents, setSystemStudents] = useState<any[]>([]);
+  const [systemSubjects, setSystemSubjects] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,32 +34,35 @@ const ManageClasses: React.FC = () => {
 
   const token = localStorage.getItem('token');
 
-  const fetchClasses = async () => {
+  const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/classes', { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setClasses(data.classes || data || []);
+      const [classRes, teacherRes, studentRes, subjectRes] = await Promise.all([
+        fetch('/api/classes', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/users?role=teacher', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/users?role=student', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/subjects', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      
+      const cData = await classRes.json();
+      const tData = await teacherRes.json();
+      const sData = await studentRes.json();
+      const subData = await subjectRes.json();
+
+      setClasses(cData.classes || cData || []);
+      setTeachers(tData.users || tData || []);
+      setSystemStudents(sData.users || sData || []);
+      setSystemSubjects(subData.subjects || subData || []);
+      
     } catch {
-      setError('Failed to load classes');
+      setError('Failed to load system records.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTeachers = async () => {
-    try {
-      const res = await fetch('/api/users?role=teacher', { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setTeachers(data.users || data || []);
-    } catch {
-      setError('Failed to load teachers list');
-    }
-  };
-
   useEffect(() => {
-    fetchClasses();
-    fetchTeachers();
+    fetchInitialData();
   }, []);
 
   const openAddModal = () => {
@@ -83,16 +89,20 @@ const ManageClasses: React.FC = () => {
     setFormLoading(true);
     const url = modalMode === 'add' ? '/api/classes' : `/api/classes/${selectedClass._id}`;
     const method = modalMode === 'add' ? 'POST' : 'PUT';
+    
+    // Only metadata, the students/subjects are read-only dynamically
+    const submissionData = { ...form };
+
     try {
       const res = await fetch(url, {
         method,
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(submissionData),
       });
       const data = await res.json();
       if (res.ok || data.success) {
         setShowModal(false);
-        fetchClasses();
+        fetchInitialData();
       } else {
         alert(data.message || 'Operation failed');
       }
@@ -110,7 +120,7 @@ const ManageClasses: React.FC = () => {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchClasses();
+      if (res.ok) fetchInitialData();
       else alert('Failed to delete class');
     } catch {
       alert('Error deleting class');
@@ -134,8 +144,8 @@ const ManageClasses: React.FC = () => {
           {/* ── Directory Header ── */}
           <div className="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-light-dark">
             <div>
-              <h3 className="fw-bold text-dark mb-1">Classroom Directory</h3>
-              <p className="text-secondary small mb-0">System-wide registry of all academic cohorts and physical room assignments.</p>
+              <h3 className="fw-bold text-dark mb-1">Classes</h3>
+              <p className="text-secondary small mb-0">Manage and organize all your school classes and room schedules.</p>
             </div>
             <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm" onClick={openAddModal}>
               ADD NEW CLASS
@@ -157,7 +167,7 @@ const ManageClasses: React.FC = () => {
               <Row className="g-4">
                 {currentClasses.map((cls) => (
                   <Col key={cls._id} xs={12} md={6} xl={4}>
-                    <Card className="h-100 shadow-sm border-0 rounded-4 hover-lift transition-all border-top border-4 border-primary">
+                    <Card className="h-100 shadow-sm border-0 rounded-4 hover-lift transition-all">
                       <Card.Body className="p-4 d-flex flex-column">
                         <div className="d-flex justify-content-between align-items-start mb-4">
                           <div>
@@ -181,14 +191,14 @@ const ManageClasses: React.FC = () => {
                             <span className="fw-bold">CLASS TEACHER</span>
                             <span className="text-dark bg-white border px-2 py-1 rounded small fw-medium">{getTeacherName(cls.classTeacher)}</span>
                           </div>
-                          <div className="d-flex justify-content-between align-items-center">
-                            <span className="fw-bold">POPULATION</span>
-                            <span className="text-dark fw-bold">{cls.students?.length || 0} Learners</span>
-                          </div>
-                          <div className="d-flex justify-content-between align-items-center">
-                            <span className="fw-bold">CURRICULUM</span>
-                            <span className="text-dark fw-bold">{cls.subjects?.length || 0} Modules</span>
-                          </div>
+                           <div className="d-flex justify-content-between align-items-center">
+                             <span className="fw-bold">TOTAL STD</span>
+                             <span className="text-dark fw-bold">{systemStudents.filter(s => s.class === cls.name && s.section === cls.section).length} Students</span>
+                           </div>
+                           <div className="d-flex justify-content-between align-items-center">
+                             <span className="fw-bold">SUBJECTS</span>
+                             <span className="text-dark fw-bold">{systemSubjects.filter(s => s.class === `${cls.name} - ${cls.section}` || s.class === cls.name).length} Subjects</span>
+                           </div>
                           {cls.roomNumber && (
                             <div className="d-flex justify-content-between align-items-center">
                               <span className="fw-bold">ROOM</span>
@@ -223,7 +233,7 @@ const ManageClasses: React.FC = () => {
       </main>
 
       {/* ── Operational Modal ── */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered className="border-0 shadow-lg">
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered size="lg" className="border-0 shadow-lg" scrollable>
         <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
           <Modal.Title className="fw-bold text-dark fs-5">
             {modalMode === 'add' ? 'CREATE CLASS' : 'UPDATE CLASS'}
@@ -237,7 +247,7 @@ const ManageClasses: React.FC = () => {
                 <Form.Control 
                   required 
                   type="text" 
-                  className="py-2 border-light-dark shadow-none" 
+                  className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. Grade 10" 
                   value={form.name} 
                   onChange={e => setForm({ ...form, name: e.target.value })} 
@@ -248,7 +258,7 @@ const ManageClasses: React.FC = () => {
                 <Form.Control 
                   required 
                   type="text" 
-                  className="py-2 border-light-dark shadow-none" 
+                  className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. A" 
                   value={form.section} 
                   onChange={e => setForm({ ...form, section: e.target.value })} 
@@ -262,7 +272,7 @@ const ManageClasses: React.FC = () => {
                 <Form.Control 
                   required 
                   type="text" 
-                  className="py-2 border-light-dark shadow-none" 
+                  className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. 2025" 
                   value={form.academicYear} 
                   onChange={e => setForm({ ...form, academicYear: e.target.value })} 
@@ -272,7 +282,7 @@ const ManageClasses: React.FC = () => {
                 <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Room (Optional)</Form.Label>
                 <Form.Control 
                   type="text" 
-                  className="py-2 border-light-dark shadow-none" 
+                  className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. 201" 
                   value={form.roomNumber} 
                   onChange={e => setForm({ ...form, roomNumber: e.target.value })} 
@@ -284,7 +294,7 @@ const ManageClasses: React.FC = () => {
               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class Teacher</Form.Label>
               <Form.Select 
                 required 
-                className="py-2 border-light-dark shadow-none" 
+                className="py-2 border-light-dark shadow-none fw-medium" 
                 value={form.classTeacher} 
                 onChange={e => setForm({ ...form, classTeacher: e.target.value })}
               >
@@ -295,12 +305,36 @@ const ManageClasses: React.FC = () => {
               </Form.Select>
             </Form.Group>
 
-            <div className="d-flex gap-2 pt-2">
+            {modalMode === 'edit' && (
+                <>
+                    <div className="border-top pt-4 mb-4">
+                        <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Students</Form.Label>
+                        <Form.Select className="py-2 border-light-dark shadow-none fw-medium bg-light">
+                            <option>View Students ({systemStudents.filter(s => s.class === form.name && s.section === form.section).length})</option>
+                            {systemStudents.filter(s => s.class === form.name && s.section === form.section).map(s => (
+                                <option key={s.profileId}>{s.name} ({s.rollNumber})</option>
+                            ))}
+                        </Form.Select>
+                    </div>
+
+                    <div className="border-top pt-4 mb-4">
+                        <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Subjects</Form.Label>
+                        <Form.Select className="py-2 border-light-dark shadow-none fw-medium bg-light">
+                            <option>View Subjects ({systemSubjects.filter(s => s.class === `${form.name} - ${form.section}` || s.class === form.name).length})</option>
+                            {systemSubjects.filter(s => s.class === `${form.name} - ${form.section}` || s.class === form.name).map(s => (
+                                <option key={s._id}>{s.name} ({s.code})</option>
+                            ))}
+                        </Form.Select>
+                    </div>
+                </>
+            )}
+
+            <div className="d-flex gap-2 pt-2 border-top mt-4 pt-4">
               <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-2" onClick={() => setShowModal(false)}>
                 DISCARD
               </Button>
               <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-2" disabled={formLoading}>
-                {formLoading ? 'PROCESSING...' : (modalMode === 'add' ? 'CONFIRM' : 'SAVE CHANGES')}
+                {formLoading ? 'PROCESSING...' : (modalMode === 'add' ? 'CONFIRM CREATION' : 'UPDATE SYNCED CLASS')}
               </Button>
             </div>
           </Form>
@@ -311,4 +345,3 @@ const ManageClasses: React.FC = () => {
 };
 
 export default ManageClasses;
-

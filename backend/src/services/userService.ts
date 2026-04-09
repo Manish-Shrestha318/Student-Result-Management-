@@ -2,6 +2,7 @@ import User, { IUserDocument } from "../models/User";
 import Student from "../models/Student";
 import Teacher from "../models/Teacher";
 import Parent from "../models/Parent";
+import Subject from "../models/Subject";
 import bcrypt from "bcryptjs";
 import cloudinary from "../utils/cloudinaryConfig";
 import streamifier from "streamifier";
@@ -43,6 +44,8 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
   // Teacher Join Branch
   if (cleanRole === 'teacher') {
     const teachers = await Teacher.find().populate('userId').lean();
+    const allSubjects = await Subject.find().lean();
+    
     return teachers.map(t => {
       const userData = t.userId as any;
       if (!userData) return null;
@@ -52,7 +55,10 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
         profileId: t._id,
         employeeId: t.employeeId,
         qualification: t.qualification,
-        phone: t.phone
+        phone: t.phone,
+        phoneNumber: t.phone, // UI expectation
+        subject: t.specialization?.[0] || '', // Primary core subject
+        assignedSubjects: allSubjects.filter(sub => sub.teacherId?.toString() === userData._id.toString())
       };
     }).filter(t => t !== null);
   }
@@ -102,6 +108,58 @@ export const updateUser = async (id: string, data: any): Promise<IUserDocument |
   if (data.status) user.status = data.status;
   if (data.role) user.role = data.role;
   await user.save();
+
+  // Handle Teacher Specific Profile Updates during User Edit
+  if (user.role === 'teacher') {
+    const updateData: any = {};
+    if (data.phoneNumber || data.phone) updateData.phone = data.phoneNumber || data.phone;
+    if (data.primarySubject) updateData.specialization = [data.primarySubject];
+    
+    await Teacher.findOneAndUpdate(
+        { userId: user._id },
+        { 
+            $set: updateData
+        }
+    );
+
+    // Subject/Class Synchronization
+    if (data.assignedSubjectIds && Array.isArray(data.assignedSubjectIds)) {
+        // Clear old subject assignments for this teacher
+        await Subject.updateMany({ teacherId: user._id }, { $unset: { teacherId: "" } });
+        // Set new subject assignments
+        if (data.assignedSubjectIds.length > 0) {
+            await Subject.updateMany({ _id: { $in: data.assignedSubjectIds } }, { $set: { teacherId: user._id } });
+        }
+    }
+  }
+
+  // Handle Parent Specific Profile Updates
+  if (user.role === 'parent') {
+    const updateData: any = {};
+    if (data.phoneNumber || data.phone) updateData.phone = data.phoneNumber || data.phone;
+    
+    await Parent.findOneAndUpdate(
+        { userId: user._id },
+        { $set: updateData }
+    );
+
+    // Sync Children
+    if (data.assignedStudentIds && Array.isArray(data.assignedStudentIds)) {
+        await Parent.findOneAndUpdate(
+            { userId: user._id },
+            { $set: { children: data.assignedStudentIds } }
+        );
+        
+        // Cascade contact info to the linked students
+        if (data.assignedStudentIds.length > 0) {
+            await Student.updateMany(
+                { _id: { $in: data.assignedStudentIds } },
+                { $set: { parentName: user.name, parentPhone: data.phoneNumber || data.phone || '' } }
+            );
+        }
+    }
+  }
+
   return user;
 };
 
