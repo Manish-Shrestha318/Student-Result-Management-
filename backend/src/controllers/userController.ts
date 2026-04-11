@@ -24,6 +24,21 @@ export const getMyProfile = async (req: any, res: Response) => {
       }
     }
 
+    // If parent, attach profile data (with children info)
+    const Parent = require('../models/Parent').default;
+    if (user.role === 'parent') {
+      const parentProfile = await Parent.findOne({ userId })
+        .populate({
+          path: 'children',
+          populate: { path: 'userId', select: 'name email profilePicture' }
+        })
+        .lean();
+      
+      if (parentProfile) {
+        user = { ...user, parentProfile };
+      }
+    }
+
     res.json({ success: true, user });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

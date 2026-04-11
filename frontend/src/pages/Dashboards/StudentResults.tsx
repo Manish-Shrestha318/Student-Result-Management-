@@ -24,7 +24,7 @@ const StudentResults: React.FC = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const [selectedTerm, setSelectedTerm] = useState('First Term');
-  const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedYear, setSelectedYear] = useState('2025');
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const StudentResults: React.FC = () => {
   }, [fetchData]);
 
   const sortedTrend = [...trend].sort((a, b) => {
-    const termOrder: any = { 'First Term': 0, 'Mid Term': 1, 'Final': 2 };
+    const termOrder: any = { 'First Term': 0, 'Second Term': 1, 'Final Term': 2 };
     const aTerm = a.term.replace(/\s\d{4}$/, '');
     const bTerm = b.term.replace(/\s\d{4}$/, '');
     return (a.year * 10 + (termOrder[aTerm] || 0)) - (b.year * 10 + (termOrder[bTerm] || 0));
@@ -75,7 +75,7 @@ const StudentResults: React.FC = () => {
 
   const currentLevel = sortedTrend.length > 0 ? sortedTrend[sortedTrend.length - 1].percentage : 0;
 
-  const termOrders = ['First Term', 'Second Term', 'Final'];
+  const termOrders = ['First Term', 'Second Term', 'Final Term'];
   const termIdx = termOrders.indexOf(selectedTerm);
   let prevTermName: string | null = null;
   let prevYearValue = selectedYear;
@@ -83,7 +83,7 @@ const StudentResults: React.FC = () => {
   if (termIdx > 0) {
       prevTermName = termOrders[termIdx - 1];
   } else if (termIdx === 0) {
-      prevTermName = 'Final';
+      prevTermName = 'Final Term';
       prevYearValue = String(Number(selectedYear) - 1);
   }
 
@@ -169,11 +169,21 @@ const StudentResults: React.FC = () => {
   const handleDownloadReport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/report-cards/generate?studentId=${user._id}&term=${selectedTerm}&year=${selectedYear}`, {
+      const termEncoded = encodeURIComponent(selectedTerm);
+      const yearEncoded = encodeURIComponent(selectedYear);
+      
+      const response = await fetch(`/api/reports/generate?studentId=${user._id}&term=${termEncoded}&year=${yearEncoded}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!response.ok) throw new Error("Report not available for selected term/year.");
+      if (!response.ok) {
+        let errMsg = "Report not available for selected term/year.";
+        try {
+          const errData = await response.json();
+          if (errData.message) errMsg = errData.message;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -235,7 +245,7 @@ const StudentResults: React.FC = () => {
                      <Form.Select size="sm" className="fw-bold smallest text-uppercase shadow-none border py-2 px-3" value={selectedTerm} onChange={(e: any) => setSelectedTerm(e.target.value)}>
                         <option value="First Term">First Term</option>
                         <option value="Second Term">Second Term</option>
-                        <option value="Final">Final</option>
+                        <option value="Final Term">Final Term</option>
                      </Form.Select>
                      <Form.Select size="sm" className="fw-bold smallest text-uppercase shadow-none border py-2 px-3" value={selectedYear} onChange={(e: any) => setSelectedYear(e.target.value)}>
                         <option value="2025">2025</option>

@@ -16,33 +16,9 @@ const getUserId = (): string => {
   } catch { return ''; }
 };
 
-const ParentSidebarInline: React.FC = () => {
-  const location = useLocation();
-  const path = location.pathname;
-  const items = [
-    { label: 'Dashboard', to: '/dashboard/parent' },
-    { label: 'Messages', to: '/dashboard/parent/messages' },
-  ];
-  return (
-    <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', minWidth: '280px', height: '100vh', zIndex: 10 }}>
-      <div className="mb-5 px-3">
-        <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
-        <span className="smallest text-muted fw-bold text-uppercase ls-1">Parent Portal</span>
-      </div>
-      <nav className="nav flex-column gap-1 flex-grow-1">
-        {items.map(item => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`nav-link rounded-pill py-3 px-4 mb-1 fw-bold transition-all ${path === item.to ? 'bg-primary text-white shadow-sm' : 'text-secondary'}`}
-          >
-            <span className="ls-1 text-uppercase smallest">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-    </aside>
-  );
-};
+import ParentSidebar from '../../components/ParentSidebar';
+
+// Removed ParentSidebarInline
 
 const ParentMessages: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -106,7 +82,7 @@ const ParentMessages: React.FC = () => {
 
   return (
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
-      <ParentSidebarInline />
+      <ParentSidebar />
       <main className="flex-grow-1 d-flex flex-column overflow-hidden bg-light">
         <AdminHeader title="Parent Messages" />
 

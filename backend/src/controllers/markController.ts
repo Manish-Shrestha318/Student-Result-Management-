@@ -35,11 +35,17 @@ export const getStudentMarks = async (req: Request, res: Response) => {
     const resolvedStudentId = await analyticsService.resolveStudentProfileId(studentId);
 
     // Authorization check: Admin and Teacher can view any student's marks. 
-    // Students and Parents can only view their own data.
-    if (user.role === "student" || user.role === "parent") {
+    // Students can only view their own data. Parents can only view their children's data.
+    if (user.role === "student") {
        const userStudentId = await analyticsService.resolveStudentProfileId(user.id);
        if (userStudentId.toString() !== resolvedStudentId.toString()) {
          return res.status(403).json({ success: false, message: "Forbidden: You can only view your own marks" });
+       }
+    } else if (user.role === "parent") {
+       const Parent = require('../models/Parent').default;
+       const parentDoc = await Parent.findOne({ userId: user.id });
+       if (!parentDoc || !parentDoc.children.map((c: any) => c.toString()).includes(resolvedStudentId.toString())) {
+         return res.status(403).json({ success: false, message: "Forbidden: You can only view your own children's marks" });
        }
     }
 
@@ -146,10 +152,16 @@ export const getPerformanceTrend = async (req: Request, res: Response) => {
     const resolvedStudentId = await analyticsService.resolveStudentProfileId(studentId);
 
     // Authorization check
-    if (user.role === "student" || user.role === "parent") {
+    if (user.role === "student") {
        const userStudentId = await analyticsService.resolveStudentProfileId(user.id);
        if (userStudentId.toString() !== resolvedStudentId.toString()) {
          return res.status(403).json({ success: false, message: "Forbidden: You can only view your own trends" });
+       }
+    } else if (user.role === "parent") {
+       const Parent = require('../models/Parent').default;
+       const parentDoc = await Parent.findOne({ userId: user.id });
+       if (!parentDoc || !parentDoc.children.map((c: any) => c.toString()).includes(resolvedStudentId.toString())) {
+         return res.status(403).json({ success: false, message: "Forbidden: You can only view your own children's trends" });
        }
     }
 

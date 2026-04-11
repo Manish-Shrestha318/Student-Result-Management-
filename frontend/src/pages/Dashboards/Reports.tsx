@@ -13,7 +13,7 @@ const Reports: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [term, setTerm] = useState('First Term');
-  const [year, setYear] = useState('2026');
+  const [year, setYear] = useState('2025');
 
   const [reportData, setReportData] = useState<any>(null);
   const [downloading, setDownloading] = useState(false);
@@ -58,10 +58,9 @@ const Reports: React.FC = () => {
       if (activeTab === 'results') {
         url = `/api/reports/data?studentId=${selectedStudent}&term=${term}&year=${year}`;
       } else if (activeTab === 'class' && selectedClass) {
-        url = `/api/analytics/class/${selectedClass}?term=${term}&year=${year}`;
+        url = `/api/analytics/class/${selectedClass}?term=${encodeURIComponent(term)}&year=${encodeURIComponent(year)}`;
       } else if (activeTab === 'attendance' && selectedStudent) {
-        const now = new Date();
-        url = `/api/academics/attendance/report/${selectedStudent}?month=${now.getMonth()+1}&year=${now.getFullYear()}`;
+        url = `/api/academics/attendance/report/${selectedStudent}`;
       }
 
       if (!url) {
@@ -106,7 +105,7 @@ const Reports: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `report-card-${selectedStudent}-${term}.pdf`;
+      a.download = `ReportCard_${reportData.student.name.replace(/\s+/g, '_')}_${term}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -122,7 +121,7 @@ const Reports: React.FC = () => {
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <AdminSidebar />
       <main className="flex-grow-1 d-flex flex-column overflow-auto bg-light">
-        <AdminHeader title="Institutional Audit & Reports" error={error} />
+        <AdminHeader title="Reports" error={error} />
 
         <div className="container-fluid p-4 p-lg-5">
           {/* ── Operational Tab Bar ── */}
@@ -130,25 +129,25 @@ const Reports: React.FC = () => {
             <Nav.Item>
               <Nav.Link 
                 active={activeTab === 'results'} 
-                onClick={() => setActiveTab('results')}
+                onClick={() => { setActiveTab('results'); setReportData(null); setError(null); }}
                 className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'results' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
               >
-                Student Performance Matrix
+                Student Results
               </Nav.Link>
             </Nav.Item>
             <Nav.Item>
               <Nav.Link 
                 active={activeTab === 'class'} 
-                onClick={() => setActiveTab('class')}
+                onClick={() => { setActiveTab('class'); setReportData(null); setError(null); }}
                 className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'class' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
               >
-                Class Analytics Portfolio
+                Class Record
               </Nav.Link>
             </Nav.Item>
             <Nav.Item>
               <Nav.Link 
                 active={activeTab === 'attendance'} 
-                onClick={() => setActiveTab('attendance')}
+                onClick={() => { setActiveTab('attendance'); setReportData(null); setError(null); }}
                 className={`fw-bold smallest px-0 py-3 ls-1 text-uppercase border-0 shadow-none ${activeTab === 'attendance' ? 'text-primary border-bottom border-3 border-primary' : 'text-muted opacity-75'}`}
               >
                 Attendance Report
@@ -201,9 +200,9 @@ const Reports: React.FC = () => {
                             onChange={(e) => setTerm(e.target.value)}
                             className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
                           >
-                            <option value="First Term">FIRST TERM</option>
-                            <option value="Mid Term">SECOND TERM</option>
-                            <option value="Final Term">FINAL TERM</option>
+                             <option value="First Term">FIRST TERM</option>
+                             <option value="Second Term">SECOND TERM</option>
+                             <option value="Final Term">FINAL TERM</option>
                           </Form.Select>
                         </Form.Group>
                         <Form.Group>
@@ -301,10 +300,14 @@ const Reports: React.FC = () => {
                               <td className="px-4 py-3 fw-bold text-dark ls-1 text-uppercase">{m.subject}</td>
                               <td className="px-4 py-3 text-center fw-bold fs-6">{m.marksObtained}</td>
                               <td className="px-4 py-3 text-center text-muted fw-bold">{m.totalMarks}</td>
-                              <td className="px-4 py-3 text-center"><Badge bg="light" text="dark" className="fw-bold smaller border px-3 py-1 rounded-pill ls-1">{m.grade} ({m.percentage}%)</Badge></td>
+                              <td className="px-4 py-3 text-center">
+                                <Badge bg="light" text="dark" className="fw-bold smaller border px-3 py-1 rounded-pill ls-1">
+                                  {m.grade || 'N/A'} ({m.percentage}%)
+                                </Badge>
+                              </td>
                               <td className="px-4 py-3 text-end">
-                                <span className={`fw-bold ls-1 text-uppercase smallest ${m.marksObtained >= (m.totalMarks * 0.4) ? 'text-success' : 'text-danger'}`}>
-                                  {m.marksObtained >= (m.totalMarks * 0.4) ? 'Pass' : 'Fail'}
+                                <span className={`fw-bold ls-1 text-uppercase smallest ${m.grade !== 'F' ? 'text-success' : 'text-danger'}`}>
+                                  {m.grade !== 'F' ? 'Pass' : 'Fail'}
                                 </span>
                               </td>
                             </tr>
@@ -318,12 +321,12 @@ const Reports: React.FC = () => {
 
               {reportData && activeTab === 'attendance' && (
                 <Card className="border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white shadow-sm">
-                  <h6 className="fw-bold text-dark mb-5 smallest text-uppercase ls-1 border-start border-4 border-info ps-3">Attendance Report</h6>
+                  <h6 className="fw-bold text-dark mb-5 smallest text-uppercase ls-1 border-start border-4 border-secondary ps-3">Attendance Report</h6>
                   <Row className="align-items-center g-5">
                     <Col md={5}>
-                      <div className="p-5 bg-light-soft rounded-circle border border-info border-3 text-center shadow-inner mx-auto" style={{ width: '220px', height: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <div className="p-5 bg-light-soft rounded-circle border border-secondary border-3 text-center shadow-inner mx-auto" style={{ width: '220px', height: '220px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1 opacity-75">Percentage</span>
-                        <h2 className="display-5 fw-bold text-primary mb-0 ls-1">{reportData.percentage}%</h2>
+                        <h2 className="display-5 fw-bold text-dark mb-0 ls-1">{reportData.percentage}%</h2>
                       </div>
                     </Col>
                     <Col md={7}>
@@ -332,13 +335,13 @@ const Reports: React.FC = () => {
                            <span className="smallest fw-bold text-uppercase text-secondary ls-1">TOTAL DAYS</span>
                            <span className="smaller fw-bold text-dark ls-1">{reportData.totalDays}</span>
                         </div>
-                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 border-start border-4 border-success bg-success-soft shadow-sm mb-2">
-                           <span className="smallest fw-bold text-uppercase text-success ls-1">DAYS PRESENT</span>
-                           <span className="smaller fw-bold text-success ls-1">{reportData.present}</span>
+                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light border-light-dark border mb-2">
+                           <span className="smallest fw-bold text-uppercase text-secondary ls-1">DAYS PRESENT</span>
+                           <span className="smaller fw-bold text-dark ls-1">{reportData.present}</span>
                         </div>
-                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 border-start border-4 border-danger bg-danger-soft shadow-sm">
-                           <span className="smallest fw-bold text-uppercase text-danger ls-1">DAYS ABSENT</span>
-                           <span className="smaller fw-bold text-danger ls-1">{reportData.absent}</span>
+                        <div className="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light border-light-dark border">
+                           <span className="smallest fw-bold text-uppercase text-secondary ls-1">DAYS ABSENT</span>
+                           <span className="smaller fw-bold text-dark ls-1">{reportData.absent}</span>
                         </div>
                       </div>
                     </Col>
@@ -356,22 +359,22 @@ const Reports: React.FC = () => {
                        <SummaryCard label="PASS RATE" value={`${reportData.passRate.toFixed(1)}%`} variant="success" trend="PERCENTAGE" />
                     </Col>
                     <Col sm={4}>
-                       <SummaryCard label="TOP STUDENT" value={reportData.topper?.name.toUpperCase() || 'N/A'} variant="warning" trend="TOPPER" />
+                       <SummaryCard label="TOP STUDENT" value={reportData.topper?.studentName?.toUpperCase() || 'N/A'} variant="warning" trend="TOPPER" />
                     </Col>
                   </Row>
 
                   <Card className="border-0 shadow-sm rounded-4 overflow-hidden shadow-sm bg-white">
                     <Card.Header className="bg-white p-4 border-0 border-bottom">
-                       <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Enrolled Subject Rankings</h6>
+                       <h6 className="fw-bold text-dark mb-0 smallest text-uppercase ls-1">Class Rankings</h6>
                     </Card.Header>
                     <div className="table-responsive" style={{ maxHeight: '500px' }}>
                       <Table borderless hover className="align-middle mb-0 smallest fw-medium">
                         <thead className="bg-light-soft position-sticky top-0 z-2 shadow-sm">
                           <tr className="border-bottom border-light">
-                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Audited Rank</th>
-                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Registry Name</th>
-                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Mean Aggregate</th>
-                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-end">Evaluation State</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Rank</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1">Student Name</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-center">Average Score</th>
+                            <th className="px-4 py-3 text-secondary fw-bold text-uppercase ls-1 text-end">Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -385,7 +388,7 @@ const Reports: React.FC = () => {
                               <td className="px-4 py-4 text-center fw-bold fs-6">{s.average}%</td>
                               <td className="px-4 py-4 text-end">
                                 <Badge bg={s.passed ? 'success-soft' : 'danger-soft'} text={s.passed ? 'success' : 'danger'} className="fw-bold smaller text-uppercase px-3 py-2 rounded-pill border ls-1">
-                                  {s.passed ? 'Satisfactory' : 'Unsatisfactory'}
+                                  {s.passed ? 'Pass' : 'Fail'}
                                 </Badge>
                               </td>
                             </tr>
@@ -405,11 +408,11 @@ const Reports: React.FC = () => {
 };
 
 const SummaryCard: React.FC<{ label: string, value: string, variant: string, trend: string }> = ({ label, value, variant, trend }) => (
-  <Card className={`border-0 shadow-sm rounded-4 h-100 border-start border-5 border-${variant}`}>
+  <Card className="border-0 shadow-sm rounded-4 h-100">
     <Card.Body className="p-4 py-3 text-center text-sm-start">
       <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{label}</span>
       <h3 className="fw-bold text-dark mb-1 ls-1">{value}</h3>
-      <div className={`smallest fw-bold text-uppercase ls-1 text-${variant}`}>{trend}</div>
+      <div className="smallest fw-bold text-uppercase ls-1 text-secondary">{trend}</div>
     </Card.Body>
   </Card>
 );

@@ -32,6 +32,10 @@ import StudentMessages from './pages/Dashboards/StudentMessages';
 import TeacherMessages from './pages/Dashboards/TeacherMessages';
 import ParentMessages from './pages/Dashboards/ParentMessages';
 
+import ParentResults from './pages/Dashboards/ParentResults';
+import ParentAttendance from './pages/Dashboards/ParentAttendance';
+import ParentNotices from './pages/Dashboards/ParentNotices';
+
 const App: React.FC = () => {
   return (
     <Router>
@@ -76,7 +80,10 @@ const App: React.FC = () => {
         <Route path="/dashboard/teacher/settings" element={<Settings />} />
         <Route path="/dashboard/teacher/messages" element={<TeacherMessages />} />
 
-        {/* Parent Messages */}
+        {/* Parent Specific Routes */}
+        <Route path="/dashboard/parent/results" element={<ParentResults />} />
+        <Route path="/dashboard/parent/attendance" element={<ParentAttendance />} />
+        <Route path="/dashboard/parent/notices" element={<ParentNotices />} />
         <Route path="/dashboard/parent/messages" element={<ParentMessages />} />
 
         {/* Fallback to Login */}

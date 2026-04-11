@@ -63,19 +63,22 @@ export const getAttendanceReport = async (req: Request, res: Response) => {
     const { studentId } = req.params;
     const { month, year } = req.query;
 
-    if (!month || !year) {
-      return res.status(400).json({
-        success: false,
-        message: "Month and year are required"
-      });
-    }
-
     const resolvedStudentId = await analyticsService.resolveStudentProfileId(String(studentId));
 
+    if (month && year) {
+      const parsedMonth = parseInt(String(month));
+      const parsedYear = parseInt(String(year));
+      
+      const report = await attendanceService.getAttendanceReport(
+        resolvedStudentId.toString(),
+        parsedMonth,
+        parsedYear
+      );
+      return res.json({ success: true, data: report });
+    }
+
     const report = await attendanceService.getAttendanceReport(
-      resolvedStudentId.toString(),
-      parseInt(String(month)),
-      parseInt(String(year))
+      resolvedStudentId.toString()
     );
 
     res.json({

@@ -10,6 +10,7 @@ const StudentDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [results, setResults] = useState<any[]>([]);
+  const [activeResults, setActiveResults] = useState<any[]>([]); // specifically latest term results
   const [attendance, setAttendance] = useState<any>(null);
   const [trends, setTrends] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -70,7 +71,21 @@ const StudentDashboard: React.FC = () => {
         noticesRes.json()
       ]);
 
-      if (resultsData.success) setResults(resultsData.data);
+      if (resultsData.success) {
+        const allResults = resultsData.data || [];
+        setResults(allResults);
+        
+        if (allResults.length > 0) {
+           const termOrder: any = { 'Final Term': 3, 'Third Term': 3, 'Second Term': 2, 'First Term': 1 };
+           const sorted = [...allResults].sort((a, b) => {
+              if (a.year !== b.year) return b.year - a.year;
+              return (termOrder[b.term] || 0) - (termOrder[a.term] || 0);
+           });
+           const latestYear = sorted[0].year;
+           const latestTerm = sorted[0].term;
+           setActiveResults(sorted.filter(r => r.year === latestYear && r.term === latestTerm));
+        }
+      }
       if (attendanceData.success) setAttendance(attendanceData.data);
       if (trendsData.success) setTrends(trendsData.data);
       if (noticesData.success) {
@@ -87,7 +102,7 @@ const StudentDashboard: React.FC = () => {
 
 
 
-  const averageMarksValue = results.length > 0 ? (results.reduce((acc, curr) => acc + (curr.marksObtained || 0), 0) / results.reduce((acc, curr) => acc + (curr.totalMarks || 100), 0) * 100).toFixed(1) : '0';
+  const averageMarksValue = activeResults.length > 0 ? (activeResults.reduce((acc, curr) => acc + (curr.marksObtained || 0), 0) / activeResults.reduce((acc, curr) => acc + (curr.totalMarks || 100), 0) * 100).toFixed(1) : '0';
   const calculateAttendance = () => {
     if (!Array.isArray(attendance) || attendance.length === 0) return '0';
     
@@ -139,10 +154,9 @@ const StudentDashboard: React.FC = () => {
             {[
               { label: 'GRADE', value: `${averageMarksValue}%`, color: 'primary' },
               { label: 'ATTENDANCE', value: `${attendancePercentage}%`, color: 'info' },
-              { label: 'SUBJECTS', value: results.length, color: 'success' },
-              { label: 'STATUS', value: 'VERIFIED', color: 'dark' },
+              { label: 'STATUS', value: Number(averageMarksValue) >= 40 ? 'VERIFIED' : 'AT RISK', color: 'dark' },
             ].map((stat, i) => (
-              <Col key={i} sm={6} xl={3}>
+              <Col key={i} sm={12} xl={4}>
                 <Card className="border-0 shadow-sm rounded-4 h-100">
                   <Card.Body className="p-4">
                     <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">{stat.label}</span>
@@ -158,7 +172,9 @@ const StudentDashboard: React.FC = () => {
                {/* ── Subject Evaluations ── */}
                <Card className="border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                   <div className="card-header bg-white border-bottom p-4">
-                     <h5 className="fw-bold mb-0 text-dark smallest text-uppercase ls-1">Subject Results</h5>
+                     <h5 className="fw-bold mb-0 text-dark smallest text-uppercase ls-1">
+                       Subject Results {activeResults.length > 0 && <span className="text-primary ms-2 opacity-75">({activeResults[0].term} {activeResults[0].year})</span>}
+                     </h5>
                   </div>
                   <div className="table-responsive">
                     <Table hover className="align-middle mb-0 smallest fw-medium">
@@ -171,10 +187,10 @@ const StudentDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {results.length === 0 ? (
+                        {activeResults.length === 0 ? (
                           <tr><td colSpan={4} className="px-4 py-5 text-center text-muted fw-bold italic opacity-50 uppercase ls-1">No results available yet.</td></tr>
                         ) : (
-                          results
+                          activeResults
                             .filter((row, index, self) => 
                               self.findIndex(r => (r.subjectId?.name || r.subject) === (row.subjectId?.name || row.subject)) === index
                             )

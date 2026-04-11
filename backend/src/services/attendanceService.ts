@@ -116,9 +116,9 @@ export class AttendanceService {
     }
   }
 
-  async getAttendanceReport(idFromParam: string, month: number, year: number): Promise<any> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0);
+  async getAttendanceReport(idFromParam: string, month?: number, year?: number): Promise<any> {
+    const startDate = (month && year) ? new Date(year, month - 1, 1) : undefined;
+    const endDate = (month && year) ? new Date(year, month, 0) : undefined;
     
     // Resolve frontend User ID to Student ID
     const AnalyticsServiceClass = require('./analyticsService').AnalyticsService;
