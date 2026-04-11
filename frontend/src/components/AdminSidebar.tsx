@@ -43,7 +43,7 @@ const AdminSidebar: React.FC = () => {
         <NavItem label="Subjects" path="/dashboard/admin/subjects" active={location.pathname === '/dashboard/admin/subjects'} />
         <NavItem label="Reports" path="/dashboard/admin/reports" active={location.pathname === '/dashboard/admin/reports'} />
         <NavItem label="Analytics" path="/dashboard/admin/analytics" active={location.pathname === '/dashboard/admin/analytics'} />
-        <NavItem label="Fees" path="/dashboard/admin/fees" active={location.pathname === '/dashboard/admin/fees'} />
+        {/* Fee NavItem removed */}
         <NavItem label="Notice" path="/dashboard/admin/notices" active={location.pathname === '/dashboard/admin/notices'} />
       </div>
     </aside>

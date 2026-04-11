@@ -9,7 +9,6 @@ import Class from "../models/Class";
 import Subject from "../models/Subject";
 import Mark from "../models/Mark";
 import Attendance from "../models/Attendance";
-import Fee from "../models/Fee";
 import Notice from "../models/Notice";
 import ActivityLog from "../models/ActivityLog";
 
@@ -41,7 +40,7 @@ const seedDatabase = async () => {
     console.log("✅ MongoDB Connected");
 
     console.log("🧹 Wiping collections...");
-    await Promise.all([User.deleteMany({}), Student.deleteMany({}), Teacher.deleteMany({}), Parent.deleteMany({}), Class.deleteMany({}), Subject.deleteMany({}), Mark.deleteMany({}), Attendance.deleteMany({}), Fee.deleteMany({}), Notice.deleteMany({}), ActivityLog.deleteMany({})]);
+    await Promise.all([User.deleteMany({}), Student.deleteMany({}), Teacher.deleteMany({}), Parent.deleteMany({}), Class.deleteMany({}), Subject.deleteMany({}), Mark.deleteMany({}), Attendance.deleteMany({}), Notice.deleteMany({}), ActivityLog.deleteMany({})]);
 
     const password = await hashPassword("password123");
 

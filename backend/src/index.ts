@@ -17,7 +17,7 @@ import markRoutes from "./routes/markRoute";
 import analyticsRoutes from "./routes/analyticsRoute";
 import reportCardRoutes from "./routes/reportCardRoute";
 import examRoutes from "./routes/examRoute";
-import feeRoutes from "./routes/feeRoute";
+// Fee route removed
 import noticeRoutes from "./routes/noticeRoute";
 import timetableRoutes from "./routes/timetableRoute";
 import chatRoutes from "./routes/chatRoutes";
@@ -95,7 +95,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/reports", reportCardRoutes);
 app.use("/api/academics/exams", examRoutes);
 app.use("/api/academics/timetable", timetableRoutes);
-app.use("/api/fees", feeRoutes);
+// app.use("/api/fees") removed
 app.use("/api/notices", noticeRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/public", publicRoutes);

@@ -12,7 +12,7 @@ import TeacherApprovals from './pages/Dashboards/TeacherApprovals';
 import StudentRecords from './pages/Dashboards/StudentRecords';
 import Reports from './pages/Dashboards/Reports';
 import Analytics from './pages/Dashboards/Analytics';
-import FeeManagement from './pages/Dashboards/FeeManagement';
+// Fee management removed
 import Settings from './pages/Dashboards/Settings';
 import ActivityLogs from './pages/Dashboards/ActivityLogs';
 import NoticeManagement from './pages/Dashboards/NoticeManagement';
@@ -23,6 +23,7 @@ import StudentAttendance from './pages/Dashboards/StudentAttendance';
 import StudentReports from './pages/Dashboards/StudentReports';
 import StudentResults from './pages/Dashboards/StudentResults';
 import TeacherRecords from './pages/Dashboards/TeacherRecords';
+import TeacherStudents from './pages/Dashboards/TeacherStudents';
 import ParentRecords from './pages/Dashboards/ParentRecords';
 import TeacherResults from './pages/Dashboards/TeacherResults';
 import TeacherAttendance from './pages/Dashboards/TeacherAttendance';
@@ -55,7 +56,7 @@ const App: React.FC = () => {
         <Route path="/dashboard/admin/students" element={<StudentRecords />} />
         <Route path="/dashboard/admin/reports" element={<Reports />} />
         <Route path="/dashboard/admin/analytics" element={<Analytics />} />
-        <Route path="/dashboard/admin/fees" element={<FeeManagement />} />
+        {/* Fee route removed */}
         <Route path="/dashboard/admin/settings" element={<Settings />} />
         <Route path="/dashboard/admin/logs" element={<ActivityLogs />} />
         <Route path="/dashboard/admin/notices" element={<NoticeManagement />} />
@@ -73,6 +74,7 @@ const App: React.FC = () => {
         <Route path="/dashboard/student/messages" element={<StudentMessages />} />
 
         {/* Teacher Specific Routes */}
+        <Route path="/dashboard/teacher/students" element={<TeacherStudents />} />
         <Route path="/dashboard/teacher/results" element={<TeacherResults />} />
         <Route path="/dashboard/teacher/attendance" element={<TeacherAttendance />} />
         <Route path="/dashboard/teacher/notices" element={<TeacherNotices />} />
