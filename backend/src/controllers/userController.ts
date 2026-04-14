@@ -165,19 +165,6 @@ export const deleteUserController = async (req: Request, res: Response) => {
   }
 };
 
-// This controller is redundant now, but we'll map its logic into the frontend calling GET /api/users?role=student
-// Removing getStudentsProfilesController
-
-export const getStudentProfileController = async (req: Request, res: Response) => {
-  try {
-    const student = await Student.findById(req.params.id).populate('userId', 'name email profilePicture role');
-    if (!student) return res.status(404).json({ success: false, message: "Student record not found" });
-    res.json({ success: true, student });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
 export const updateStudentProfileController = async (req: Request, res: Response) => {
   try {
     const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });

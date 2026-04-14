@@ -20,8 +20,6 @@ const StudentResults: React.FC = () => {
   const [comprehensive, setComprehensive] = useState<any>(null);
   const [trend, setTrend] = useState<any[]>([]);
   const [resultWithAttendance, setResultWithAttendance] = useState<any>(null);
-  const [hoveredSubject, setHoveredSubject] = useState<string | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const [selectedTerm, setSelectedTerm] = useState('First Term');
   const [selectedYear, setSelectedYear] = useState('2025');
@@ -348,36 +346,6 @@ const StudentResults: React.FC = () => {
                 </Card.Body>
               </Card>
 
-              {/* ── Hover Intelligence Fragment ── */}
-              {hoveredSubject && (
-                <div 
-                  className="position-fixed bg-white border border-light-dark rounded-4 shadow-lg p-4 z-3"
-                  style={{ top: mousePos.y + 15, left: mousePos.x + 15, minWidth: '260px', pointerEvents: 'none' }}
-                >
-                   <h6 className="fw-bold text-primary mb-3 smallest text-uppercase ls-2 border-bottom pb-2">
-                     {hoveredSubject} Topic Matrix
-                   </h6>
-                   <div className="d-flex flex-column gap-3">
-                      {comprehensive?.subjectAnalysis?.topicBreakdown?.filter((t: any) => t.subject === hoveredSubject)
-                        .filter((t: any, i: number, self: any[]) => self.findIndex(x => x.topic === t.topic) === i)
-                        .map((topic: any, idx: number) => (
-                          <div key={idx}>
-                            <div className="d-flex justify-content-between smallest fw-bold text-uppercase mb-1 ls-1">
-                              <span className="text-secondary">{topic.topic}</span>
-                              <span className="text-dark">{topic.percentage}</span>
-                            </div>
-                            <div style={{ height: '8px' }} className="bg-light-soft rounded-pill overflow-hidden border">
-                              <div style={{ 
-                                height: '100%', 
-                                width: `${topic.percentage}%`, 
-                                background: parseFloat(topic.percentage) >= 80 ? '#10b981' : parseFloat(topic.percentage) >= 50 ? '#f59e0b' : '#ef4444' 
-                              }} />
-                            </div>
-                          </div>
-                      ))}
-                   </div>
-                </div>
-              )}
 
               {/* ── Performance Trend ── */}
               {sortedTrend.length > 0 && (
@@ -508,8 +476,6 @@ const StudentResults: React.FC = () => {
                                 <tr
                                   key={i}
                                   className="cursor-help border-bottom border-light transition-all hover-translate-x"
-                                  onMouseMove={(e) => { setHoveredSubject(sub.subject); setMousePos({ x: e.clientX, y: e.clientY }); }}
-                                  onMouseLeave={() => setHoveredSubject(null)}
                                 >
                                   <td className="px-4 py-3">
                                     <span className="fw-bold text-dark smallest text-uppercase ls-1">{sub.subject}</span>

@@ -16,20 +16,17 @@ const StudentDashboard: React.FC = () => {
   const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) {
+      const parsedUser = JSON.parse(rawUser);
+      setUser(parsedUser);
+      // Fetch fresh data once on mount
+      fetchDashboardData(parsedUser._id);
+      fetchProfileData();
     } else {
       navigate('/login');
     }
-  }, [navigate]);
-
-  useEffect(() => {
-    if (user?._id) {
-      fetchDashboardData();
-      fetchProfileData();
-    }
-  }, [user]);
+  }, []); // Only run once on mount
 
   const fetchProfileData = async () => {
     const token = localStorage.getItem('token');
@@ -51,16 +48,17 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (targetUserId: string) => {
+    if (!targetUserId) return;
     setLoading(true);
     const token = localStorage.getItem('token');
     const headers = { 'Authorization': `Bearer ${token}` };
 
     try {
       const [resultsRes, attendanceRes, trendsRes, noticesRes] = await Promise.all([
-        fetch(`/api/academics/marks/marks/student/${user._id}`, { headers }),
-        fetch(`/api/academics/attendance/student/${user._id}`, { headers }),
-        fetch(`/api/academics/marks/trends/${user._id}`, { headers }),
+        fetch(`/api/academics/marks/marks/student/${targetUserId}`, { headers }),
+        fetch(`/api/academics/attendance/student/${targetUserId}`, { headers }),
+        fetch(`/api/academics/marks/trends/${targetUserId}`, { headers }),
         fetch('/api/notices', { headers })
       ]);
 

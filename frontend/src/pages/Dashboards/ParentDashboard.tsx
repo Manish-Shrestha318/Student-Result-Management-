@@ -17,30 +17,26 @@ const ParentDashboard: React.FC = () => {
   const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
-    } else {
+    const rawUser = localStorage.getItem('user');
+    if (!rawUser) {
       navigate('/login');
+      return;
     }
-  }, [navigate]);
+    const parsedUser = JSON.parse(rawUser);
+    setUser(parsedUser);
+    fetchParentProfile();
 
-  useEffect(() => {
-    if (user?._id) {
-      fetchParentProfile();
-    }
-    
     const syncChild = () => {
       const storedId = localStorage.getItem('selectedChildId');
-      if (storedId && user?.parentProfile?.children) {
-        const match = user.parentProfile.children.find((c: any) => c._id === storedId);
+      if (storedId && parsedUser?.parentProfile?.children) {
+        const match = parsedUser.parentProfile.children.find((c: any) => c._id === storedId);
         if (match) setSelectedChild(match);
       }
     };
     
     window.addEventListener('storage', syncChild);
     return () => window.removeEventListener('storage', syncChild);
-  }, [user]);
+  }, []); // Only run once on mount
 
   const fetchParentProfile = async () => {
     const token = localStorage.getItem('token');

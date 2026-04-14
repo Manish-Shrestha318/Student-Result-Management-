@@ -66,6 +66,7 @@ const Settings: React.FC = () => {
       
       if (response.ok) {
         setSuccessMessage('Profile updated successfully!');
+        const updatedUser = { ...currentUser, name: profile.name };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         window.dispatchEvent(new Event('userUpdated')); // Force Header to refresh
         setTimeout(() => setSuccessMessage(null), 3000);
