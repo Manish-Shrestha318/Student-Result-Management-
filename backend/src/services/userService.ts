@@ -16,13 +16,13 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
   
   console.log(`[SERVICE] getAllUsers - role: "${cleanRole}", status: "${cleanStatus}"`);
 
-  // MANDATORY: If role is 'student', we MUST return only students with their profile data
-  // This is the specific branch for the Student Records dashboard
+  // Student Branch
   if (cleanRole === 'student') {
     const students = await Student.find().populate('userId').lean();
     return students.map(s => {
       const userData = s.userId as any;
       if (!userData) return null;
+      if (cleanStatus && userData.status !== cleanStatus) return null;
       return {
         _id: userData._id, 
         profileId: s._id,
@@ -41,10 +41,12 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
     }).filter(s => s !== null);
   }
 
-  // Teacher Join Branch
+  // Teacher Branch
   if (cleanRole === 'teacher') {
-    const teachers = await Teacher.find().populate('userId').lean();
-    const allSubjects = await Subject.find().lean();
+    const [teachers, allSubjects] = await Promise.all([
+      Teacher.find().populate('userId').lean(),
+      Subject.find().lean() // Still fetching all subjects, but parallelized. Ideally paginate this later.
+    ]);
     
     return teachers.map(t => {
       const userData = t.userId as any;
@@ -56,19 +58,20 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
         employeeId: t.employeeId,
         qualification: t.qualification,
         phone: t.phone,
-        phoneNumber: t.phone, // UI expectation
-        subject: t.specialization?.[0] || '', // Primary core subject
+        phoneNumber: t.phone,
+        subject: t.specialization?.[0] || '',
         assignedSubjects: allSubjects.filter(sub => sub.teacherId?.toString() === userData._id.toString())
       };
     }).filter(t => t !== null);
   }
 
-  // Parent Join Branch
+  // Parent Branch
   if (cleanRole === 'parent') {
     const parents = await Parent.find().populate('userId').populate('children').lean();
     return parents.map(p => {
       const userData = p.userId as any;
       if (!userData) return null;
+      if (cleanStatus && userData.status !== cleanStatus) return null;
       return {
         ...userData,
         profileId: p._id,
@@ -78,8 +81,7 @@ export const getAllUsers = async (role?: string, status?: string): Promise<any[]
     }).filter(p => p !== null);
   }
 
-  // FALLBACK: If no specialized branch hit, return users filtered by role/status
-  // CRITICAL: We MUST ensure we don't return everyone if a role was specified but branch wasn't hit
+  // Fallback
   const filter: any = {};
   if (cleanRole && cleanRole !== 'any') filter.role = cleanRole;
   if (cleanStatus && cleanStatus !== 'any') filter.status = cleanStatus;

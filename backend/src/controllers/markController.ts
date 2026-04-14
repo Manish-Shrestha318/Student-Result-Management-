@@ -5,10 +5,10 @@ const markService = new MarkService();
 
 export const enterMarks = async (req: Request, res: Response) => {
   try {
-    const { studentId, subjectId, examType, marksObtained, totalMarks, term, year, remarks } = req.body;
+    const { studentId, subjectId, examType, marksObtained, totalMarks, term, year, remarks, topicWise } = req.body;
     
     const mark = await markService.createMark({
-      studentId, subjectId, examType, marksObtained, totalMarks, term, year, remarks
+      studentId, subjectId, examType, marksObtained, totalMarks, term, year, remarks, topicWise
     });
     
     res.status(201).json({ 

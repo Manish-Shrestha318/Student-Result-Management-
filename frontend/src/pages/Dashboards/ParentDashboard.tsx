@@ -51,7 +51,7 @@ const ParentDashboard: React.FC = () => {
         setUser(data.user);
         const childList = data.user.parentProfile?.children || [];
         const storedId = localStorage.getItem('selectedChildId');
-        const match = storedId ? childList.find((c: any) => c._id === storedId) : childList[0];
+        const match = childList.find((c: any) => c._id === storedId) || childList[0];
         if (match) setSelectedChild(match);
       }
     } catch (err) { console.error(err); }

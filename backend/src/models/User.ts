@@ -29,6 +29,11 @@ const UserSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+// Indexes for faster loading
+UserSchema.index({ role: 1 });
+UserSchema.index({ status: 1 });
+UserSchema.index({ role: 1, status: 1 });
+
 UserSchema.methods.getResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");
 

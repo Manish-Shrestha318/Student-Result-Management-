@@ -22,4 +22,8 @@ const SubjectSchema: Schema = new Schema({
   subtopics: [{ type: String }]
 }, { timestamps: true });
 
+// Indexes for faster lookups
+SubjectSchema.index({ teacherId: 1 });
+SubjectSchema.index({ class: 1, section: 1 });
+
 export default mongoose.model<ISubject>("Subject", SubjectSchema);

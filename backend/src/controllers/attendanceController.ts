@@ -10,6 +10,14 @@ export const markAttendance = async (req: Request, res: Response) => {
     const { studentId, date, status, subjectId, remarks } = req.body;
     const markedBy = (req as any).user.id;
 
+    if (status === 'normal') {
+      await attendanceService.removeAttendance(studentId, new Date(date));
+      return res.status(200).json({
+        success: true,
+        message: "Attendance cleared"
+      });
+    }
+
     const attendance = await attendanceService.markAttendance({
       studentId,
       date: new Date(date),

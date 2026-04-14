@@ -48,7 +48,10 @@ const ParentAttendance: React.FC = () => {
       const data = await res.json();
       if (data.success && data.user) {
         const list = data.user.parentProfile?.children || [];
-        const match = forceId ? list.find((c: any) => c._id === forceId) : (localStorage.getItem('selectedChildId') ? list.find((c: any) => c._id === localStorage.getItem('selectedChildId')) : list[0]);
+        const storedId = localStorage.getItem('selectedChildId');
+        const match = forceId 
+          ? list.find((c: any) => c._id === forceId) 
+          : (list.find((c: any) => c._id === storedId) || list[0]);
         if (match) setSelectedChild(match);
       }
     } catch (err) { console.error(err); }

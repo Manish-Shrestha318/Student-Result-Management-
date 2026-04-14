@@ -82,15 +82,12 @@ const StudentResults: React.FC = () => {
 
   if (termIdx > 0) {
       prevTermName = termOrders[termIdx - 1];
-  } else if (termIdx === 0) {
-      prevTermName = 'Final Term';
-      prevYearValue = String(Number(selectedYear) - 1);
   }
 
   // Build rich comparisons: subject-level + topic breakdown embedded
   const buildComparisons = () => {
     const rawSubjectsAll = resultWithAttendance?.subjects || [];
-    const topicsData = comprehensive?.topicBreakdown || [];
+    const topicsData = comprehensive?.subjectAnalysis?.topicBreakdown || [];
     const subjectsSet = new Set<string>();
     rawSubjectsAll.forEach((s: any) => subjectsSet.add(s.subject));
     const result: any[] = [];
@@ -112,18 +109,21 @@ const StudentResults: React.FC = () => {
         const currTopic = topicsData.find((t: any) => 
           t.subject.toLowerCase() === subName.toLowerCase() && 
           t.topic === topicName && 
-          t.term.toLowerCase().includes(currentTermNormalized)
+          t.term.toLowerCase().includes(currentTermNormalized) &&
+          (!t.year || String(t.year) === String(selectedYear))
         );
         const prevTopic = prevTermName ? topicsData.find((t: any) => 
           t.subject.toLowerCase() === subName.toLowerCase() && 
           t.topic === topicName && 
-          t.term.toLowerCase().includes(prevTermName.toLowerCase())
+          t.term.toLowerCase().includes(prevTermName.toLowerCase()) &&
+          (!t.year || String(t.year) === String(prevYearValue))
         ) : null;
 
         return {
           topic: topicName,
-          current: currTopic ? parseFloat(currTopic.percentage) : 0,
-          previous: prevTopic ? parseFloat(prevTopic.percentage) : 0,
+          rawScore: currTopic ? parseFloat(currTopic.score) : 0,
+          prevRawScore: prevTopic ? parseFloat(prevTopic.score) : 0,
+          percentage: currTopic ? parseFloat(currTopic.percentage) : 0,
         };
       });
 
@@ -275,7 +275,7 @@ const StudentResults: React.FC = () => {
                         {comparisons.length === 0 ? (
                           <tr><td colSpan={6} className="text-center text-muted p-4">No data for the selected term.</td></tr>
                         ) : comparisons.map((c: any, i: number) => {
-                          const delta = c.currPct - c.prevPct;
+                          const delta = c.current - c.previous;
                           const isPass = c.currPct >= 40;
                           const strength = c.currPct >= 80 ? 'STRONG' : c.currPct < 40 ? 'WEAK' : 'AVERAGE';
                           const isExpanded = expandedSubject === c.name;
@@ -297,8 +297,8 @@ const StudentResults: React.FC = () => {
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 text-center text-muted">{c.prevPct > 0 ? c.prevPct.toFixed(1) : '—'}</td>
-                                <td className="px-4 py-3 text-center fw-bold" style={{ color: '#5a8dee' }}>{c.currPct > 0 ? c.currPct.toFixed(1) : '0'}</td>
+                                <td className="px-4 py-3 text-center text-muted">{c.previous > 0 ? c.previous.toFixed(1) : '—'}</td>
+                                <td className="px-4 py-3 text-center fw-bold" style={{ color: '#5a8dee' }}>{c.current > 0 ? c.current.toFixed(1) : '0'}</td>
                                 <td className="px-4 py-3 text-center">
                                   <Badge bg={isPass ? 'success-soft' : 'danger-soft'} text={isPass ? 'success' : 'danger'} className="rounded-pill px-3 py-1 fw-bold">{isPass ? 'PASS' : 'FAIL'}</Badge>
                                 </td>
@@ -312,16 +312,16 @@ const StudentResults: React.FC = () => {
 
                               {/* Topic expansion rows */}
                               {isExpanded && c.topics?.length > 0 && c.topics.map((t: any, j: number) => {
-                                const tDelta = t.current - t.previous;
-                                const tPass = t.current >= 40;
-                                const tStrength = t.current >= 80 ? 'STRONG' : t.current < 40 ? 'WEAK' : 'AVERAGE';
+                                const tDelta = t.rawScore - t.prevRawScore;
+                                const tPass = t.percentage >= 40;
+                                const tStrength = t.percentage >= 80 ? 'STRONG' : t.percentage < 40 ? 'WEAK' : 'AVERAGE';
                                 return (
                                   <tr key={`topic-${i}-${j}`} className="border-bottom" style={{ backgroundColor: '#f8faff' }}>
                                     <td className="ps-5 pe-4 py-2">
                                       <span className="text-muted fw-semibold text-uppercase ls-1" style={{ fontSize: '0.75rem' }}>↳ {t.topic}</span>
                                     </td>
-                                    <td className="px-4 py-2 text-center text-muted" style={{ fontSize: '0.75rem' }}>{t.previous > 0 ? t.previous.toFixed(1) : '—'}</td>
-                                    <td className="px-4 py-2 text-center fw-bold" style={{ color: '#5a8dee', fontSize: '0.75rem' }}>{t.current > 0 ? t.current.toFixed(1) : '0'}</td>
+                                    <td className="px-4 py-2 text-center text-muted" style={{ fontSize: '0.75rem' }}>{t.prevRawScore > 0 ? t.prevRawScore.toFixed(1) : '—'}</td>
+                                    <td className="px-4 py-2 text-center fw-bold" style={{ color: '#5a8dee', fontSize: '0.75rem' }}>{t.rawScore > 0 ? t.rawScore.toFixed(1) : '0'}</td>
                                     <td className="px-4 py-2 text-center">
                                       <Badge bg={tPass ? 'success-soft' : 'danger-soft'} text={tPass ? 'success' : 'danger'} className="rounded-pill px-2 py-1" style={{ fontSize: '0.65rem' }}>{tPass ? 'PASS' : 'FAIL'}</Badge>
                                     </td>
@@ -358,7 +358,7 @@ const StudentResults: React.FC = () => {
                      {hoveredSubject} Topic Matrix
                    </h6>
                    <div className="d-flex flex-column gap-3">
-                      {comprehensive?.topicBreakdown?.filter((t: any) => t.subject === hoveredSubject)
+                      {comprehensive?.subjectAnalysis?.topicBreakdown?.filter((t: any) => t.subject === hoveredSubject)
                         .filter((t: any, i: number, self: any[]) => self.findIndex(x => x.topic === t.topic) === i)
                         .map((topic: any, idx: number) => (
                           <div key={idx}>
@@ -425,47 +425,50 @@ const StudentResults: React.FC = () => {
                 const strongest = comprehensive?.summary?.strongestSubject;
                 const attend = resultWithAttendance?.attendancePercentage ?? 100;
                 const failedSubs = (resultWithAttendance?.subjects || []).filter((s: any) => s.term === selectedTerm && String(s.year ?? s.yearId) === selectedYear && s.rawPercentage < 40);
-                const prevScore = sortedTrend.length > 1 ? sortedTrend[sortedTrend.length - 2].percentage : null;
                 const currScore = currentLevel;
-                const trending = prevScore !== null ? (currScore > prevScore + 2 ? 'up' : currScore < prevScore - 2 ? 'down' : 'stable') : null;
 
                 let type = 'INFO';
                 let typeColor = 'text-primary';
                 let msg = '';
+                let impactMsg = '';
 
-                if (attend < 75) {
-                  type = 'ALERT';
-                  typeColor = 'text-danger';
-                  msg = `Your attendance is critically low at ${attend.toFixed(1)}%. You are at risk of being marked ineligible for exams. Prioritize attending classes immediately.`;
-                } else if (failedSubs.length > 0) {
-                  type = 'ACTION REQUIRED';
-                  typeColor = 'text-danger';
-                  const failNames = failedSubs.map((s: any) => s.subject).join(', ');
-                  msg = `You have failed ${failedSubs.length} subject(s) this term: ${failNames}. Focus your revision on these subjects before the next assessment.`;
-                } else if (trending === 'down') {
-                  type = 'DECLINING';
-                  typeColor = 'text-warning';
-                  msg = `Your overall score has dropped by ${(prevScore! - currScore).toFixed(1)}% compared to last term. ${weakest ? `Pay extra attention to ${weakest}.` : ''} Review your study habits and seek help where needed.`;
-                } else if (trending === 'up') {
-                  type = 'IMPROVING';
-                  typeColor = 'text-success';
-                  msg = `Good improvement. Your score rose by ${(currScore - prevScore!).toFixed(1)}% from last term. ${strongest ? `${strongest} is your standout subject.` : ''} Keep this momentum going.`;
-                } else if (weakest && weakest !== 'N/A') {
-                  type = 'SUGGESTION';
-                  typeColor = 'text-primary';
-                  msg = `Your performance is steady. Dedicate more time to ${weakest} to boost your overall average. ${strongest ? `${strongest} remains your strongest subject.` : ''}`;
+                if (attend >= 85 && currScore >= 70) {
+                     impactMsg = 'Your consistent attendance has directly contributed to your strong grades. Keep up this excellent dedication.';
+                     type = 'EXCELLENT';
+                     typeColor = 'text-success border-success bg-success-soft';
+                } else if (attend >= 85 && currScore < 70) {
+                     impactMsg = 'While your classroom attendance is great, your grades need attention. Consider exploring new study habits or seeking extra help.';
+                     type = 'NEEDS FOCUS';
+                     typeColor = 'text-warning border-warning bg-warning-soft';
+                } else if (attend < 75 && currScore < 50) {
+                     impactMsg = 'Your frequent absences are severely affecting your academic performance. Regular attendance is critical to improving your grades.';
+                     type = 'CRITICAL ALERT';
+                     typeColor = 'text-danger border-danger bg-danger-soft';
+                } else if (attend < 75 && currScore >= 70) {
+                     impactMsg = 'You possess good academic capabilities, but your low attendance is a risk. Maintaining regular participation is essential for long-term consistency.';
+                     type = 'ATTENDANCE RISK';
+                     typeColor = 'text-warning border-warning bg-warning-soft';
                 } else {
-                  type = 'ON TRACK';
-                  typeColor = 'text-success';
-                  msg = `All subjects are passing. Attendance is at ${attend.toFixed(1)}%. Keep up the consistent effort across all subjects.`;
+                     impactMsg = 'Your attendance and academic performance are at a moderate level. Consistent class participation is the key to further improvement.';
+                     type = 'ON TRACK';
+                     typeColor = 'text-secondary border-secondary bg-light';
+                }
+
+                if (failedSubs.length > 0) {
+                  const failNames = failedSubs.map((s: any) => s.subject).join(', ');
+                  msg = `${impactMsg} You also need to focus heavily on recovering your failing grades in: ${failNames}.`;
+                  type = 'ACTION REQUIRED';
+                  typeColor = 'text-danger border-danger bg-danger-soft';
+                } else {
+                  msg = `${impactMsg} ${weakest && weakest !== 'N/A' ? `Dedicating extra time to ${weakest} will help boost your overall average even further.` : ''}`;
                 }
 
                 return (
-                  <Card className="border-0 shadow-sm rounded-4 p-4">
+                  <Card className="border-0 shadow-sm rounded-4 p-4 mb-5">
                     <div className="d-flex align-items-start gap-3">
-                      <div className={`smallest fw-bold text-uppercase ls-1 border rounded-2 px-2 py-1 ${typeColor}`} style={{ whiteSpace: 'nowrap', fontSize: '0.65rem' }}>{type}</div>
+                      <div className={`smallest fw-bolder text-uppercase ls-1 border rounded-2 px-3 py-2 ${typeColor}`} style={{ whiteSpace: 'nowrap', fontSize: '0.65rem' }}>{type}</div>
                       <div>
-                        <span className="smallest fw-bold text-uppercase ls-1 text-muted d-block mb-1">Recommendation</span>
+                        <span className="smallest fw-bold text-uppercase ls-1 text-muted d-block mb-2">Performance Insight</span>
                         <p className="text-dark mb-0 fw-semibold" style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>{msg}</p>
                       </div>
                     </div>

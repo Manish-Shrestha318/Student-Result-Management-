@@ -1,8 +1,0 @@
-﻿src/pages/Auth/Login.tsx(2,23): error TS6133: 'Link' is declared but its value is never read.
-src/pages/Auth/Register.tsx(2,23): error TS6133: 'Link' is declared but its value is never read.
-src/pages/Dashboards/ActivityLogs.tsx(91,21): error TS2322: Type 'void' is not assignable to type 'ReactNode'.
-src/pages/Dashboards/Analytics.tsx(35,10): error TS6133: 'subjectAnalysis' is declared but its value is never read.
-src/pages/Dashboards/ManageUsers.tsx(379,20): error TS2304: Cannot find name 'UserIcon'.
-src/pages/Dashboards/ManageUsers.tsx(520,22): error TS2304: Cannot find name 'UserIcon'.
-src/pages/Dashboards/StudentAttendance.tsx(15,10): error TS6133: 'loading' is declared but its value is never read.
-src/pages/Dashboards/StudentAttendance.tsx(233,7): error TS2322: Type 'void' is not assignable to type 'ReactNode'.

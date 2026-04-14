@@ -158,7 +158,11 @@ const TeacherStudents: React.FC = () => {
                           className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
                         >
                           <option value="">SELECT STUDENT...</option>
-                          {students.filter(s => !selectedClass || s.class === selectedClass.split(' ')[0]).map(s => <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>)}
+                          {students.filter(s => {
+                            if (!selectedClass) return true;
+                            const cls = classes.find(c => c._id === selectedClass);
+                            return cls ? (`${s.class} — ${s.section}` === `${cls.name} — ${cls.section}`) : true;
+                          }).map(s => <option key={s._id} value={s._id}>{s.class} {s.section} — {s.name.toUpperCase()}</option>)}
                         </Form.Select>
                       </Form.Group>
                     )}
@@ -172,7 +176,7 @@ const TeacherStudents: React.FC = () => {
                           className="smallest fw-bold py-3 border-light-dark rounded-4 shadow-none ls-1 bg-light text-uppercase"
                         >
                           <option value="">SELECT CLASS...</option>
-                          {classes.map(c => <option key={c._id} value={c._id}>{c.name.toUpperCase()}</option>)}
+                          {classes.map((c: any) => <option key={c._id} value={c._id}>{c.name.toUpperCase()} — {c.section}</option>)}
                         </Form.Select>
                       </Form.Group>
                     )}
@@ -188,7 +192,7 @@ const TeacherStudents: React.FC = () => {
                           >
                              <option value="First Term">FIRST TERM</option>
                              <option value="Second Term">SECOND TERM</option>
-                             <option value="Final Term">FINAL TERM</option>
+                             <option value="Final">FINAL TERM</option>
                           </Form.Select>
                         </Form.Group>
                         <Form.Group>
@@ -311,10 +315,10 @@ const TeacherStudents: React.FC = () => {
                 <div className="d-flex flex-column gap-5 animate-fade-in">
                   <Row className="g-4">
                     <Col sm={4}>
-                       <SummaryCard label="CLASS AVERAGE" value={`${reportData.averageScore.toFixed(1)}%`} variant="primary" trend="AVERAGE" />
+                       <SummaryCard label="CLASS AVERAGE" value={`${Number(reportData.averageScore).toFixed(1)}%`} variant="primary" trend="AVERAGE" />
                     </Col>
                     <Col sm={4}>
-                       <SummaryCard label="PASS RATE" value={`${reportData.passRate.toFixed(1)}%`} variant="success" trend="PERCENTAGE" />
+                       <SummaryCard label="PASS RATE" value={`${Number(reportData.passRate).toFixed(1)}%`} variant="success" trend="PERCENTAGE" />
                     </Col>
                     <Col sm={4}>
                        <SummaryCard label="TOP STUDENT" value={reportData.topper?.studentName?.toUpperCase() || 'N/A'} variant="warning" trend="TOPPER" />
@@ -337,13 +341,13 @@ const TeacherStudents: React.FC = () => {
                         </thead>
                         <tbody>
                           {reportData.studentPerformance.map((s: any, i: number) => (
-                            <tr key={s.studentId} className="border-bottom border-light">
+                            <tr key={String(s.studentId)} className="border-bottom border-light">
                               <td className="px-4 py-4"><Badge bg="light" text="primary" className="fw-bold p-2 border smallest ls-1">#{i + 1}</Badge></td>
                               <td className="px-4 py-4">
-                                <div className="fw-bold text-dark ls-1 text-uppercase">{s.name}</div>
-                                <div className="smallest text-muted fw-bold ls-1 opacity-50">REG: {s.rollNumber}</div>
+                                <div className="fw-bold text-dark ls-1 text-uppercase">{s.studentName || s.name || 'Unknown'}</div>
+                                <div className="smallest text-muted fw-bold ls-1 opacity-50">ROLL: {s.rollNumber || 'N/A'}</div>
                               </td>
-                              <td className="px-4 py-4 text-center fw-bold fs-6">{s.average}%</td>
+                              <td className="px-4 py-4 text-center fw-bold fs-6">{Number(s.average).toFixed(1)}%</td>
                               <td className="px-4 py-4 text-end">
                                 <Badge bg={s.passed ? 'success-soft' : 'danger-soft'} text={s.passed ? 'success' : 'danger'} className="fw-bold smaller text-uppercase px-3 py-2 rounded-pill border ls-1">
                                   {s.passed ? 'Pass' : 'Fail'}

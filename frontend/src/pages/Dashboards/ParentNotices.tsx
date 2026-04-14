@@ -38,10 +38,10 @@ const ParentNotices: React.FC = () => {
       if (data.success) {
         setNotices(Array.isArray(data.data) ? data.data : []);
       } else {
-        setError(data.message || 'Failed to establish directive bridge.');
+        setError(data.message || 'Failed to load notices.');
       }
     } catch (err) {
-      setError('Communication error: Institutional brief server unreachable.');
+      setError('Communication error: Server unreachable.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ const ParentNotices: React.FC = () => {
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search campus directives..." 
+                  placeholder="Search notices..." 
                   className="py-3 px-4 smaller border-0 shadow-none fw-bold ls-1 text-uppercase bg-white"
                 />
               </InputGroup>
@@ -124,8 +124,8 @@ const ParentNotices: React.FC = () => {
           ) : filteredNotices.length === 0 ? (
             <Card className="border-0 shadow-sm rounded-4 text-center py-5">
               <Card.Body>
-                <h6 className="text-secondary fw-bold smallest text-uppercase ls-2">No Notices Identified</h6>
-                <p className="text-muted smallest fw-bold ls-1 opacity-50 mt-2 uppercase">No directives matching your query parameters were identified.</p>
+                <h6 className="text-secondary fw-bold smallest text-uppercase ls-2">No Notices Found</h6>
+                <p className="text-muted smallest fw-bold ls-1 opacity-50 mt-2 uppercase">No notices matching your search were found.</p>
               </Card.Body>
             </Card>
           ) : (
@@ -153,8 +153,8 @@ const ParentNotices: React.FC = () => {
                             {notice.content}
                           </p>
                           <div className="d-flex justify-content-between align-items-center pt-3 border-top border-light-dark">
-                             <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{notice.createdBy?.name || 'OFFICE'}</span>
-                             <Button variant="link" className="smallest text-primary fw-bold text-uppercase ls-1 p-0 text-decoration-none uppercase fw-bold">{isSelected ? 'ACTIVE VIEW' : 'EXPAND DIRECTIVE'}</Button>
+                             <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{notice.createdBy?.name || 'ADMIN'}</span>
+                             <Button variant="link" className="smallest text-primary fw-bold text-uppercase ls-1 p-0 text-decoration-none uppercase fw-bold">{isSelected ? 'VIEWING' : 'VIEW DETAILS'}</Button>
                           </div>
                         </Card.Body>
                       </Card>
@@ -169,12 +169,12 @@ const ParentNotices: React.FC = () => {
                     <Card.Body className="p-4 p-lg-5">
                       <div className="mb-5">
                         <Badge bg={getCategoryVariant(selectedNotice.category)} text={getCategoryText(selectedNotice.category)} className="fw-bold smallest text-uppercase px-4 py-2 border rounded-pill ls-1 mb-4">
-                          {selectedNotice.category} DIRECTIVE
+                          {selectedNotice.category} NOTICE
                         </Badge>
                         <h3 className="fw-bold text-dark ls-1 mb-4 text-uppercase fw-bold">{selectedNotice.title}</h3>
                         <div className="d-flex flex-column flex-sm-row gap-4 smallest fw-bold text-muted text-uppercase ls-1 border-bottom border-light-dark pb-4">
-                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50 text-uppercase">RELEASED:</span> <span>{formatDate(selectedNotice.createdAt)}</span></div>
-                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50 text-uppercase">ISSUED BY:</span> <span>{selectedNotice.createdBy?.name || 'REGISTRAR'}</span></div>
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50 text-uppercase">DATE:</span> <span>{formatDate(selectedNotice.createdAt)}</span></div>
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50 text-uppercase">AUTHOR:</span> <span>{selectedNotice.createdBy?.name || 'ADMIN'}</span></div>
                         </div>
                       </div>
                       <div className="text-dark smallest lh-lg fw-bold ls-1 opacity-75">

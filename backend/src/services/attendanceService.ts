@@ -28,7 +28,11 @@ export class AttendanceService {
     });
 
     if (existing) {
-      throw new Error("Attendance already marked for this date");
+      existing.status = data.status;
+      if (data.remarks) existing.remarks = data.remarks;
+      existing.markedBy = new Types.ObjectId(data.markedBy);
+      await existing.save();
+      return existing;
     }
 
     const attendanceData = {
@@ -42,6 +46,14 @@ export class AttendanceService {
 
     const attendance = await Attendance.create(attendanceData);
     return attendance;
+  }
+
+  async removeAttendance(studentId: string, date: Date): Promise<void> {
+    const studentObjectId = new Types.ObjectId(studentId);
+    await Attendance.deleteOne({
+      studentId: studentObjectId,
+      date: date
+    });
   }
 
   async getAttendanceByStudent(studentId: string, startDate?: Date, endDate?: Date): Promise<IAttendance[]> {

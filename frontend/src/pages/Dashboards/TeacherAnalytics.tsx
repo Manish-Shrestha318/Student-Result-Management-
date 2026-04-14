@@ -149,17 +149,21 @@ const TeacherAnalytics: React.FC = () => {
              <div className="card-body p-4">
                <Row className="g-4 align-items-end">
                  <Col xl={3}>
-                   <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Student</Form.Label>
-                   <Form.Select className="py-2 border-light-dark shadow-none" value={selectedStudent} onChange={e => { setSelectedStudent(e.target.value); setSelectedClass(''); }}>
-                     <option value="">Choose student...</option>
-                     {students.map(s => <option key={s._id} value={s._id}>{s.name} ({s.rollNumber})</option>)}
-                   </Form.Select>
-                 </Col>
-                 <Col xl={3}>
                    <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Class</Form.Label>
                    <Form.Select className="py-2 border-light-dark shadow-none" value={selectedClass} onChange={e => { setSelectedClass(e.target.value); setSelectedStudent(''); }}>
                      <option value="">Choose class...</option>
-                     {classes.map(c => <option key={c._id} value={c.name}>{c.name} — {c.section}</option>)}
+                     {classes.map(c => <option key={c._id} value={c._id}>{c.name} — {c.section}</option>)}
+                   </Form.Select>
+                 </Col>
+                 <Col xl={3}>
+                   <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Student</Form.Label>
+                   <Form.Select className="py-2 border-light-dark shadow-none" value={selectedStudent} onChange={e => { setSelectedStudent(e.target.value); setSelectedClass(''); }}>
+                     <option value="">Choose student...</option>
+                     {students.filter(s => {
+                       if (!selectedClass) return true;
+                       const cls = classes.find(c => c._id === selectedClass);
+                       return cls ? (`${s.class} — ${s.section}` === `${cls.name} — ${cls.section}`) : true;
+                     }).map(s => <option key={s._id} value={s._id}>{s.name} ({s.rollNumber})</option>)}
                    </Form.Select>
                  </Col>
                  <Col xl={2}>
@@ -198,15 +202,15 @@ const TeacherAnalytics: React.FC = () => {
            {performance && (
              <Row className="g-4">
                <Col md={4}>
-                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4 border-start border-4 border-secondary">
+                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4">
                    <span className="smallest text-muted fw-bold text-uppercase mb-2">Previous Average</span>
                    <h2 className="mb-0 fw-bold">{prevTerm ? `${Math.round(prevTerm.percentage)}%` : '—'}</h2>
                    <div className="text-muted small mt-1">{prevTerm?.term || 'No history'}</div>
                  </Card>
                </Col>
                <Col md={4}>
-                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4 border-start border-4 border-primary">
-                   <span className="smallest text-muted fw-bold text-uppercase mb-2">Active Average</span>
+                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4">
+                   <span className="smallest text-muted fw-bold text-uppercase mb-2">Current Average</span>
                    <h2 className="mb-0 fw-bold text-primary">{currentTerm ? `${Math.round(currentTerm.percentage)}%` : '—'}</h2>
                    <div className={`smallest fw-bold mt-1 ${ (termDiff || 0) >= 0 ? 'text-success' : 'text-danger' } text-uppercase ls-1`}>
                       {(termDiff || 0) >= 0 ? 'Growth' : 'Decline'} ({termDiff || 0}%)
@@ -214,11 +218,11 @@ const TeacherAnalytics: React.FC = () => {
                  </Card>
                </Col>
                <Col md={4}>
-                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4 border-start border-4 border-warning">
+                 <Card className="h-100 shadow-sm border-0 rounded-4 p-4">
                    <span className="smallest text-muted fw-bold text-uppercase mb-2">Attendance</span>
                    <h2 className="mb-0 fw-bold">{attendPct ? `${Math.round(attendPct)}%` : '—'}</h2>
                    <div className={`smallest fw-bold mt-1 ${ (attendPct || 0) >= 75 ? 'text-success' : 'text-danger' } text-uppercase ls-1`}>
-                     {(attendPct || 0) >= 75 ? 'Optimal' : 'Low'}
+                     {(attendPct || 0) >= 75 ? 'Good' : 'Low'}
                    </div>
                  </Card>
                </Col>
@@ -235,15 +239,15 @@ const TeacherAnalytics: React.FC = () => {
                </Col>
 
                <Col lg={4}>
-                 <Card className="shadow-sm border-0 rounded-4 p-4 mb-4 bg-primary text-white border-0">
-                    <h6 className="fw-bold text-uppercase smallest mb-3 opacity-75">Summary</h6>
-                    <p className="small mb-4 lh-lg">
+                 <Card className="shadow-sm border-0 rounded-4 p-4 mb-4">
+                    <h6 className="fw-bold text-uppercase smallest mb-3 text-muted">Summary</h6>
+                    <p className="small mb-4 lh-lg text-dark">
                       Student is currently at <strong>{currentTerm?.percentage}%</strong>. 
                       {termDiff && termDiff > 0 ? " Showing steady growth." : " Needs more focus."}
                     </p>
-                    <div className="bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-10">
-                      <div className="smallest fw-bold text-uppercase mb-1">Attendance</div>
-                      <div className="small">{attendPct && attendPct < 75 ? "Warning: Low presence." : "Good attendance."}</div>
+                    <div className="bg-light p-3 rounded-3 border">
+                      <div className="smallest fw-bold text-uppercase mb-1 text-secondary">Attendance</div>
+                      <div className="small text-dark">{attendPct && attendPct < 75 ? "Warning: Low presence." : "Good attendance."}</div>
                     </div>
                  </Card>
 
@@ -267,10 +271,10 @@ const TeacherAnalytics: React.FC = () => {
 
            {classData && (
              <Row className="g-4">
-               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4 border-start border-4 border-primary"><span className="smallest fw-bold text-muted text-uppercase mb-2">Class Average</span><h3 className="fw-bold mb-0">{classData.averageScore?.toFixed(1)}%</h3></Card></Col>
-               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4 border-start border-4 border-success"><span className="smallest fw-bold text-muted text-uppercase mb-2">Pass Rate</span><h3 className="fw-bold mb-0">{classData.passRate?.toFixed(1)}%</h3></Card></Col>
-               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4 border-start border-4 border-warning"><span className="smallest fw-bold text-muted text-uppercase mb-2">Top Student</span><div className="fw-bold text-truncate small">{classData.topper?.studentName || '—'}</div></Card></Col>
-               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4 border-start border-4 border-secondary"><span className="smallest fw-bold text-muted text-uppercase mb-2">Total Students</span><h3 className="fw-bold mb-0">{classData.totalStudents}</h3></Card></Col>
+               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4"><span className="smallest fw-bold text-muted text-uppercase mb-2">Class Average</span><h3 className="fw-bold mb-0">{classData.averageScore?.toFixed(1)}%</h3></Card></Col>
+               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4"><span className="smallest fw-bold text-muted text-uppercase mb-2">Pass Rate</span><h3 className="fw-bold mb-0">{classData.passRate?.toFixed(1)}%</h3></Card></Col>
+               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4"><span className="smallest fw-bold text-muted text-uppercase mb-2">Top Student</span><div className="fw-bold text-truncate small">{classData.topper?.studentName || '—'}</div></Card></Col>
+               <Col md={3}><Card className="shadow-sm border-0 rounded-4 p-4"><span className="smallest fw-bold text-muted text-uppercase mb-2">Total Students</span><h3 className="fw-bold mb-0">{classData.totalStudents}</h3></Card></Col>
 
                <Col lg={8}>
                  <Card className="shadow-sm border-0 rounded-4 overflow-hidden">

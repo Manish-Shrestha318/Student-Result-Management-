@@ -24,5 +24,7 @@ const AttendanceSchema: Schema = new Schema({
 
 // Ensure one attendance record per student per day
 AttendanceSchema.index({ studentId: 1, date: 1 }, { unique: true });
+AttendanceSchema.index({ status: 1 });
+AttendanceSchema.index({ date: 1 });
 
 export default mongoose.model<IAttendance>("Attendance", AttendanceSchema);

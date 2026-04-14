@@ -129,13 +129,13 @@ const TeacherAttendance: React.FC = () => {
     setSelectedDate(dateStr);
 
     const existing = getDayStatus(dayNum);
-    let nextStatus: 'present' | 'absent' | 'holiday' = 'present';
-    
-    // TACTILE CYCLE Logic
+    // FULL CYCLE Logic: present -> absent -> holiday -> normal -> present
+    let nextStatus: string = 'present';
     if (!existing) nextStatus = 'present';
     else if (existing.status === 'present') nextStatus = 'absent';
     else if (existing.status === 'absent') nextStatus = 'holiday';
-    else if (existing.status === 'holiday') nextStatus = 'present';
+    else if (existing.status === 'holiday') nextStatus = 'normal';
+    else nextStatus = 'present';
     
     setLoading(true);
     const token = localStorage.getItem('token');
@@ -162,10 +162,16 @@ const TeacherAttendance: React.FC = () => {
              return rd.getDate() === dayNum && rd.getMonth() === currentMonth && rd.getFullYear() === currentYear;
         });
         
-        if (recordIndex !== -1) {
-            updatedRecords[recordIndex] = { ...updatedRecords[recordIndex], status: nextStatus };
+        if (nextStatus === 'normal') {
+            if (recordIndex !== -1) {
+                updatedRecords.splice(recordIndex, 1);
+            }
         } else {
-            updatedRecords.push({ date: new Date(currentYear, currentMonth, dayNum).toISOString(), status: nextStatus });
+            if (recordIndex !== -1) {
+                updatedRecords[recordIndex] = { ...updatedRecords[recordIndex], status: nextStatus };
+            } else {
+                updatedRecords.push({ date: new Date(currentYear, currentMonth, dayNum).toISOString(), status: nextStatus });
+            }
         }
         setRecords(updatedRecords);
         // Also fetch from server to be sure
@@ -193,17 +199,17 @@ const TeacherAttendance: React.FC = () => {
                <Col lg={4}>
                   <Card className="border-0 shadow-sm rounded-4 p-4 bg-white sticky-top shadow-sm" style={{ top: '2rem' }}>
                     <div className="mb-4">
-                        <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-2">Instant Register</h6>
-                        <span className="smallest text-muted fw-bold ls-1 opacity-50 uppercase">Presence Controller</span>
+                        <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-2">Attendance Form</h6>
+                        <span className="smallest text-muted fw-bold ls-1 opacity-50 uppercase">Options</span>
                         {loading && <Spinner animation="border" variant="primary" size="sm" className="ms-2 opacity-50" />}
                     </div>
                     
                     <Form onSubmit={(e) => e.preventDefault()}>
                        <Form.Group className="mb-4">
-                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Grade Level</Form.Label>
+                          <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Class</Form.Label>
                           <Form.Select className="py-3 border-light shadow-none bg-light rounded-4 smallest fw-bold" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
                              <option value="">CHOOSE CLASS</option>
-                             {classes.map(c => <option key={c._id} value={c.name}>{c.name} — {c.section}</option>)}
+                             {classes.map(c => <option key={c._id} value={`${c.name} — ${c.section}`}>{c.name} — {c.section}</option>)}
                           </Form.Select>
                        </Form.Group>
 
@@ -211,8 +217,8 @@ const TeacherAttendance: React.FC = () => {
                           <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Select Student</Form.Label>
                           <Form.Select required className="py-3 border-light shadow-none bg-light rounded-4 smallest fw-bold" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}>
                              <option value="">CHOOSE STUDENT</option>
-                             {students.filter(s => !selectedClass || s.class === selectedClass).map(s => (
-                                <option key={s.profileId} value={s.profileId}>{s.rollNumber} — {s.name}</option>
+                             {students.filter(s => !selectedClass || `${s.class} — ${s.section}` === selectedClass).map(s => (
+                                <option key={s._id} value={s._id}>{s.class} {s.section} — {s.name} ({s.rollNumber})</option>
                              ))}
                           </Form.Select>
                        </Form.Group>
@@ -220,10 +226,10 @@ const TeacherAttendance: React.FC = () => {
                        <Form.Group className="mb-0">
                           <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Selected Date</Form.Label>
                           <Form.Control type="date" className="py-3 border-light shadow-none bg-light fw-bold smallest ls-1 rounded-4" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-                          <div className="mt-4 p-3 rounded-4 bg-primary-soft border-0">
-                            <span className="smallest text-primary fw-bold d-block ls-1 mb-1">INSTRUCTION</span>
+                          <div className="mt-4 p-3 rounded-4 bg-light border">
+                            <span className="smallest text-secondary fw-bold d-block ls-1 mb-1">HOW TO USE</span>
                             <span className="smallest text-dark opacity-75 d-block italic fw-medium px-1">
-                              Mark presence by clicking current/past dates directly on the grid.
+                              Click on any date in the calendar to toggle attendance status.
                             </span>
                           </div>
                        </Form.Group>
@@ -231,26 +237,26 @@ const TeacherAttendance: React.FC = () => {
                   </Card>
                </Col>
 
-               {/* ── Visual Ledger ── */}
+               {/* ── Attendance Calendar ── */}
                <Col lg={8}>
                   {selectedStudent && (
                     <Row className="g-4 mb-4">
                       <Col md={4}>
-                        <Card className="border-0 shadow-sm rounded-4 p-4 border-start border-4 border-success text-center bg-white">
+                        <Card className="border-0 shadow-sm rounded-4 p-4 text-center bg-white">
                           <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">PRESENT</span>
-                          <h4 className="fw-bold mb-0 text-success">{stats.present}</h4>
+                          <h4 className="fw-bold mb-0 text-dark">{stats.present}</h4>
                         </Card>
                       </Col>
                       <Col md={4}>
-                        <Card className="border-0 shadow-sm rounded-4 p-4 border-start border-4 border-danger text-center bg-white">
+                        <Card className="border-0 shadow-sm rounded-4 p-4 text-center bg-white">
                           <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">ABSENT</span>
-                          <h4 className="fw-bold mb-0 text-danger">{stats.absent}</h4>
+                          <h4 className="fw-bold mb-0 text-dark">{stats.absent}</h4>
                         </Card>
                       </Col>
                       <Col md={4}>
-                        <Card className="border-0 shadow-sm rounded-4 p-4 border-start border-4 border-primary text-center bg-white">
-                          <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">RATIO</span>
-                          <h4 className="fw-bold mb-0 text-primary">{stats.percentage}%</h4>
+                        <Card className="border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+                          <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-1">PERCENTAGE</span>
+                          <h4 className="fw-bold mb-0 text-dark">{stats.percentage}%</h4>
                         </Card>
                       </Col>
                     </Row>
@@ -261,7 +267,7 @@ const TeacherAttendance: React.FC = () => {
                         <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-2">{monthName} {currentYear}</h6>
                         <div className="btn-group btn-group-sm shadow-sm rounded-pill overflow-hidden border">
                           <Button variant="white" className="px-4 py-2 fw-bold smallest ls-1 border-end" onClick={() => changeMonth(-1)}>PREV</Button>
-                          <Button variant="white" className="px-4 py-2 fw-bold smallest ls-1 border-end" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); setSelectedDate(new Date().toLocaleDateString('en-CA')); }}>SYNC</Button>
+                          <Button variant="white" className="px-4 py-2 fw-bold smallest ls-1 border-end" onClick={() => { setCurrentMonth(new Date().getMonth()); setCurrentYear(new Date().getFullYear()); setSelectedDate(new Date().toLocaleDateString('en-CA')); }}>TODAY</Button>
                           <Button variant="white" className="px-4 py-2 fw-bold smallest ls-1" onClick={() => changeMonth(1)}>NEXT</Button>
                         </div>
                      </div>
@@ -274,7 +280,7 @@ const TeacherAttendance: React.FC = () => {
 
                      <div className="position-relative">
                         {!selectedStudent ? (
-                           <div className="py-5 text-center text-muted opacity-50 smallest fw-bold ls-1 uppercase italic px-3">Unlock attendance by selecting a student from the HUB</div>
+                           <div className="py-5 text-center text-muted opacity-50 smallest fw-bold ls-1 uppercase italic px-3">Select a student first to unlock the calendar</div>
                         ) : (
                           <div className="attendance-grid">
                              {/* Empty slots */}

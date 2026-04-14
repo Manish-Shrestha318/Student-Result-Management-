@@ -61,7 +61,10 @@ export class AnalyticsService {
   async getClassPerformanceReport(classId: string, term: string, year: number): Promise<any> {
     // Get all students in class
     const Class = require('../models/Class').default;
-    const classData = await Class.findById(classId).populate('students');
+    const classData = await Class.findById(classId).populate({
+      path: 'students',
+      populate: { path: 'userId', select: 'name' }
+    });
 
     if (!classData) {
       throw new Error("Class not found");
@@ -69,36 +72,40 @@ export class AnalyticsService {
 
     const studentIds = classData.students.map((s: any) => s._id);
 
-    // Get marks for all students
+    // Get marks for all students — do NOT populate('studentId') so it stays as
+    // a raw ObjectId enabling reliable string comparison in the loop below
     const marks = await Mark.find({
       studentId: { $in: studentIds },
       term,
       year
-    }).populate('subjectId').populate('studentId');
+    }).populate('subjectId').lean();
 
     // Group by student
     const studentPerformance: any[] = [];
     const subjectAverages: any = {};
 
     for (const studentId of studentIds) {
+      // Safe comparison: both are plain ObjectId strings after .lean()
       const studentMarks = marks.filter(m => m.studentId.toString() === studentId.toString());
 
       if (studentMarks.length > 0) {
         const total = studentMarks.reduce((sum, m) => sum + m.marksObtained, 0);
         const average = total / studentMarks.length;
 
-        const student = await Student.findById(studentId).populate('userId');
+        // Find the student from classData which is already populated
+        const student = classData.students.find((s: any) => s._id.toString() === studentId.toString());
 
         studentPerformance.push({
           studentId,
-          studentName: (student as any)?.userId?.name || 'Unknown',
+          studentName: student?.userId?.name || 'Unknown',
+          rollNumber: student?.rollNumber || 'N/A',
           average: average.toFixed(2),
           totalMarks: total,
           subjects: studentMarks.length,
           passed: studentMarks.every(m => m.grade !== 'F')
         });
 
-        // Calculate subject averages - FIXED HERE
+        // Calculate subject averages
         for (const mark of studentMarks) {
           const subjectName = (mark.subjectId as any)?.name || 'Unknown';
           if (!subjectAverages[subjectName]) {
@@ -361,7 +368,8 @@ export class TopicAnalysisService {
               score: tw.marksObtained,
               total: tw.totalMarks,
               percentage: ((tw.marksObtained / tw.totalMarks) * 100).toFixed(2),
-              term: s.term
+              term: s.term,
+              year: s.year
             });
           });
         }

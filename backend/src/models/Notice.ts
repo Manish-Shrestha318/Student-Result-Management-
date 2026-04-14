@@ -39,4 +39,10 @@ const NoticeSchema: Schema = new Schema({
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
+// Indexes for faster notice retrieval
+NoticeSchema.index({ category: 1 });
+NoticeSchema.index({ isActive: 1 });
+NoticeSchema.index({ publishDate: -1 }); // Newest first
+NoticeSchema.index({ targetRoles: 1 });
+
 export default mongoose.model<INotice>("Notice", NoticeSchema);

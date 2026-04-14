@@ -16,10 +16,33 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, error }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  
+  // Reactive User State to update immediately when Settings change
+  const [userObj, setUserObj] = useState<any>(() => {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  });
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Sync user data across the app
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const raw = localStorage.getItem('user');
+      if (raw) setUserObj(JSON.parse(raw));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // This custom event allows us to trigger the sync manually within the same tab
+    window.addEventListener('userUpdated', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userUpdated', handleStorageChange);
+    };
+  }, []);
 
   // Fetch notifications
   useEffect(() => {
@@ -93,8 +116,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, error }) => {
     navigate('/login');
   };
 
-  const rawUser = localStorage.getItem('user');
-  const userObj = rawUser ? JSON.parse(rawUser) : null;
 
   return (
     <header className="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top py-0 shadow-sm" style={{ height: '80px', zIndex: 1020 }}>
@@ -187,8 +208,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ title, error }) => {
               className="btn btn-link p-0 border-0 d-flex align-items-center gap-2 text-decoration-none shadow-none"
               onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
-              <div className="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '38px', height: '38px', fontSize: '0.85rem' }}>
-                {userObj?.name ? userObj.name.charAt(0).toUpperCase() : 'A'}
+              <div className="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm overflow-hidden" style={{ width: '38px', height: '38px', fontSize: '0.85rem' }}>
+                {userObj?.profilePicture ? (
+                  <img src={userObj.profilePicture} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  userObj?.name ? userObj.name.charAt(0).toUpperCase() : 'A'
+                )}
               </div>
             </button>
             

@@ -66,8 +66,8 @@ const Settings: React.FC = () => {
       
       if (response.ok) {
         setSuccessMessage('Profile updated successfully!');
-        const updatedUser = { ...currentUser, name: profile.name };
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event('userUpdated')); // Force Header to refresh
         setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         const data = await response.json();
@@ -143,7 +143,13 @@ const Settings: React.FC = () => {
       
       const data = await response.json();
       if (data.profilePicture) {
+        // 1. Update local state
         setProfile({ ...profile, profilePicture: data.profilePicture });
+        
+        const updatedUser = { ...currentUser, profilePicture: data.profilePicture };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        window.dispatchEvent(new Event('userUpdated')); // Force Header to refresh
+        
         setSuccessMessage('Profile photo updated!');
         setTimeout(() => setSuccessMessage(null), 3000);
       }

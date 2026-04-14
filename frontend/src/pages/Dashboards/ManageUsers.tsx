@@ -41,10 +41,10 @@ const ManageUsers: React.FC = () => {
       } else if (Array.isArray(data)) {
         setUsers(data);
       } else {
-        setError(data.message || 'Failed to established user bridge.');
+        setError(data.message || 'Failed to load users.');
       }
     } catch (err) {
-      setError('Communication error: User repository unreachable.');
+      setError('Communication error: Server unreachable.');
     } finally {
       setLoading(false);
     }
@@ -95,11 +95,11 @@ const ManageUsers: React.FC = () => {
       if (response.ok) {
         fetchUsers();
       } else {
-        alert('Termination sequence failed.');
+        alert('Failed to delete account.');
       }
     } catch (err) {
-      alert('Error: Deletion protocol not established.');
-    }
+      alert('Error: Could not delete user.');
+    } finally { };
   };
 
   const handleOpenAddModal = () => {
@@ -153,10 +153,10 @@ const ManageUsers: React.FC = () => {
         setIsModalOpen(false);
         fetchUsers();
       } else {
-        alert(`Directive failed. Operational status: UNAVAILABLE`);
+        alert(`Failed to save changes.`);
       }
     } catch (err) {
-      alert(`Sync error during record update.`);
+      alert(`Error updating record.`);
     } finally {
       setFormLoading(false);
     }
@@ -182,7 +182,7 @@ const ManageUsers: React.FC = () => {
               <p className="text-secondary small mb-0 fw-medium">Manage all users, their roles, and account statuses.</p>
             </div>
             <Button variant="primary" className="fw-bold px-4 py-2 rounded-pill shadow-sm ls-1 smallest text-uppercase" onClick={handleOpenAddModal}>
-              ADD NEW USER
+              ADD USER
             </Button>
           </div>
 
@@ -207,7 +207,7 @@ const ManageUsers: React.FC = () => {
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                     >
-                      <option value="newest">LATEST SIGNUPS</option>
+                      <option value="newest">NEWEST FIRST</option>
                       <option value="oldest">OLDEST FIRST</option>
                       <option value="name_asc">ALPHABETICAL (A-Z)</option>
                       <option value="name_desc">ALPHABETICAL (Z-A)</option>
@@ -218,11 +218,11 @@ const ManageUsers: React.FC = () => {
                       value={roleFilter}
                       onChange={(e) => setRoleFilter(e.target.value)}
                     >
-                      <option value="all">ALL ROLE LEVELS</option>
+                      <option value="all">ALL ROLES</option>
                       <option value="student">STUDENTS</option>
                       <option value="teacher">TEACHER</option>
                       <option value="parent">PARENT</option>
-                      <option value="admin">ADMINISTRATORS</option>
+                      <option value="admin">ADMINS</option>
                     </Form.Select>
                   </div>
                 </Col>
@@ -245,9 +245,9 @@ const ManageUsers: React.FC = () => {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={5} className="text-center py-5 text-muted fw-bold italic opacity-50 uppercase ls-1">Synchronizing identity records...</td></tr>
+                    <tr><td colSpan={5} className="text-center py-5 text-muted fw-bold italic opacity-50 uppercase ls-1">Loading users...</td></tr>
                   ) : filteredUsers.length === 0 ? (
-                    <tr><td colSpan={5} className="text-center py-5 text-muted fw-bold italic opacity-50 uppercase ls-1">No matching nodes identified.</td></tr>
+                    <tr><td colSpan={5} className="text-center py-5 text-muted fw-bold italic opacity-50 uppercase ls-1">No users found.</td></tr>
                   ) : (
                     currentItems.map((user) => (
                       <tr key={user._id} className="border-bottom border-light">
@@ -315,12 +315,12 @@ const ManageUsers: React.FC = () => {
       {/* ── Add/Edit User Portal ── */}
       <Modal show={isModalOpen} onHide={() => setIsModalOpen(false)} centered backdrop="static">
         <Modal.Header className="border-0 p-4 pb-0" closeButton>
-           <Modal.Title className="fw-bold text-dark smallest text-uppercase ls-2">{modalMode === 'add' ? 'ADD NEW USER' : 'EDIT USER'}</Modal.Title>
+           <Modal.Title className="fw-bold text-dark smallest text-uppercase ls-2">{modalMode === 'add' ? 'ADD USER' : 'EDIT USER'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
            <Form onSubmit={handleModalSubmit}>
               <Form.Group className="mb-3">
-                 <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Principal Name</Form.Label>
+                 <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Full Name</Form.Label>
                  <Form.Control 
                     type="text" 
                     required 
@@ -330,7 +330,7 @@ const ManageUsers: React.FC = () => {
                  />
               </Form.Group>
               <Form.Group className="mb-3">
-                 <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Communication Path (Email)</Form.Label>
+                 <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Email</Form.Label>
                  <Form.Control 
                     type="email" 
                     required 
@@ -342,7 +342,7 @@ const ManageUsers: React.FC = () => {
 
               {modalMode === 'add' && (
                 <Form.Group className="mb-3">
-                   <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Security Credential (Password)</Form.Label>
+                   <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Password</Form.Label>
                    <Form.Control 
                       type="password" 
                       required 
@@ -355,7 +355,7 @@ const ManageUsers: React.FC = () => {
 
               <Row className="g-3 mb-4">
                  <Col sm={6}>
-                    <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Access Level</Form.Label>
+                    <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Role</Form.Label>
                     <Form.Select className="py-2 border-light-dark shadow-none smallest fw-bold text-uppercase ls-1" value={formData.role} onChange={(e) => setFormData({...formData, role: e.target.value})}>
                         <option value="student">STUDENT</option>
                         <option value="teacher">TEACHER</option>
@@ -365,7 +365,7 @@ const ManageUsers: React.FC = () => {
                  </Col>
                  {formData.role === 'teacher' && (
                     <Col sm={6}>
-                       <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Operational State</Form.Label>
+                       <Form.Label className="smallest fw-bold text-secondary text-uppercase ls-1">Status</Form.Label>
                        <Form.Select className="py-2 border-light-dark shadow-none smallest fw-bold text-uppercase ls-1" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
                           <option value="active">VERIFIED</option>
                           <option value="rejected">REJECTED</option>
@@ -375,9 +375,9 @@ const ManageUsers: React.FC = () => {
               </Row>
 
               <div className="d-flex gap-2">
-                 <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-3 smallest ls-1 text-uppercase" onClick={() => setIsModalOpen(false)}>DISCARD</Button>
+                 <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-3 smallest ls-1 text-uppercase" onClick={() => setIsModalOpen(false)}>CANCEL</Button>
                  <Button variant="primary" type="submit" disabled={formLoading} className="flex-grow-1 fw-bold rounded-pill py-3 smallest ls-1 text-uppercase shadow-sm">
-                    {formLoading ? 'PROCESSING...' : modalMode === 'add' ? 'SYNC NEW IDENTITY' : 'UPDATE IDENTITY'}
+                    {formLoading ? 'SAVING...' : modalMode === 'add' ? 'CREATE USER' : 'SAVE CHANGES'}
                  </Button>
               </div>
            </Form>
@@ -386,12 +386,12 @@ const ManageUsers: React.FC = () => {
 
       {/* ── View Detail Portal ── */}
       <Modal show={isViewModalOpen} onHide={() => setIsViewModalOpen(false)} centered>
-         <Modal.Header className="bg-primary text-white border-0 p-4 text-center d-flex flex-column" closeButton closeVariant="white">
-            <div className="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center fw-bold mx-auto mb-3 border shadow-sm border-white border-opacity-50" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>
+         <Modal.Header className="border-0 p-4 text-center d-flex flex-column" closeButton>
+            <div className="bg-light text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 border shadow-sm" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>
               {selectedUser?.name?.[0]?.toUpperCase()}
             </div>
-            <Modal.Title className="fw-bold text-white ls-1 text-uppercase fs-5">{selectedUser?.name}</Modal.Title>
-            <Badge bg="white" text="primary" className="fw-bold smallest text-uppercase ls-1 px-3 py-2 mt-2 border-0">{selectedUser?.role} ACCOUNT</Badge>
+            <Modal.Title className="fw-bold text-dark ls-1 text-uppercase fs-5">{selectedUser?.name}</Modal.Title>
+            <Badge bg="light" text="dark" className="fw-bold smallest text-uppercase ls-1 px-3 py-2 mt-2 border">{selectedUser?.role}</Badge>
          </Modal.Header>
          <Modal.Body className="p-4 p-lg-5">
                 {selectedUser?.role === 'teacher' && (() => {
@@ -404,43 +404,43 @@ const ManageUsers: React.FC = () => {
                    const distinctClasses = Object.keys(classesMap);
 
                    return (
-                      <div className="p-4 rounded-4 border-start border-5 border-info bg-info bg-opacity-10 mb-4">
-                         <div className="smallest fw-bold text-info text-uppercase ls-1 mb-3">Teaching Spectrum</div>
-                         {distinctClasses.length > 0 ? (
-                            <div className="d-flex flex-column gap-3">
-                               {distinctClasses.map((cls, idx) => (
-                                  <div key={idx} className="bg-white p-3 rounded-4 shadow-sm border">
-                                     <div className="smallest fw-bold text-dark text-uppercase ls-1 mb-2 border-bottom pb-1 border-light">
-                                        CLASS: {cls}
-                                     </div>
-                                     <div className="d-flex flex-wrap gap-2">
-                                        {classesMap[cls].map((sub: string, sIdx: number) => (
-                                           <Badge key={sIdx} bg="primary-soft" text="primary" className="border-0 smallest fw-bold ls-1 px-3 py-2 rounded-pill">
-                                              {sub}
-                                           </Badge>
-                                        ))}
-                                     </div>
-                                  </div>
-                               ))}
-                            </div>
-                         ) : (
-                            <span className="smallest text-muted fw-bold italic opacity-75">No Class or Subject Nodes Assigned</span>
-                         )}
-                      </div>
+                       <div className="p-4 rounded-4 border bg-white mb-4">
+                          <div className="smallest fw-bold text-secondary text-uppercase ls-1 mb-3">Teaching Subjects</div>
+                          {distinctClasses.length > 0 ? (
+                             <div className="d-flex flex-column gap-3">
+                                {distinctClasses.map((cls, idx) => (
+                                   <div key={idx} className="bg-white p-3 rounded-4 shadow-sm border">
+                                      <div className="smallest fw-bold text-dark text-uppercase ls-1 mb-2 border-bottom pb-1 border-light">
+                                         CLASS: {cls}
+                                      </div>
+                                      <div className="d-flex flex-wrap gap-2">
+                                         {classesMap[cls].map((sub: string, sIdx: number) => (
+                                            <Badge key={sIdx} bg="primary-soft" text="primary" className="border-0 smallest fw-bold ls-1 px-3 py-2 rounded-pill">
+                                               {sub}
+                                            </Badge>
+                                         ))}
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          ) : (
+                             <span className="smallest text-muted fw-bold italic opacity-75">No classes assigned.</span>
+                          )}
+                       </div>
                    );
                 })()}
                 {[
-                  { label: 'ELECTRONIC MAIL', value: selectedUser?.email, color: 'primary' },
-                  { label: 'OPERATIONAL STANDING', value: selectedUser?.status || (selectedUser?.isVerified ? 'VERIFIED' : 'PENDING'), color: 'success' },
-                  { label: 'REGISTRATION LOG', value: new Date(selectedUser?.createdAt).toLocaleDateString(), color: 'warning' },
-                  { label: 'IDENTITY ID', value: selectedUser?._id, color: 'dark' },
+                  { label: 'EMAIL', value: selectedUser?.email },
+                  { label: 'STATUS', value: selectedUser?.status || (selectedUser?.isVerified ? 'VERIFIED' : 'PENDING') },
+                  { label: 'JOINED DATE', value: new Date(selectedUser?.createdAt).toLocaleDateString() },
+                  { label: 'USER ID', value: selectedUser?._id },
                 ].map((item, i) => (
-                   <div key={i} className={`p-4 rounded-4 border-start border-5 border-${item.color} bg-light-soft`}>
+                   <div key={i} className="p-3 mb-2 rounded-3 border bg-light">
                       <div className="smallest fw-bold text-secondary text-uppercase ls-1 mb-1">{item.label}</div>
                       <div className="fw-bold text-dark ls-1 text-wrap word-break">{item.value}</div>
                    </div>
                 ))}
-            <Button variant="primary" className="w-100 fw-bold py-3 rounded-pill mt-5 shadow-sm smallest ls-1 text-uppercase" onClick={() => { setIsViewModalOpen(false); handleEdit(selectedUser); }}>MODIFY IDENTITY PATH</Button>
+            <Button variant="primary" className="w-100 fw-bold py-3 rounded-pill mt-4 shadow-sm smallest ls-1 text-uppercase" onClick={() => { setIsViewModalOpen(false); handleEdit(selectedUser); }}>EDIT PROFILE</Button>
          </Modal.Body>
       </Modal>
 

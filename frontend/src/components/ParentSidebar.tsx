@@ -80,22 +80,25 @@ const ParentSidebar: React.FC = () => {
         <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">Parent Panel</span>
       </div>
 
-      {children.length > 0 && (
-        <div className="mb-5 px-3">
-          <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-2 opacity-50">Active Child</span>
-          <Form.Select 
-            className="smallest fw-bold py-2 border-light-dark rounded-3 shadow-none text-uppercase"
-            value={selectedChildId}
-            onChange={(e) => handleChildChange(e.target.value)}
-          >
-            {children.map(c => (
+      <div className="mb-5 px-3">
+        <span className="smallest text-muted fw-bold text-uppercase ls-1 d-block mb-2 opacity-50">Active Child</span>
+        <Form.Select 
+          className="smallest fw-bold py-2 border-light-dark rounded-3 shadow-none text-uppercase"
+          value={selectedChildId}
+          onChange={(e) => handleChildChange(e.target.value)}
+          disabled={children.length === 0}
+        >
+          {children.length === 0 ? (
+            <option>Loading profiles...</option>
+          ) : (
+            children.map((c: any) => (
               <option key={c._id} value={c._id}>
                 {(c.userId?.name || 'STUDENT').toUpperCase()}
               </option>
-            ))}
-          </Form.Select>
-        </div>
-      )}
+            ))
+          )}
+        </Form.Select>
+      </div>
       
       <nav className="nav flex-column gap-1 flex-grow-1 overflow-auto custom-scrollbar">
         <NavItem label="Dashboard" to="/dashboard/parent" />

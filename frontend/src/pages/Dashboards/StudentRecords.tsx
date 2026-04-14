@@ -253,10 +253,10 @@ const StudentRecords: React.FC = () => {
                         <td className="px-4 py-3 text-end">
                            <div className="d-flex justify-content-end gap-1">
                               <Button variant="outline-primary" size="sm" className="fw-bold border-0 bg-light" onClick={() => openEditModal(student)}>
-                                UPDATE
+                                EDIT
                               </Button>
                               <Button variant="outline-danger" size="sm" className="fw-bold border-0 bg-danger-soft text-danger" onClick={() => handleDelete(student._id, student.name)}>
-                                REMOVE
+                                DELETE
                               </Button>
                            </div>
                         </td>
@@ -289,13 +289,13 @@ const StudentRecords: React.FC = () => {
       {/* ── Profile Modification Terminal ── */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered className="border-0 shadow-lg">
         <Modal.Header closeButton className="border-0 pb-0 px-4 pt-4">
-          <Modal.Title className="fw-bold text-dark fs-5">MODIFY LEARNER PROFILE</Modal.Title>
+          <Modal.Title className="fw-bold text-dark fs-5">Edit Student</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <Form onSubmit={handleSaveEdit}>
             <Row className="g-3 mb-3">
               <Col md={6}>
-                 <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class Assignment</Form.Label>
+                 <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Class</Form.Label>
                  <Form.Select
                    className="py-2 border-light-dark shadow-none"
                    value={editForm.class}
@@ -326,7 +326,7 @@ const StudentRecords: React.FC = () => {
             </Row>
 
             <Form.Group className="mb-3">
-               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Administrative ID (Roll No)</Form.Label>
+               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Roll Number</Form.Label>
                <Form.Control 
                  type="text" 
                  className="py-2 border-light-dark shadow-none" 
@@ -337,7 +337,7 @@ const StudentRecords: React.FC = () => {
             </Form.Group>
 
             <Form.Group className="mb-4">
-               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Primary Emergency Contact</Form.Label>
+               <Form.Label className="smaller fw-bold text-secondary text-uppercase mb-2">Parent Phone</Form.Label>
                <Form.Control 
                  type="text" 
                  className="py-2 border-light-dark shadow-none" 
@@ -349,10 +349,10 @@ const StudentRecords: React.FC = () => {
 
             <div className="d-flex gap-2 pt-2">
               <Button variant="light" className="flex-grow-1 fw-bold rounded-pill border py-2" onClick={() => setShowEditModal(false)}>
-                DISCARD
+                CANCEL
               </Button>
               <Button variant="primary" type="submit" className="flex-grow-1 fw-bold rounded-pill py-2" disabled={isSaving}>
-                {isSaving ? 'PROCESSING...' : 'CONFIRM UPDATES'}
+                {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
               </Button>
             </div>
           </Form>

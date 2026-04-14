@@ -38,10 +38,10 @@ const StudentNotices: React.FC = () => {
       if (data.success) {
         setNotices(Array.isArray(data.data) ? data.data : []);
       } else {
-        setError(data.message || 'Failed to establish directive bridge.');
+        setError(data.message || 'Failed to load notices.');
       }
     } catch (err) {
-      setError('Communication error: Institutional brief server unreachable.');
+      setError('Communication error: Server unreachable.');
     } finally {
       setLoading(false);
     }
@@ -133,8 +133,8 @@ const StudentNotices: React.FC = () => {
           ) : filteredNotices.length === 0 ? (
             <Card className="border-0 shadow-sm rounded-4 text-center py-5 border-bottom border-4 border-primary">
               <Card.Body>
-                <h6 className="text-secondary fw-bold smallest text-uppercase ls-2">COMMUNICATION VACUUM</h6>
-                <p className="text-muted smallest fw-bold ls-1 opacity-50 mt-2 uppercase">No directives matching your query parameters were identified.</p>
+                <h6 className="text-secondary fw-bold smallest text-uppercase ls-2">No Notices Found</h6>
+                <p className="text-muted smallest fw-bold ls-1 opacity-50 mt-2 uppercase">No notices matching your search were found.</p>
               </Card.Body>
             </Card>
           ) : (
@@ -162,8 +162,8 @@ const StudentNotices: React.FC = () => {
                             {notice.content}
                           </p>
                           <div className="d-flex justify-content-between align-items-center pt-3 border-top border-light-dark">
-                             <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{notice.createdBy?.name || 'ADMINISTRATOR'}</span>
-                             <Button variant="link" className="smallest text-primary fw-bold text-uppercase ls-1 p-0 text-decoration-none">{isSelected ? 'ACTIVE VIEW' : 'EXPAND'}</Button>
+                             <span className="smallest text-muted fw-bold text-uppercase ls-1 opacity-50">{notice.createdBy?.name || 'ADMIN'}</span>
+                             <Button variant="link" className="smallest text-primary fw-bold text-uppercase ls-1 p-0 text-decoration-none">{isSelected ? 'VIEWING' : 'VIEW DETAILS'}</Button>
                           </div>
                         </Card.Body>
                       </Card>
@@ -178,12 +178,12 @@ const StudentNotices: React.FC = () => {
                     <Card.Body className="p-4 p-lg-5">
                       <div className="mb-5">
                         <Badge bg={getCategoryVariant(selectedNotice.category)} text={getCategoryText(selectedNotice.category)} className="fw-bold smallest text-uppercase px-4 py-2 border rounded-pill ls-1 mb-4">
-                          {selectedNotice.category} DIRECTIVE
+                          {selectedNotice.category} NOTICE
                         </Badge>
-                        <h3 className="fw-bold text-dark ls-1 mb-4">{selectedNotice.title}</h3>
+                        <h3 className="fw-bold text-dark ls-1 mb-4 text-uppercase">{selectedNotice.title}</h3>
                         <div className="d-flex flex-column flex-sm-row gap-4 smallest fw-bold text-muted text-uppercase ls-1 border-bottom border-light-dark pb-4">
-                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">RELEASED:</span> <span>{formatDate(selectedNotice.createdAt)}</span></div>
-                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">ISSUED BY:</span> <span>{selectedNotice.createdBy?.name || 'REGISTRAR OFFICE'}</span></div>
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">DATE:</span> <span>{formatDate(selectedNotice.createdAt)}</span></div>
+                           <div className="d-flex gap-2 align-items-center"><span className="opacity-50">AUTHOR:</span> <span>{selectedNotice.createdBy?.name || 'ADMIN'}</span></div>
                         </div>
                       </div>
                       <div className="text-dark smallest lh-lg fw-bold ls-1 opacity-75">

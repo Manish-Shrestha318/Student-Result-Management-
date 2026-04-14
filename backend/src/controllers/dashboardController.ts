@@ -8,16 +8,27 @@ import Student from "../models/Student";
 
 export const getAdminStats = async (req: Request, res: Response) => {
   try {
-    const totalStudents = await User.countDocuments({ role: "student" });
-    const totalTeachers = await User.countDocuments({ role: "teacher" });
-    const totalClasses = await Class.countDocuments();
-    const totalSubjects = await Subject.countDocuments();
-    const totalExams = await Exam.countDocuments();
-    const pendingTeacherApprovals = await User.countDocuments({ role: "teacher", status: "pending" });
+    const [
+      totalStudents,
+      totalTeachers,
+      totalClasses,
+      totalSubjects,
+      totalExams,
+      pendingTeacherApprovals,
+      totalAttendance,
+      presentAttendance
+    ] = await Promise.all([
+      User.countDocuments({ role: "student" }),
+      User.countDocuments({ role: "teacher" }),
+      Class.countDocuments(),
+      Subject.countDocuments(),
+      Exam.countDocuments(),
+      User.countDocuments({ role: "teacher", status: "pending" }),
+      Attendance.countDocuments(),
+      Attendance.countDocuments({ status: "present" })
+    ]);
 
-    // Calculate overall attendance for the last 30 days if possible
-    const totalAttendance = await Attendance.countDocuments();
-    const presentAttendance = await Attendance.countDocuments({ status: "present" });
+    // Calculate overall attendance
     const avgAttendance = totalAttendance > 0 ? (presentAttendance / totalAttendance) * 100 : 94.5;
 
     res.json({
@@ -43,10 +54,9 @@ export const getTeacherStats = async (req: Request, res: Response) => {
     const userRole = (req as any).user.role;
 
     // For testing purposes: If an Admin visits the teacher dashboard, load data for the first active teacher 
-    // so the dashboard isn't completely empty!
     if (userRole === 'admin') {
       const User = require('../models/User').default;
-      const firstTeacher = await User.findOne({ role: 'teacher', status: 'active' });
+      const firstTeacher = await User.findOne({ role: 'teacher', status: 'active' }).lean();
       if (firstTeacher) {
         teacherUserId = firstTeacher._id.toString();
         console.log(`[DASHBOARD] Admin requested teacher stats. Simulating with teacher: ${firstTeacher.email}`);
@@ -54,7 +64,8 @@ export const getTeacherStats = async (req: Request, res: Response) => {
     }
 
     // 1. Fetch subjects explicitly assigned to this teacher
-    const teacherSubjects = await Subject.find({ teacherId: teacherUserId });
+    // Parallelize with other potential lookups if needed
+    const teacherSubjects = await Subject.find({ teacherId: teacherUserId }).lean();
     
     // 2. Extract unique Class/Section pairs from assigned subjects
     const teacherAssignments = teacherSubjects.map(s => ({
@@ -62,29 +73,45 @@ export const getTeacherStats = async (req: Request, res: Response) => {
         section: s.section
     }));
 
-    // 3. Fetch classes strictly restricted to the subjects the teacher handles
+    if (teacherAssignments.length === 0) {
+      return res.json({
+        success: true,
+        teacherId: teacherUserId,
+        stats: { assignedClasses: 0, totalStudents: 0, subjectsHandled: 0 },
+        students: [],
+        assignedClassesList: [],
+        subjects: [],
+        classPerformanceData: { labels: [], datasets: [] }
+      });
+    }
+
+    // 3. Fetch classes and students in parallel
     const teacherClasses = await Class.find({
-      $or: teacherAssignments.length > 0 ? teacherAssignments.map(a => ({
+      $or: teacherAssignments.map(a => ({
           name: a.class,
           section: a.section
-      })) : [{ name: "__NONE__" }]
-    }).populate('students');
+      }))
+    }).populate('students').lean();
 
     const distinctClassesMap = new Map();
+    const studentIds = new Set<string>();
+
     teacherClasses.forEach(c => {
         const classKey = `${c.name} — ${c.section}`;
-        // Ensure the teacher actually handles a subject in this class
         const teachesInThisClass = teacherAssignments.some(a => a.class === c.name && a.section === c.section);
-        if (teachesInThisClass && !distinctClassesMap.has(classKey)) {
-            distinctClassesMap.set(classKey, c);
+        if (teachesInThisClass) {
+            if (!distinctClassesMap.has(classKey)) {
+                distinctClassesMap.set(classKey, c);
+            }
+            if (c.students) {
+                c.students.forEach((s: any) => studentIds.add(s._id.toString()));
+            }
         }
     });
 
-    const studentIds = Array.from(new Set(teacherClasses.flatMap(c => c.students.map((s: any) => s._id.toString()))));
-    
-    // Fetch actual student details for the teacher portal
+    // 4. Fetch actual student details for the teacher portal
     const StudentModel = require('../models/Student').default;
-    const studentProfiles = await StudentModel.find({ _id: { $in: studentIds } })
+    const studentProfiles = await StudentModel.find({ _id: { $in: Array.from(studentIds) } })
       .populate('userId', 'name email profilePicture')
       .lean();
 
@@ -104,7 +131,7 @@ export const getTeacherStats = async (req: Request, res: Response) => {
       teacherId: teacherUserId,
       stats: {
         assignedClasses: distinctClassKeys.length,
-        totalStudents: studentIds.length,
+        totalStudents: studentIds.size,
         subjectsHandled: teacherSubjects.length
       },
       students: formattedStudents,

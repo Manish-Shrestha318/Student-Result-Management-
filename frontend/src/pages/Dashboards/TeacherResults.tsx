@@ -158,7 +158,7 @@ const TeacherResults: React.FC = () => {
                         <Form.Select required className="py-2 border-light shadow-none bg-light" value={selectedStudent} onChange={e => setSelectedStudent(e.target.value)}>
                            <option value="">Select Student...</option>
                            {students.filter(s => !selectedClass || `${s.class} — ${s.section}` === selectedClass).map(s => (
-                              <option key={s._id} value={s._id}>{s.rollNumber} — {s.name}</option>
+                              <option key={s._id} value={s._id}>{s.class} {s.section} — {s.name} ({s.rollNumber})</option>
                            ))}
                         </Form.Select>
                     </Col>
