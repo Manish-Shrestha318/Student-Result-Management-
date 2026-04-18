@@ -1,0 +1,102 @@
+.homepage-wrapper {
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Utils */
+.ls-1 { letter-spacing: 1px; }
+.ls-2 { letter-spacing: 2px; }
+.ls-neg-1 { letter-spacing: -1px; }
+.smallest { font-size: 0.72rem; }
+.fw-black { font-weight: 900; }
+.bg-primary-soft { background-color: rgba(37, 99, 235, 0.1); }
+.text-primary-gradient {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-primary-light {
+  color: #7dd3fc; /* Sky blue 300 */
+}
+
+/* Nav */
+.navbar-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.nav-item-h {
+  transition: all 0.2s ease;
+}
+.nav-item-h:hover {
+  color: #2563eb !important;
+  transform: translateY(-1px);
+}
+
+/* Hero */
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1.1;
+}
+
+.hero-subtitle {
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+.shadow-blue-sm {
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.25);
+}
+
+.shadow-blue-lg {
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.35);
+}
+
+.floating-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Feature Circles */
+.feature-circle {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.feature-circle:hover {
+  transform: scale(1.1) translateY(-5px);
+  box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.2);
+}
+
+/* Sections */
+.bg-light-soft {
+  background-color: #f8fafc;
+}
+
+.shadow-sm-hover {
+  transition: all 0.3s ease;
+}
+
+.shadow-sm-hover:hover {
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.05);
+  transform: translateX(5px);
+}
+
+.min-vh-75 {
+  min-height: 75vh;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 991.98px) {
+  .hero-title {
+    font-size: 2.8rem;
+  }
+}

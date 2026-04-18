@@ -65,7 +65,15 @@ const TeacherAnalytics: React.FC = () => {
 
         if (comp.success) setPerformance(comp.data.performance);
         if (trend.success) setTrendData(trend.data || []);
-        if (result.success) setResultData(result.data);
+        if (result.success) {
+          setResultData(result.data);
+          // Auto-select the term/year that actually has data
+          if (result.data?.subjects?.length > 0) {
+            const latest = result.data.subjects[0];
+            setSelectedTerm(latest.term);
+            setSelectedYear(String(latest.year));
+          }
+        }
         setClassData(null);
       } else if (selectedClass) {
         const res = await fetch(`/api/analytics/class/${selectedClass}?term=${selectedTerm}&year=${selectedYear}`, {
@@ -104,10 +112,14 @@ const TeacherAnalytics: React.FC = () => {
   const termDiff = prevTerm && currentTerm ? +(currentTerm.percentage - prevTerm.percentage).toFixed(1) : null;
 
   const barData = {
-    labels: subjects.map((s: any) => s.name || s.subject),
+    labels: subjects.map((s: any) => s.subject ?? s.name),
     datasets: [
-      { label: 'Marks', data: subjects.map((s: any) => s.marks ?? s.obtainedMarks ?? 0), backgroundColor: '#2563eb', borderRadius: 4 },
-      { label: 'Average', data: subjects.map((s: any) => s.avgMarks ?? s.classAvg ?? 0), backgroundColor: '#cbd5e1', borderRadius: 4 }
+      {
+        label: 'Score (%)',
+        data: subjects.map((s: any) => s.rawPercentage ?? (s.marksObtained != null && s.totalMarks ? +((s.marksObtained / s.totalMarks) * 100).toFixed(2) : 0)),
+        backgroundColor: '#2563eb',
+        borderRadius: 4
+      },
     ],
   };
 
@@ -254,15 +266,18 @@ const TeacherAnalytics: React.FC = () => {
                  <Card className="shadow-sm border-0 rounded-4 overflow-hidden">
                    <div className="p-3 border-bottom bg-white fw-bold smallest text-uppercase ls-1">Subjects</div>
                    <div className="p-0">
-                     {subjects.map((s: any, idx: number) => (
-                       <div key={idx} className="d-flex align-items-center justify-content-between p-3 border-bottom last-border-0">
-                         <div>
-                           <div className="fw-bold small text-dark">{s.subject ?? s.name}</div>
-                           <div className="text-muted smallest">{s.marksObtained}/{s.totalMarks}</div>
-                         </div>
-                         <div className={`fw-bold small ${ (s.percentage) >= 75 ? 'text-success' : 'text-dark' }`}>{s.percentage}%</div>
-                       </div>
-                     ))}
+                      {subjects.map((s: any, idx: number) => {
+                        const pct = s.rawPercentage ?? (s.marksObtained != null && s.totalMarks ? +((s.marksObtained / s.totalMarks) * 100).toFixed(2) : 0);
+                        return (
+                          <div key={idx} className="d-flex align-items-center justify-content-between p-3 border-bottom last-border-0">
+                            <div>
+                              <div className="fw-bold small text-dark">{s.subject ?? s.name}</div>
+                              <div className="text-muted smallest">{s.marksObtained}/{s.totalMarks}</div>
+                            </div>
+                            <div className={`fw-bold small ${ pct >= 75 ? 'text-success' : 'text-dark' }`}>{pct}%</div>
+                          </div>
+                        );
+                      })}
                    </div>
                  </Card>
                </Col>

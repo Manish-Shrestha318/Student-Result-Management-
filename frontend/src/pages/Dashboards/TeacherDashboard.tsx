@@ -186,26 +186,7 @@ const TeacherDashboard: React.FC = () => {
                   </div>
                 </Card>
 
-                {/* ── Faculty Tasks ── */}
-                <Card className="border-0 shadow-sm rounded-4 p-4 bg-white flex-grow-1">
-                  <div className="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3 border-light-dark">
-                      <h6 className="fw-bold text-dark mb-0 text-uppercase smallest ls-1">Pending Syncs</h6>
-                  </div>
-                  <div className="d-flex flex-column gap-3">
-                    {[
-                      { type: 'Exam', msg: 'Update Grade 10 Math results.', status: 'Priority' },
-                      { type: 'Attendance', msg: 'Verify session sync for 9B.', status: 'Pending' },
-                    ].map((task, idx) => (
-                      <div key={idx} className="p-3 bg-white border border-light-dark rounded-4 shadow-sm">
-                        <div className="d-flex justify-content-between align-items-center mb-1">
-                            <div className="smallest fw-bold text-dark text-uppercase ls-1">{task.type}</div>
-                            <span className={`smallest fw-bold ${task.status === 'Priority' ? 'text-danger' : 'text-warning'} uppercase ls-1`}>{task.status}</span>
-                        </div>
-                        <p className="smallest text-secondary mb-0 text-truncate fw-medium">{task.msg}</p>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
+
               </div>
             </Col>
           </Row>
