@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Login from './pages/Auth/Login';
 import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 import StudentDashboard from './pages/Dashboards/StudentDashboard';
 import ParentDashboard from './pages/Dashboards/ParentDashboard';
 import TeacherDashboard from './pages/Dashboards/TeacherDashboard';
@@ -49,6 +50,7 @@ const App: React.FC = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:resetToken" element={<ResetPassword />} />
 
         {/* Dashboard Routes */}
         <Route path="/dashboard/student" element={<StudentDashboard />} />

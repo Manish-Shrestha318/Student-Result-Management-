@@ -96,13 +96,15 @@ const Login: React.FC = () => {
 
           navigateByRole(data.user?.role?.toLowerCase());
         } else {
-        setError(data.message || 'Invalid email or password.');
+          setError(data.message || 'Invalid email or password.');
+          setPassword('');
+        }
+      } catch (_err) {
+        setError('An error occurred during login. Please try again.');
+        setPassword('');
+      } finally {
+        setLoading(false);
       }
-    } catch (_err) {
-      setError('An error occurred during login. Please try again.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

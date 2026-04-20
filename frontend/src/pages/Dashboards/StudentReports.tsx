@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logo from '../../assets/logo.svg';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Table, Badge, Button, Form, Spinner } from 'react-bootstrap';
 import AdminHeader from '../../components/AdminHeader';
@@ -109,12 +110,16 @@ const StudentReports: React.FC = () => {
     return 'danger';
   };
 
+
   return (
     <div className="d-flex overflow-hidden bg-white" style={{ height: '100vh', width: '100vw' }}>
       <aside className="bg-white border-end d-flex flex-column px-4 py-5" style={{ width: '280px' }}>
-        <div className="mb-5 text-center">
-           <h4 className="fw-bold text-primary ls-1">SMARTRESULTS</h4>
-           <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
+        <div className="mb-5 px-3">
+          <div className="d-flex align-items-center gap-2 mb-1">
+             <img src={logo} alt="Logo" style={{ height: '30px', width: '30px' }} />
+             <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+          </div>
+          <span className="smallest text-muted fw-bold text-uppercase ls-1">Student</span>
         </div>
         
         <nav className="flex-grow-1 d-flex flex-column gap-1">

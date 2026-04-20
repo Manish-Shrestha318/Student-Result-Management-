@@ -61,6 +61,12 @@ const TeacherResults: React.FC = () => {
   }, [selectedSubject, subjects]);
 
   const updateSubtopic = (index: number, value: string) => {
+    // Show alert and block if negative values are entered
+    if (value !== '' && parseFloat(value) < 0) {
+      alert("Negative marks are not allowed. Please enter a valid score.");
+      return;
+    }
+    
     const next = [...subtopics];
     next[index].marks = value;
     setSubtopics(next);
@@ -73,6 +79,14 @@ const TeacherResults: React.FC = () => {
     const anyMarkEntered = subtopics.some(s => s.marks.trim() !== '' && !isNaN(parseFloat(s.marks)));
     if (!anyMarkEntered) {
       return alert("Enter marks for at least one topic.");
+    }
+
+    if (subtopics.some(s => s.marks.trim() !== '' && parseFloat(s.marks) < 0)) {
+      return alert("Marks cannot be negative.");
+    }
+
+    if (parseFloat(totalPossible) <= 0) {
+      return alert("Full marks must be a positive number.");
     }
 
     setLoading(true);
@@ -174,10 +188,10 @@ const TeacherResults: React.FC = () => {
                            ))}
                        </Form.Select>
                     </Col>
-                    <Col md={3}>
-                       <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Marks</Form.Label>
-                       <Form.Control type="number" className="py-3 border-light shadow-none bg-light fw-bold text-dark" value={totalPossible} onChange={e => setTotalPossible(e.target.value)} />
-                    </Col>
+                     <Col md={3}>
+                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Marks</Form.Label>
+                        <Form.Control type="number" min="1" className="py-3 border-light shadow-none bg-light fw-bold text-dark" value={totalPossible} onChange={e => setTotalPossible(e.target.value)} />
+                     </Col>
                  </Row>
 
                  <div className="mb-5">
@@ -196,16 +210,17 @@ const TeacherResults: React.FC = () => {
                                    <td className="p-4">
                                       <span className="text-dark fw-bold">{item.name}</span>
                                    </td>
-                                   <td className="p-3">
-                                       <Form.Control 
-                                          type="number" 
-                                          step="0.5"
-                                          placeholder="0.0" 
-                                          className="text-center py-2 border-light shadow-none bg-light smallest fw-bold" 
-                                          value={item.marks} 
-                                          onChange={e => updateSubtopic(idx, e.target.value)} 
-                                       />
-                                   </td>
+                                    <td className="p-3">
+                                        <Form.Control 
+                                           type="number" 
+                                           step="0.5"
+                                           min="0"
+                                           placeholder="0.0" 
+                                           className="text-center py-2 border-light shadow-none bg-light smallest fw-bold" 
+                                           value={item.marks} 
+                                           onChange={e => updateSubtopic(idx, e.target.value)} 
+                                        />
+                                    </td>
                                 </tr>
                              ))}
                           </tbody>

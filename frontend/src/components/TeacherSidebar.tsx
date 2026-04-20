@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+import logo from '../assets/logo.svg';
+
 const TeacherSidebar: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
@@ -19,7 +21,10 @@ const TeacherSidebar: React.FC = () => {
     <aside className="d-flex flex-column bg-white border-end p-4 shadow-sm" style={{ width: '280px', height: '100vh', zIndex: 10 }}>
       {/* ── Brand Section ── */}
       <div className="mb-5 px-3">
-        <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+        <div className="d-flex align-items-center gap-2 mb-1">
+          <img src={logo} alt="Logo" style={{ height: '30px', width: '30px' }} />
+          <h4 className="fw-bold text-primary ls-1 mb-0">SMARTRESULTS</h4>
+        </div>
         <span className="smallest text-muted fw-bold text-uppercase ls-1">Teacher Portal</span>
       </div>
       

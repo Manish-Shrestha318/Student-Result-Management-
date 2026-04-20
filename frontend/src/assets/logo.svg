@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <!-- Graduate Head and Cap -->
+  <circle cx="200" cy="110" r="30" fill="#2563EB"/>
+  <path d="M150 75L200 50L250 75L200 100L150 75Z" fill="#FBBF24"/>
+  <rect x="195" y="70" width="10" height="20" fill="#FBBF24"/>
+  <path d="M150 75V85" stroke="#FBBF24" stroke-width="4"/>
+  
+  <!-- Shoulders -->
+  <path d="M130 160C130 160 160 120 200 120C240 120 270 160 270 160L200 210L130 160Z" fill="#FBBF24"/>
+
+  <!-- Open Book / Wings -->
+  <!-- Left Wing -->
+  <path d="M190 200C150 200 80 180 50 250C90 250 140 280 190 260" fill="#2563EB"/>
+  <path d="M190 215C160 215 100 200 80 245C110 245 150 265 190 250" fill="#FBBF24"/>
+  
+  <!-- Right Wing -->
+  <path d="M210 200C250 200 320 180 350 250C310 250 260 280 210 260" fill="#2563EB"/>
+  <path d="M210 215C240 215 300 200 320 245C290 245 250 265 210 250" fill="#FBBF24"/>
+  
+  <!-- Bottom Foundation -->
+  <path d="M50 280C120 290 200 310 200 310C200 310 280 290 350 280L350 295C280 305 200 325 200 325C200 325 120 305 50 295L50 280Z" fill="#2563EB"/>
+</svg>

@@ -22,13 +22,18 @@ const NavItem: React.FC<NavItemProps> = ({ label, path, active }) => {
   );
 };
 
+import logo from '../assets/logo.svg';
+
 const AdminSidebar: React.FC = () => {
   const location = useLocation();
 
   return (
     <aside className="d-flex flex-column flex-shrink-0 p-4 bg-white border-end shadow-sm overflow-hidden" style={{ width: '300px', height: '100vh', zIndex: 1000 }}>
       <div className="mb-4 px-3 pt-2">
-        <h4 className="fw-bold text-primary mb-1" style={{ letterSpacing: '1.5px' }}>SMARTRESULTS</h4>
+        <div className="d-flex align-items-center gap-2 mb-1">
+          <img src={logo} alt="Logo" style={{ height: '32px', width: '32px' }} />
+          <h4 className="fw-bold text-primary mb-0" style={{ letterSpacing: '1.5px' }}>SMARTRESULTS</h4>
+        </div>
         <span className="text-muted fw-bold text-uppercase d-block mt-1" style={{ fontSize: '0.82rem', letterSpacing: '1.2px', opacity: 0.8 }}>ADMIN PANEL</span>
       </div>
       
