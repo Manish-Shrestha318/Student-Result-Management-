@@ -89,6 +89,10 @@ const TeacherResults: React.FC = () => {
       return alert("Full marks must be a positive number.");
     }
 
+    if (totalScored > parseFloat(totalPossible)) {
+      return alert("Marks obtained cannot exceed total mark");
+    }
+
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
@@ -111,16 +115,23 @@ const TeacherResults: React.FC = () => {
             }))
           })
         });
-        const data = await res.json();
+
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonErr) {
+          throw new Error("Server responded with an invalid format.");
+        }
+
         if (res.ok || data.success) {
             alert("Marks saved.");
             setSubtopics(subtopics.map(s => ({ ...s, marks: '' })));
             setRemarks('');
         } else {
-            alert(data.message || "Failed.");
+            alert(data.message || "Failed to save marks.");
         }
-    } catch (err) {
-        alert("Error saving.");
+    } catch (err: any) {
+        alert(err.message || "Error saving marks. Please check your connection.");
     } finally {
         setLoading(false);
     }

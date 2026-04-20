@@ -16,6 +16,9 @@ export const createMarkSchema = z.object({
     totalMarks: z.number().nonnegative("Total marks cannot be negative"),
     percentage: z.number().optional()
   })).optional()
+}).refine(data => data.marksObtained <= data.totalMarks, {
+  message: "Marks obtained cannot exceed total mark",
+  path: ["marksObtained"]
 });
 
 export const updateMarkSchema = createMarkSchema.partial();

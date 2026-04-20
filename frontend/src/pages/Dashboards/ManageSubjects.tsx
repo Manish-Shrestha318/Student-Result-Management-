@@ -106,6 +106,9 @@ const ManageSubjects: React.FC = () => {
 
   const addSubtopic = () => {
     if (newSubtopic.trim()) {
+      if (newSubtopic.trim().length > 30) {
+        return alert("Topic name cannot exceed 30 characters.");
+      }
       setForm({ ...form, subtopics: [...form.subtopics, newSubtopic.trim()] });
       setNewSubtopic('');
     }
@@ -285,7 +288,20 @@ const ManageSubjects: React.FC = () => {
             <Row className="g-3 mb-4">
               <Col md={6}>
                 <Form.Label className="smallest fw-bold text-muted text-uppercase mb-2 ls-1">Subject Name</Form.Label>
-                <Form.Control required type="text" className="py-2 border-light shadow-none bg-light fw-bold" placeholder="e.g. Science" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <Form.Control 
+                  required 
+                  type="text" 
+                  className="py-2 border-light shadow-none bg-light fw-bold" 
+                  placeholder="e.g. Science" 
+                  value={form.name} 
+                  onChange={e => {
+                    if (e.target.value.length > 30) {
+                      alert("Subject name cannot exceed 30 characters.");
+                    } else {
+                      setForm({ ...form, name: e.target.value });
+                    }
+                  }} 
+                />
               </Col>
               <Col md={6}>
                 <Form.Label className="smallest fw-bold text-muted text-uppercase mb-2 ls-1">Subject Code</Form.Label>
@@ -342,7 +358,20 @@ const ManageSubjects: React.FC = () => {
             <div className="border-top pt-4 mb-4">
               <Form.Label className="smallest fw-bold text-muted text-uppercase mb-3 ls-1">Topics</Form.Label>
               <div className="d-flex gap-2 mb-3">
-                <Form.Control type="text" className="py-2 border-light shadow-none bg-light" placeholder="Topic name..." value={newSubtopic} onChange={e => setNewSubtopic(e.target.value)} onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSubtopic())} />
+                <Form.Control 
+                  type="text" 
+                  className="py-2 border-light shadow-none bg-light" 
+                  placeholder="Topic name..." 
+                  value={newSubtopic} 
+                  onChange={e => {
+                    if (e.target.value.length > 30) {
+                      alert("Topic name cannot exceed 30 characters.");
+                    } else {
+                      setNewSubtopic(e.target.value);
+                    }
+                  }} 
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSubtopic())} 
+                />
                 <Button variant="dark" className="fw-bold px-4" onClick={addSubtopic}>ADD</Button>
               </div>
               <div className="d-flex flex-wrap gap-2">

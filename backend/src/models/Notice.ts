@@ -17,7 +17,7 @@ export interface INotice extends Document {
 }
 
 const NoticeSchema: Schema = new Schema({
-  title: { type: String, required: true },
+  title: { type: String, required: true, maxlength: 30 },
   content: { type: String, required: true },
   category: { 
     type: String, 

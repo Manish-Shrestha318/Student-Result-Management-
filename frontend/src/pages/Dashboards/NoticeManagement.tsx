@@ -204,10 +204,16 @@ const NoticeManagement: React.FC = () => {
                     type="text"
                     required
                     value={newNotice.title} 
-                    onChange={(e) => setNewNotice({...newNotice, title: e.target.value})} 
-                    className="py-2 smaller border-light-dark shadow-none"
-                    placeholder="e.g., School Holiday"
-                  />
+                  onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      alert("Notice title cannot exceed 30 characters.");
+                    } else {
+                      setNewNotice({...newNotice, title: e.target.value});
+                    }
+                  }} 
+                  className="py-2 smaller border-light-dark shadow-none"
+                  placeholder="e.g., School Holiday"
+                />
                 </Form.Group>
               </Col>
               <Col md={4}>

@@ -19,7 +19,7 @@ const SubjectSchema: Schema = new Schema({
   teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   fullMarks: { type: Number, default: 100 },
   passMarks: { type: Number, default: 40 },
-  subtopics: [{ type: String }]
+  subtopics: [{ type: String, maxlength: 30 }]
 }, { timestamps: true });
 
 // Indexes for faster lookups

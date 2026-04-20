@@ -129,6 +129,9 @@ const Login: React.FC = () => {
             <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Email Address</label>
             <input 
               type="email" 
+              name="email"
+              id="email"
+              autoComplete="username"
               className="input-field" 
               placeholder="Email Address" 
               required 
@@ -141,6 +144,9 @@ const Login: React.FC = () => {
             <div style={{ position: 'relative' }}>
               <input 
                 type={showPassword ? "text" : "password"} 
+                name="password"
+                id="password"
+                autoComplete="current-password"
                 className="input-field" 
                 placeholder="••••••••" 
                 required 

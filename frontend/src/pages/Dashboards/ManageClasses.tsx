@@ -250,7 +250,13 @@ const ManageClasses: React.FC = () => {
                   className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. Grade 10" 
                   value={form.name} 
-                  onChange={e => setForm({ ...form, name: e.target.value })} 
+                  onChange={e => {
+                    if (e.target.value.length > 30) {
+                      alert("Class name cannot exceed 30 characters.");
+                    } else {
+                      setForm({ ...form, name: e.target.value });
+                    }
+                  }} 
                 />
               </Col>
               <Col md={6}>
@@ -261,7 +267,13 @@ const ManageClasses: React.FC = () => {
                   className="py-2 border-light-dark shadow-none fw-medium" 
                   placeholder="e.g. A" 
                   value={form.section} 
-                  onChange={e => setForm({ ...form, section: e.target.value })} 
+                  onChange={e => {
+                    if (e.target.value.length > 30) {
+                      alert("Section name cannot exceed 30 characters.");
+                    } else {
+                      setForm({ ...form, section: e.target.value });
+                    }
+                  }} 
                 />
               </Col>
             </Row>

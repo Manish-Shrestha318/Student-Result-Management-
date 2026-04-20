@@ -11,8 +11,8 @@ export interface IClass extends Document {
 }
 
 const ClassSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  section: { type: String, required: true },
+  name: { type: String, required: true, maxlength: 30 },
+  section: { type: String, required: true, maxlength: 30 },
   academicYear: { type: String, required: true },
   classTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   students: [{ type: Schema.Types.ObjectId, ref: 'Student' }],

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createNoticeSchema = z.object({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().min(1, "Title is required").max(30, "Title cannot exceed 30 characters"),
   content: z.string().min(1, "Content is required"),
   category: z.enum(["academic", "exam", "event", "holiday", "general"]),
   targetRoles: z.array(z.enum(["admin", "teacher", "student", "parent"])),
