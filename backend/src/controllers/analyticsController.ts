@@ -130,7 +130,7 @@ export const getSubjectWiseAnalysis = async (req: Request, res: Response) => {
 };
 
 /**
- * NEW: Get attendance impact analysis
+ * Get attendance impact analysis
  * This shows how attendance affects student's grades
  */
 export const getAttendanceImpact = async (req: Request, res: Response) => {

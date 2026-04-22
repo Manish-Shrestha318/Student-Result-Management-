@@ -49,6 +49,11 @@ const NoticeManagement: React.FC = () => {
 
   const handleCreateNotice = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newNotice.targetRoles.length === 0) {
+      alert("Please select at least one role");
+      return;
+    }
+    
     setLoading(true);
     const token = localStorage.getItem('token');
     try {
@@ -205,8 +210,8 @@ const NoticeManagement: React.FC = () => {
                     required
                     value={newNotice.title} 
                   onChange={(e) => {
-                    if (e.target.value.length > 30) {
-                      alert("Notice title cannot exceed 30 characters.");
+                    if (e.target.value.length > 100) {
+                      alert("Title cannot exceed 100 characters.");
                     } else {
                       setNewNotice({...newNotice, title: e.target.value});
                     }

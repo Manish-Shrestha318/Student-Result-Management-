@@ -17,6 +17,7 @@ const ManageSubjects: React.FC = () => {
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const [sortOrder, setSortOrder] = useState<string>('default');
 
   const [form, setForm] = useState({
     name: '',
@@ -172,9 +173,19 @@ const ManageSubjects: React.FC = () => {
     s.class?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const sortedData = [...filtered].sort((a, b) => {
+    if (sortOrder === 'default') return 0;
+    const nameA = (a.name || "").toLowerCase();
+    const nameB = (b.name || "").toLowerCase();
+    
+    if (sortOrder === 'name_asc') return nameA < nameB ? -1 : 1;
+    if (sortOrder === 'name_desc') return nameA > nameB ? -1 : 1;
+    return 0;
+  });
+
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentSubjects = filtered.slice(indexOfFirst, indexOfLast);
+  const currentSubjects = sortedData.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   return (
@@ -190,6 +201,16 @@ const ManageSubjects: React.FC = () => {
               <p className="text-secondary small mb-0">Add, edit, or delete school subjects and topics.</p>
             </div>
             <div className="d-flex gap-3 align-items-center">
+              <Form.Select 
+                className="py-2 shadow-none smaller fw-medium bg-white" 
+                style={{ width: '180px' }}
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+              >
+                <option value="default">Sort By...</option>
+                <option value="name_asc">Name (A-Z)</option>
+                <option value="name_desc">Name (Z-A)</option>
+              </Form.Select>
               <InputGroup className="shadow-none border-light-dark" style={{ width: '280px' }}>
                 <Form.Control
                   placeholder="Search subject or code..."

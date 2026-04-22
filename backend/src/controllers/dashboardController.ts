@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import User from "../models/User";
 import Class from "../models/Class";
 import Subject from "../models/Subject";
-import Exam from "../models/Exam";
 import Attendance from "../models/Attendance";
 import Student from "../models/Student";
 
@@ -13,7 +12,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
       totalTeachers,
       totalClasses,
       totalSubjects,
-      totalExams,
       pendingTeacherApprovals,
       totalAttendance,
       presentAttendance
@@ -22,7 +20,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
       User.countDocuments({ role: "teacher" }),
       Class.countDocuments(),
       Subject.countDocuments(),
-      Exam.countDocuments(),
       User.countDocuments({ role: "teacher", status: "pending" }),
       Attendance.countDocuments(),
       Attendance.countDocuments({ status: "present" })
@@ -38,7 +35,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
         totalTeachers,
         totalClasses,
         totalSubjects,
-        totalExams,
         pendingTeacherApprovals,
         avgAttendance: avgAttendance.toFixed(1)
       }

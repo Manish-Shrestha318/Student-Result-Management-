@@ -19,5 +19,18 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Allow `any` types — common in data-heavy React projects
+      '@typescript-eslint/no-explicit-any': 'off',
+      // Allow unused variables prefixed with _ (e.g. catch (_err))
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        varsIgnorePattern: '^_', 
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
+      'no-unused-vars': 'off',
+      // Allow empty block statements e.g. catch {}
+      'no-empty': 'off',
+    },
   },
 ])

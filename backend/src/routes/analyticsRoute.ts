@@ -45,7 +45,7 @@ router.get(
   getTeacherPerformance
 );
 
- //NEW: Subject-wise analysis (strengths & weaknesses)
+ // Subject-wise analysis (strengths & weaknesses)
  
 router.get(
   "/subject-analysis/:studentId", 
@@ -53,7 +53,7 @@ router.get(
   getSubjectWiseAnalysis
 );
 
-//NEW: Attendance impact analysis
+// Attendance impact analysis
 
 router.get(
   "/attendance-impact/:studentId", 
@@ -61,7 +61,7 @@ router.get(
   getAttendanceImpact
 );
 
-//NEW: Comprehensive student report (all in one)
+//Comprehensive student report (all in one)
 
 router.get(
   "/comprehensive/:studentId", 
@@ -70,7 +70,7 @@ router.get(
 );
 
 /**
- * NEW: Compare two students
+ *Compare two students
  * GET /api/analytics/compare/:studentId1/:studentId2
  */
 router.get(

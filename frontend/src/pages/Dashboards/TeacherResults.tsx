@@ -17,6 +17,16 @@ const TeacherResults: React.FC = () => {
   const [selectedTerm, setSelectedTerm] = useState('First Term');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
 
+  const isSelectionComplete = !!(selectedYear && selectedTerm && selectedClass && selectedStudent);
+
+  useEffect(() => {
+    if (!isSelectionComplete) {
+      setSelectedSubject('');
+      setSubtopics([]);
+      setTotalPossible('100');
+    }
+  }, [selectedYear, selectedTerm, selectedClass, selectedStudent]);
+
   const [subtopics, setSubtopics] = useState<{ name: string, marks: string }[]>([]);
   const [remarks, setRemarks] = useState('');
   const [totalPossible, setTotalPossible] = useState('100');
@@ -189,21 +199,34 @@ const TeacherResults: React.FC = () => {
                     </Col>
                  </Row>
 
-                 <Row className="g-4 mb-5 pt-4 border-top">
-                     <Col md={9}>
-                       <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Subject</Form.Label>
-                       <Form.Select required className="py-3 border-light shadow-none bg-light fw-bold" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
-                          <option value="">Select Subject...</option>
-                          {subjects.filter(s => !selectedClass || `${s.class} — ${s.section}` === selectedClass).map(s => (
-                              <option key={s._id} value={s._id}>{s.name} - {s.class} ({s.section})</option>
-                           ))}
-                       </Form.Select>
-                    </Col>
-                     <Col md={3}>
-                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Marks</Form.Label>
-                        <Form.Control type="number" min="1" className="py-3 border-light shadow-none bg-light fw-bold text-dark" value={totalPossible} onChange={e => setTotalPossible(e.target.value)} />
+                  <Row className="g-4 mb-5 pt-4 border-top">
+                      <Col md={9}>
+                        <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Subject</Form.Label>
+                        <Form.Select 
+                           required 
+                           disabled={!isSelectionComplete}
+                           className={`py-3 border-light shadow-none fw-bold ${!isSelectionComplete ? 'bg-white opacity-50' : 'bg-light'}`}
+                           value={selectedSubject} 
+                           onChange={e => setSelectedSubject(e.target.value)}
+                        >
+                           <option value="">{isSelectionComplete ? "Select Subject..." : "Complete selections above first"}</option>
+                           {subjects.filter(s => !selectedClass || `${s.class} — ${s.section}` === selectedClass).map(s => (
+                               <option key={s._id} value={s._id}>{s.name} - {s.class} ({s.section})</option>
+                            ))}
+                        </Form.Select>
                      </Col>
-                 </Row>
+                      <Col md={3}>
+                         <Form.Label className="smallest fw-bold text-muted text-uppercase ls-1">Full Marks</Form.Label>
+                         <Form.Control 
+                            type="number" 
+                            min="1" 
+                            disabled={!isSelectionComplete}
+                            className={`py-3 border-light shadow-none fw-bold text-dark ${!isSelectionComplete ? 'bg-white opacity-50' : 'bg-light'}`}
+                            value={totalPossible} 
+                            onChange={e => setTotalPossible(e.target.value)} 
+                         />
+                      </Col>
+                  </Row>
 
                  <div className="mb-5">
                     <h6 className="fw-bold text-dark mb-4 text-uppercase smallest ls-1 border-bottom pb-2">Topics</h6>
@@ -226,8 +249,9 @@ const TeacherResults: React.FC = () => {
                                            type="number" 
                                            step="0.5"
                                            min="0"
+                                           disabled={!isSelectionComplete || !selectedSubject}
                                            placeholder="0.0" 
-                                           className="text-center py-2 border-light shadow-none bg-light smallest fw-bold" 
+                                           className={`text-center py-2 border-light shadow-none smallest fw-bold ${(!isSelectionComplete || !selectedSubject) ? 'bg-white opacity-50' : 'bg-light'}`} 
                                            value={item.marks} 
                                            onChange={e => updateSubtopic(idx, e.target.value)} 
                                         />

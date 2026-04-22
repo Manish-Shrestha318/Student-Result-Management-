@@ -218,7 +218,7 @@ export class AnalyticsService {
     }));
   }
 
-  // NEW: Compute effective result considering attendance
+  //  Compute effective result considering attendance
   // Rule: attendance < 75% → student is NOT ELIGIBLE (detained) for that term's exam
   async getStudentResultWithAttendance(studentId: string): Promise<any> {
     const studentObjectId = await this.resolveStudentProfileId(studentId);

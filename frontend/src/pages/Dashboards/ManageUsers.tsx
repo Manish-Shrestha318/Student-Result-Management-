@@ -253,9 +253,6 @@ const ManageUsers: React.FC = () => {
                       <tr key={user._id} className="border-bottom border-light">
                         <td className="px-4 py-3">
                           <div className="d-flex align-items-center gap-3">
-                            <div className="bg-primary-soft text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center border" style={{ width: '42px', height: '42px' }}>
-                              {user.name?.[0]?.toUpperCase()}
-                            </div>
                             <div>
                                <div className="fw-bold text-dark text-uppercase">{user.name}</div>
                                <div className="smallest text-muted fw-bold text-lowercase">{user.email}</div>
@@ -269,7 +266,6 @@ const ManageUsers: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 text-center">
                            <div className="d-flex align-items-center justify-content-center gap-2">
-                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: (user.status === 'active' || user.isVerified) ? '#10b981' : (user.status === 'pending' ? '#f59e0b' : '#ef4444') }}></div>
                              <span className={`smallest fw-bold text-uppercase ls-1 ${ (user.status === 'active' || user.isVerified) ? 'text-success' : (user.status === 'pending' ? 'text-warning' : 'text-danger') }`}>
                                {user.status || (user.isVerified ? 'VERIFIED' : 'PENDING')}
                              </span>

@@ -35,11 +35,11 @@ const hashPassword = (pwd: string) => bcrypt.hash(pwd, 10);
 
 const seedDatabase = async () => {
   try {
-    console.log("🚀 Starting Core Seeding...");
+    console.log("Starting Core Seeding...");
     await mongoose.connect(process.env.MONGO_URI as string);
-    console.log("✅ MongoDB Connected");
+    console.log("MongoDB Connected");
 
-    console.log("🧹 Wiping collections...");
+    console.log("Wiping collections...");
     await Promise.all([User.deleteMany({}), Student.deleteMany({}), Teacher.deleteMany({}), Parent.deleteMany({}), Class.deleteMany({}), Subject.deleteMany({}), Mark.deleteMany({}), Attendance.deleteMany({}), Notice.deleteMany({}), ActivityLog.deleteMany({})]);
 
     const password = await hashPassword("password123");
@@ -56,7 +56,7 @@ const seedDatabase = async () => {
     })));
 
     // 3. Students & Parents (RESTORING RECORDS)
-    console.log("📦 Restoring Parent & Student Records...");
+    console.log("Restoring Parent & Student Records...");
     const sUsers = [];
     const pUsers = [];
     for (let i = 0; i < 40; i++) {
@@ -96,7 +96,7 @@ const seedDatabase = async () => {
         });
         parentProfiles.push(pProf);
     }
-    console.log(`✅ ${studentProfiles.length} students & ${parentProfiles.length} parents restored.`);
+    console.log(`${studentProfiles.length} students & ${parentProfiles.length} parents restored.`);
 
     // 4. Subjects (Corrected to Section-Specific)
     const sData = [];
@@ -137,7 +137,7 @@ const seedDatabase = async () => {
     }
 
     // 6. Dynamic Scholastic History
-    console.log("📊 Generating Analytical History...");
+    console.log("Generating Analytical History...");
     const marksFinal = [];
     const attendanceFinal = [];
     for (const s of studentProfiles) {
@@ -205,9 +205,9 @@ const seedDatabase = async () => {
     }
     await Mark.insertMany(marksFinal);
     await Attendance.insertMany(attendanceFinal);
-    console.log("🏁 SEEDING SUCCESSFUL!");
+    console.log("SEEDING SUCCESSFUL!");
     process.exit(0);
-  } catch (err: any) { console.error("❌ Fatal:", err.message); process.exit(1); }
+  } catch (err: any) { console.error("Fatal:", err.message); process.exit(1); }
 };
 
 seedDatabase();

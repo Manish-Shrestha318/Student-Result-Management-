@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import ActivityLog from "../models/ActivityLog";
 import { getAllSubjects, createSubject, updateSubject, deleteSubject } from "../services/subjectService";
 
 export const getSubjectsController = async (req: Request, res: Response) => {
@@ -19,6 +20,14 @@ export const getSubjectsController = async (req: Request, res: Response) => {
 export const createSubjectController = async (req: Request, res: Response) => {
   try {
     const newSubject = await createSubject(req.body);
+
+    await ActivityLog.create({
+      userId: (req as any).user.id,
+      action: "CREATE_SUBJECT",
+      category: "academic",
+      details: `Admin created subject: ${newSubject.name}`,
+    });
+
     res.status(201).json(newSubject);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

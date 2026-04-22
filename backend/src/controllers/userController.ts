@@ -5,7 +5,7 @@ import User from "../models/User";
 import Student from "../models/Student";
 import bcrypt from "bcryptjs";
 
-// ===== SELF-SERVICE ENDPOINTS (any authenticated user) =====
+//SELF-SERVICE ENDPOINTS
 
 // Get own profile
 export const getMyProfile = async (req: any, res: Response) => {
@@ -106,7 +106,8 @@ export const changeMyPassword = async (req: any, res: Response) => {
   }
 };
 
-// ===== ADMIN ENDPOINTS =====
+//  ADMIN ENDPOINTS
+
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
@@ -157,8 +158,16 @@ export const updateUserController = async (req: Request, res: Response) => {
 
 export const deleteUserController = async (req: Request, res: Response) => {
   try {
-    const deletedUser = await deleteUser(req.params.id as string);
+    const deletedUser: any = await deleteUser(req.params.id as string);
     if (!deletedUser) return res.status(404).json({ message: "User not found" });
+
+    await logActivity({
+      userId: (req as any).user.id,
+      action: "USER_DELETED",
+      category: "user_management",
+      details: `Admin deleted user: ${deletedUser.name || 'Unknown'} (${deletedUser.role || 'Unknown'})`
+    });
+
     res.json({ message: "User deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -177,10 +186,20 @@ export const updateStudentProfileController = async (req: Request, res: Response
 
 export const deleteStudentProfileController = async (req: Request, res: Response) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.params.id).populate("userId", "name");
     if (!student) return res.status(404).json({ success: false, message: "Student record not found" });
 
-    await deleteUser(student.userId.toString());
+    const studentName = (student.userId as any)?.name || 'Unknown';
+
+    await deleteUser(student.userId._id ? student.userId._id.toString() : student.userId.toString());
+
+    await logActivity({
+      userId: (req as any).user.id,
+      action: "STUDENT_DELETED",
+      category: "user_management",
+      details: `Admin deleted student: ${studentName} (Roll: ${student.rollNumber})`
+    });
+
     res.json({ success: true, message: "Student and associated user deleted successfully" });
   } catch (error: any) {
     console.error("DEBUG Error in deleteStudentProfileController:", error);
